@@ -32,7 +32,7 @@ final class QuizForgeController extends ChangeNotifier {
   final AppDatabase database;
   final QuestionRepository questionRepository;
   final SettingsRepository settingsRepository;
-  final ProfilePreferences profilePreferences;
+  final ActiveProfilePreferences profilePreferences;
   final AppLogger logger;
   final QuizEngine quizEngine;
   final QuestionBankCodec codec;
@@ -251,9 +251,10 @@ final class QuizForgeController extends ChangeNotifier {
       (PlayerProfile profile) => profile.id == profileId,
       orElse: () => throw ArgumentError('Unknown profile id.'),
     );
-    _activeProfile = selected;
+    final _ProfileData profileData = await _loadProfileData(selected.id);
     await profilePreferences.saveActiveProfileId(selected.id);
-    await _refreshProfileData();
+    _activeProfile = selected;
+    _applyProfileData(profileData);
     logger.info('profile.select.completed');
     notifyListeners();
   }
@@ -374,9 +375,25 @@ final class QuizForgeController extends ChangeNotifier {
       _categoryProgress = const <CategoryProgress>[];
       return;
     }
-    _bookmarkIds = await database.loadBookmarkIds(profile.id);
-    _progress = await database.loadProgress(profile.id);
-    _categoryProgress = await database.loadCategoryProgress(profile.id);
+    _applyProfileData(await _loadProfileData(profile.id));
+  }
+
+  Future<_ProfileData> _loadProfileData(String profileId) async {
+    final Set<String> bookmarkIds = await database.loadBookmarkIds(profileId);
+    final ProgressSummary progress = await database.loadProgress(profileId);
+    final List<CategoryProgress> categoryProgress =
+        await database.loadCategoryProgress(profileId);
+    return _ProfileData(
+      bookmarkIds: bookmarkIds,
+      progress: progress,
+      categoryProgress: categoryProgress,
+    );
+  }
+
+  void _applyProfileData(_ProfileData data) {
+    _bookmarkIds = data.bookmarkIds;
+    _progress = data.progress;
+    _categoryProgress = data.categoryProgress;
   }
 
   @override
@@ -384,4 +401,16 @@ final class QuizForgeController extends ChangeNotifier {
     unawaited(database.close());
     super.dispose();
   }
+}
+
+final class _ProfileData {
+  const _ProfileData({
+    required this.bookmarkIds,
+    required this.progress,
+    required this.categoryProgress,
+  });
+
+  final Set<String> bookmarkIds;
+  final ProgressSummary progress;
+  final List<CategoryProgress> categoryProgress;
 }
