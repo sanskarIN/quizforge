@@ -45,28 +45,36 @@ flutter create . --platforms=android,ios,web,windows,macos,linux
 
 Run the command from the repository root. Review generated diffs before committing platform files; generated local paths, signing material, and machine-specific configuration must remain untracked.
 
-## Install packages
+## Install packages and generate localizations
 
 ```bash
 flutter pub get
+flutter gen-l10n
 ```
 
-Do not manually edit generated dependency caches. Commit the normal Flutter lockfile when generated for an application so CI and release builds resolve a reproducible dependency graph.
+`pubspec.yaml` keeps `intl: any` alongside the Flutter localization SDK so the installed Flutter stable SDK selects its compatible `intl` version. Do not replace that with an arbitrary manually pinned version unless the complete Flutter dependency graph has been verified.
+
+Do not manually edit generated dependency caches. Commit the normal Flutter application lockfile when generated in a verified Flutter environment so CI and release builds can resolve the reviewed dependency graph reproducibly.
 
 ## Verify the checkout
 
 ```bash
-dart format --output=none --set-exit-if-changed lib test
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
-flutter test
+flutter test --coverage
 ```
+
+The `tool/` directory is part of the formatting gate because it contains the deterministic benchmark utility.
 
 If the platform runners are present, also verify the primary build appropriate to your host, for example:
 
 ```bash
 flutter build apk --debug
-flutter build web
+flutter build web --release
 ```
+
+Desktop and Apple-platform release builds require their corresponding supported host environments. The pull-request platform-build workflow provides additional cross-platform evidence on GitHub-hosted runners.
 
 ## Run the app
 
