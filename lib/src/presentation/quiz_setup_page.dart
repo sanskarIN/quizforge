@@ -39,9 +39,8 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
         .toList()
       ..sort();
     final int available = _matchingQuestions().length;
-    final int effectiveCount = available == 0
-        ? 1
-        : _questionCount.clamp(1, available > 100 ? 100 : available);
+    final int maximumCount = available == 0 ? 1 : available.clamp(1, 100).toInt();
+    final int effectiveCount = _questionCount.clamp(1, maximumCount).toInt();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Build a quiz')),
@@ -161,8 +160,8 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                         Slider(
                           value: effectiveCount.toDouble(),
                           min: 1,
-                          max: (available > 0 ? available.clamp(1, 100) : 1).toDouble(),
-                          divisions: available <= 1 ? null : available.clamp(1, 100) - 1,
+                          max: maximumCount.toDouble(),
+                          divisions: maximumCount <= 1 ? null : maximumCount - 1,
                           label: '$effectiveCount',
                           onChanged: available == 0
                               ? null
@@ -258,8 +257,8 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
 
   void _normalizeCount() {
     final int available = _matchingQuestions().length;
-    final int maxCount = available.clamp(1, 100);
-    _questionCount = _questionCount.clamp(1, maxCount);
+    final int maxCount = available.clamp(1, 100).toInt();
+    _questionCount = _questionCount.clamp(1, maxCount).toInt();
   }
 
   void _startQuiz() {
@@ -267,13 +266,14 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
     if (available == 0) {
       return;
     }
+    final int maxCount = available.clamp(1, 100).toInt();
     final QuizConfig config = QuizConfig(
       category: _category == 'all' ? null : _category,
       difficulty: _difficulty == 'all'
           ? null
           : Difficulty.values.byName(_difficulty),
       tags: Set<String>.of(_tags),
-      questionCount: _questionCount.clamp(1, available.clamp(1, 100)),
+      questionCount: _questionCount.clamp(1, maxCount).toInt(),
       timed: _timed,
       defaultSecondsPerQuestion: _secondsPerQuestion,
       seed: DateTime.now().microsecondsSinceEpoch,
