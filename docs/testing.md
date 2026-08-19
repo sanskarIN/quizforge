@@ -39,9 +39,11 @@ CI runs the same source-quality checks on pushes and pull requests targeting `ma
 Controller-level tests use explicit persistence interfaces and an in-memory database to verify failure ordering that is difficult to exercise through real platform preference plugins. Coverage includes:
 
 - active-profile selection remains unchanged when the active-profile preference write fails;
+- failed new-profile activation removes the newly inserted profile instead of leaving a hidden local record;
+- failed replacement-profile preference persistence prevents active-profile deletion before any database row is removed;
 - settings remain unchanged in memory when settings persistence fails.
 
-These tests protect the rule that user-visible controller state must not claim a preference was saved before its persistence operation succeeds.
+These tests protect the rule that user-visible controller state and durable local state must not claim a preference was saved before its persistence operation succeeds.
 
 ### Codec and fuzz tests
 
