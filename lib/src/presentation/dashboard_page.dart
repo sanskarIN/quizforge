@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
@@ -17,6 +18,7 @@ final class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final List<String> categories = controller.questions
         .map((Question question) => question.category)
         .toSet()
@@ -28,12 +30,12 @@ final class DashboardPage extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: <Widget>[
           Text(
-            'Ready to forge your next score?',
+            strings.dashboardTitle,
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Practice offline, review every answer, and build a consistent streak.',
+            strings.dashboardSubtitle,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -54,30 +56,30 @@ final class DashboardPage extends StatelessWidget {
                 children: <Widget>[
                   _ActionCard(
                     icon: Icons.today_outlined,
-                    title: 'Daily quiz',
-                    description: 'A deterministic set that changes with your local date.',
-                    actionLabel: 'Play daily',
+                    title: strings.dailyQuiz,
+                    description: strings.dailyQuizDescription,
+                    actionLabel: strings.playDaily,
                     onPressed: () => _openDaily(context),
                   ),
                   _ActionCard(
                     icon: Icons.shuffle,
-                    title: 'Random practice',
-                    description: 'Ten mixed questions from your current question bank.',
-                    actionLabel: 'Start practice',
+                    title: strings.randomPractice,
+                    description: strings.randomPracticeDescription,
+                    actionLabel: strings.startPractice,
                     onPressed: () => _openPractice(context),
                   ),
                   _ActionCard(
                     icon: Icons.timer_outlined,
-                    title: 'Timed sprint',
-                    description: 'A quick five-question round with 20 seconds per question.',
-                    actionLabel: 'Start sprint',
+                    title: strings.timedSprint,
+                    description: strings.timedSprintDescription,
+                    actionLabel: strings.startSprint,
                     onPressed: () => _openTimed(context),
                   ),
                   _ActionCard(
                     icon: Icons.tune,
-                    title: 'Build a quiz',
-                    description: 'Choose category, difficulty, tags, question count, and timing.',
-                    actionLabel: 'Customize',
+                    title: strings.buildQuiz,
+                    description: strings.buildQuizDescription,
+                    actionLabel: strings.customize,
                     onPressed: () => _openBuilder(context),
                   ),
                 ],
@@ -85,7 +87,7 @@ final class DashboardPage extends StatelessWidget {
             },
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Progress', style: Theme.of(context).textTheme.titleLarge),
+          Text(strings.progress, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.md),
           Card(
             child: Padding(
@@ -94,17 +96,20 @@ final class DashboardPage extends StatelessWidget {
                 spacing: AppSpacing.xl,
                 runSpacing: AppSpacing.md,
                 children: <Widget>[
-                  _Metric(label: 'Quizzes', value: '${controller.progress.quizCount}'),
                   _Metric(
-                    label: 'Accuracy',
+                    label: strings.quizzes,
+                    value: '${controller.progress.quizCount}',
+                  ),
+                  _Metric(
+                    label: strings.accuracy,
                     value: '${controller.progress.accuracy.toStringAsFixed(0)}%',
                   ),
                   _Metric(
-                    label: 'Best streak',
+                    label: strings.bestStreak,
                     value: '${controller.progress.bestStreak}',
                   ),
                   _Metric(
-                    label: 'Bookmarks',
+                    label: strings.bookmarks,
                     value: '${controller.bookmarkIds.length}',
                   ),
                 ],
@@ -112,10 +117,10 @@ final class DashboardPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Categories', style: Theme.of(context).textTheme.titleLarge),
+          Text(strings.categories, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.md),
           if (categories.isEmpty)
-            const Text('No categories yet. Create or import a question to begin.')
+            Text(strings.noCategories)
           else
             Wrap(
               spacing: AppSpacing.sm,
@@ -130,6 +135,7 @@ final class DashboardPage extends StatelessWidget {
   }
 
   Future<void> _openDaily(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final DateTime now = DateTime.now();
     final List<Question> questions = controller.quizEngine.dailyQuiz(
       controller.questions,
@@ -138,7 +144,7 @@ final class DashboardPage extends StatelessWidget {
     );
     await _pushQuiz(
       context,
-      title: 'Daily Quiz',
+      title: strings.dailyQuizTitle,
       questions: questions,
       config: QuizConfig(
         questionCount: 10,
@@ -148,6 +154,7 @@ final class DashboardPage extends StatelessWidget {
   }
 
   Future<void> _openPractice(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final QuizConfig config = QuizConfig(
       questionCount: 10,
       seed: DateTime.now().microsecondsSinceEpoch,
@@ -156,13 +163,14 @@ final class DashboardPage extends StatelessWidget {
         controller.quizEngine.selectQuestions(controller.questions, config);
     await _pushQuiz(
       context,
-      title: 'Random Practice',
+      title: strings.randomPracticeTitle,
       questions: questions,
       config: config,
     );
   }
 
   Future<void> _openTimed(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final QuizConfig config = QuizConfig(
       questionCount: 5,
       timed: true,
@@ -173,7 +181,7 @@ final class DashboardPage extends StatelessWidget {
         controller.quizEngine.selectQuestions(controller.questions, config);
     await _pushQuiz(
       context,
-      title: 'Timed Sprint',
+      title: strings.timedSprintTitle,
       questions: questions,
       config: config,
     );
@@ -195,7 +203,7 @@ final class DashboardPage extends StatelessWidget {
   }) async {
     if (questions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No questions are available for this quiz.')),
+        SnackBar(content: Text(AppLocalizations.of(context).noQuestionsForQuiz)),
       );
       return;
     }
