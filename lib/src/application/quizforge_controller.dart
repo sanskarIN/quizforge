@@ -68,7 +68,7 @@ final class QuizForgeController extends ChangeNotifier {
     notifyListeners();
     logger.info('app.initialize.started');
     try {
-      _settings = await settingsRepository.load();
+      _settings = await _loadSettingsForStartup();
       _questions = await questionRepository.loadAll();
       _profiles = await database.loadProfiles();
       if (_profiles.isEmpty) {
@@ -80,14 +80,19 @@ final class QuizForgeController extends ChangeNotifier {
         await database.upsertProfile(defaultProfile);
         _profiles = <PlayerProfile>[defaultProfile];
       }
-      final String? preferredId = await profilePreferences.loadActiveProfileId();
+
+      final String? preferredId = await _loadPreferredProfileIdForStartup();
       _activeProfile = _profiles.firstWhere(
         (PlayerProfile profile) => profile.id == preferredId,
         orElse: () => _profiles.first,
       );
-      await profilePreferences.saveActiveProfileId(_activeProfile!.id);
-      await _refreshProfileData();
-      _leaderboard = await database.loadLeaderboard();
+      await _persistStartupProfileBestEffort(_activeProfile!.id);
+      await _refreshProfileDataBestEffort(
+        _activeProfile!.id,
+        failureEvent: 'app.initialize.profile_data.failed',
+      );
+      await _refreshLeaderboardBestEffort('app.initialize.leaderboard.failed');
+
       logger.info(
         'app.initialize.completed',
         fields: <String, Object?>{
@@ -430,8 +435,14 @@ final class QuizForgeController extends ChangeNotifier {
       }
     }
 
-    await runReset(database.resetAllLocalData, 'app.local_data.database_reset.failed');
-    await runReset(settingsRepository.reset, 'app.local_data.settings_reset.failed');
+    await runReset(
+      database.resetAllLocalData,
+      'app.local_data.database_reset.failed',
+    );
+    await runReset(
+      settingsRepository.reset,
+      'app.local_data.settings_reset.failed',
+    );
     await runReset(
       profilePreferences.clearActiveProfileId,
       'app.local_data.profile_preference_reset.failed',
@@ -482,6 +493,41 @@ final class QuizForgeController extends ChangeNotifier {
         'errorCount': result.errors.length,
       },
     );
+  }
+
+  Future<AppSettings> _loadSettingsForStartup() async {
+    try {
+      return await settingsRepository.load();
+    } on Object catch (error) {
+      logger.warning(
+        'app.initialize.settings.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      return const AppSettings();
+    }
+  }
+
+  Future<String?> _loadPreferredProfileIdForStartup() async {
+    try {
+      return await profilePreferences.loadActiveProfileId();
+    } on Object catch (error) {
+      logger.warning(
+        'app.initialize.profile_preference_load.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      return null;
+    }
+  }
+
+  Future<void> _persistStartupProfileBestEffort(String profileId) async {
+    try {
+      await profilePreferences.saveActiveProfileId(profileId);
+    } on Object catch (error) {
+      logger.warning(
+        'app.initialize.profile_preference_save.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+    }
   }
 
   Future<void> _refreshProfileData() async {
