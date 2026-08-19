@@ -34,7 +34,6 @@ void main() {
       'Accessibility',
       'Privacy and data',
       'Updates',
-      'About',
       'Made by the Sanskar',
     ]) {
       await tester.scrollUntilVisible(
@@ -44,5 +43,6 @@ void main() {
       );
       expect(find.text(section), findsOneWidget);
     }
+    expect(find.text('About'), findsNWidgets(2));
   });
 }
