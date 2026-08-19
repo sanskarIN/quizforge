@@ -2,12 +2,15 @@
 
 QuizForge releases must be reproducible, tested, and based on a clean repository state.
 
+The maintained release candidate is **2.7.4+1** and its public Git tag, after verification, is **`v2.7.4`**.
+
 ## Release prerequisites
 
-Before creating a release candidate:
+Before creating or promoting a release candidate:
 
 - `main` is up to date and clean;
 - the version in `pubspec.yaml` is intentional;
+- `tool/check_release_metadata.py` confirms that package, changelog, and versioning metadata agree;
 - the reviewed application `pubspec.lock` is tracked and matches `pubspec.yaml` after locked dependency resolution;
 - `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md` are current;
 - repository-validator regression tests pass;
@@ -27,8 +30,10 @@ From a fresh clone:
 flutter create . --platforms=android,ios,web,windows,macos,linux
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
+python3 tool/test_check_release_metadata.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
+python3 tool/check_release_metadata.py
 flutter pub get --enforce-lockfile
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
@@ -39,6 +44,18 @@ flutter test --coverage
 On Windows, use `python` instead of `python3` when that is the configured launcher.
 
 The release workflow intentionally fails when `pubspec.lock` is missing, empty, incompatible with `pubspec.yaml`, or rewritten by locked dependency resolution. A queued, pending, cancelled, or superseded remote check is not evidence of a passing release candidate.
+
+## Release metadata gate
+
+`tool/check_release_metadata.py` is the early, Flutter-independent release identity gate. For 2.7.4 it verifies:
+
+- exactly one package version with the `MAJOR.MINOR.PATCH+BUILD` form and a positive build number;
+- a dated `CHANGELOG.md` entry matching public version `2.7.4`;
+- unique release headings in descending version order, including historical zero-major entries;
+- no stale pre-1.0 compatibility policy while the package is on a stable major version;
+- maintained package identity `2.7.4+1` and tag identity `v2.7.4` in `docs/versioning.md`.
+
+Its regression suite is `tool/test_check_release_metadata.py`. Both the validator and its tests run in pull-request CI and the tag release workflow.
 
 ## Local backup/restore verification
 
@@ -116,30 +133,32 @@ The pull-request matrix performs an iOS release compile with `--no-codesign`. Di
 
 ## Versioning
 
-Use Semantic Versioning where practical:
+Use Semantic Versioning:
 
 - patch: compatible fixes;
 - minor: compatible functionality;
-- major: incompatible public data/API behavior.
+- major: incompatible public data/API behavior that cannot be handled through a reasonable migration/compatibility path.
 
-The local-backup `format`/`version` contract is independent from the app package version. A breaking backup-format change must use a new backup version and document migration/compatibility behavior rather than silently reinterpreting version 1.
+The local-backup `format`/`version` contract is independent from the app package version. QuizForge 2.7.4 continues to use local-backup format version 1. A breaking backup-format change must use a new backup version and document migration/compatibility behavior rather than silently reinterpreting version 1.
 
-Flutter's build number follows the `+N` suffix in `pubspec.yaml` and should increase for store submissions as required by the target store.
+Flutter's build number follows the `+N` suffix in `pubspec.yaml` and should increase for store submissions as required by the target store. A build-number-only store rebuild of 2.7.4 still uses the public tag/version `v2.7.4` when no SemVer-visible behavior changes.
 
-## Tagging
+## Tagging 2.7.4
 
-Only tag after the release commit passes required checks:
+Only tag after the exact 2.7.4 release commit passes all required checks and manual release blockers are recorded as complete:
 
 ```bash
-git tag -s vX.Y.Z -m "QuizForge vX.Y.Z"
-git push origin vX.Y.Z
+git tag -s v2.7.4 -m "QuizForge v2.7.4"
+git push origin v2.7.4
 ```
+
+For later releases, substitute the matching `vX.Y.Z` value.
 
 If signed tags are not available in the execution environment, do not falsely claim a signed release.
 
-The tag-triggered GitHub Actions release workflow independently verifies the tag/version relationship, requires the committed lockfile, resolves dependencies with `--enforce-lockfile`, verifies the lockfile was not rewritten, generates localizations, reruns formatting/documentation-link/analysis/test gates, builds Android/Web release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and publishes the GitHub release.
+The tag-triggered GitHub Actions release workflow independently verifies the tag/version relationship, requires the committed lockfile, reruns Markdown/ARB/release-metadata validator tests and validators, resolves dependencies with `--enforce-lockfile`, verifies the lockfile was not rewritten, generates localizations, reruns formatting/analysis/test gates, builds Android/Web release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and publishes the GitHub release.
 
-A future release-workflow edit should keep the ARB validation/tool-test sequence aligned with CI/local scripts rather than allowing release automation to bypass repository-input validation.
+A future release-workflow edit should keep all repository validator/test sequences aligned with CI/local scripts rather than allowing release automation to bypass a pull-request gate.
 
 ## Release notes
 
@@ -153,6 +172,8 @@ Release notes should include:
 - local-backup compatibility notes when applicable;
 - verified platforms and exact build scope.
 
+The maintained 2.7.4 notes are in [`release-notes-2.7.4.md`](release-notes-2.7.4.md).
+
 Do not describe an unverified build as supported by that release merely because source code contains a target runner.
 
 ## Post-release
@@ -160,7 +181,7 @@ Do not describe an unverified build as supported by that release merely because 
 After publication:
 
 1. verify downloadable artifacts/checksums where provided;
-2. update `CHANGELOG.md` from Unreleased to the release version/date;
-3. update `what_changed.md` with tag and release commit;
-4. create the next Unreleased section;
+2. ensure `CHANGELOG.md` reflects the published release version/date and has a fresh Unreleased section;
+3. update `what_changed.md` and `docs/verification.md` with the exact tag and release commit;
+4. record actual verified platform scope and any remaining limitations in the release notes;
 5. record any store/distribution-specific follow-up separately from open-source source control.
