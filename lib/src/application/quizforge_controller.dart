@@ -332,8 +332,8 @@ final class QuizForgeController extends ChangeNotifier {
   }
 
   Future<void> updateSettings(AppSettings settings) async {
-    _settings = settings;
     await settingsRepository.save(settings);
+    _settings = settings;
     logger.info('settings.updated');
     notifyListeners();
   }
