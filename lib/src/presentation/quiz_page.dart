@@ -37,6 +37,7 @@ final class _QuizPageState extends State<QuizPage> {
   int _index = 0;
   int _secondsRemaining = 0;
   bool _busy = false;
+  bool _allowPop = false;
 
   Question get _question => widget.questions[_index];
 
@@ -65,95 +66,110 @@ final class _QuizPageState extends State<QuizPage> {
 
     final Question question = _question;
     final double progress = (_index + 1) / widget.questions.length;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: <Widget>[
-          if (widget.config.timed)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Center(
-                child: Semantics(
-                  label: '$_secondsRemaining seconds remaining',
-                  liveRegion: _secondsRemaining <= 5,
-                  child: Chip(
-                    avatar: const Icon(Icons.timer_outlined, size: 18),
-                    label: Text('${_secondsRemaining}s'),
+    final bool confirmExit = widget.controller.settings.confirmBeforeExitQuiz;
+    return PopScope<void>(
+      canPop: _allowPop || !confirmExit,
+      onPopInvokedWithResult: (bool didPop, void result) {
+        if (!didPop && confirmExit && !_allowPop) {
+          unawaited(_confirmExit());
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+          actions: <Widget>[
+            if (widget.config.timed)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Center(
+                  child: Semantics(
+                    label: '$_secondsRemaining seconds remaining',
+                    liveRegion: _secondsRemaining <= 5,
+                    child: Chip(
+                      avatar: const Icon(Icons.timer_outlined, size: 18),
+                      label: Text('${_secondsRemaining}s'),
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        semanticsLabel:
-                            'Question ${_index + 1} of ${widget.questions.length}',
+          ],
+        ),
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          semanticsLabel:
+                              'Question ${_index + 1} of ${widget.questions.length}',
+                        ),
                       ),
+                      const SizedBox(width: AppSpacing.md),
+                      Text('${_index + 1}/${widget.questions.length}'),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: <Widget>[
+                      Chip(label: Text(question.category)),
+                      Chip(label: Text(question.difficulty.name)),
+                      Chip(label: Text(_typeLabel(question.type))),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Semantics(
+                    header: true,
+                    hint: widget.controller.settings.screenReaderHints
+                        ? _screenReaderHint(question.type)
+                        : null,
+                    child: Text(
+                      question.prompt,
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    const SizedBox(width: AppSpacing.md),
-                    Text('${_index + 1}/${widget.questions.length}'),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: <Widget>[
-                    Chip(label: Text(question.category)),
-                    Chip(label: Text(question.difficulty.name)),
-                    Chip(label: Text(_typeLabel(question.type))),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  question.prompt,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                _answerEditor(question),
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  children: <Widget>[
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () {
-                              unawaited(_submit(forced: true));
-                            },
-                      child: const Text('Skip'),
-                    ),
-                    const Spacer(),
-                    FilledButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () {
-                              unawaited(_submit());
-                            },
-                      icon: Icon(
-                        _index == widget.questions.length - 1
-                            ? Icons.flag_outlined
-                            : Icons.arrow_forward,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  _answerEditor(question),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: <Widget>[
+                      TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () {
+                                unawaited(_submit(forced: true));
+                              },
+                        child: const Text('Skip'),
                       ),
-                      label: Text(
-                        _index == widget.questions.length - 1
-                            ? 'Finish quiz'
-                            : 'Next',
+                      const Spacer(),
+                      FilledButton.icon(
+                        onPressed: _busy
+                            ? null
+                            : () {
+                                unawaited(_submit());
+                              },
+                        icon: Icon(
+                          _index == widget.questions.length - 1
+                              ? Icons.flag_outlined
+                              : Icons.arrow_forward,
+                        ),
+                        label: Text(
+                          _index == widget.questions.length - 1
+                              ? 'Finish quiz'
+                              : 'Next',
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -264,15 +280,24 @@ final class _QuizPageState extends State<QuizPage> {
     try {
       await widget.controller.recordResult(result);
     } on Object catch (error) {
+      widget.controller.logger.error(
+        'quiz.result.persist.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Result saved locally with an error: $error')),
+          const SnackBar(
+            content: Text(
+              'The quiz is complete, but its result could not be saved locally.',
+            ),
+          ),
         );
       }
     }
     if (!mounted) {
       return;
     }
+    _allowPop = true;
     await Navigator.of(context).pushReplacement<void, void>(
       MaterialPageRoute<void>(
         builder: (BuildContext context) => ReviewPage(
@@ -282,6 +307,37 @@ final class _QuizPageState extends State<QuizPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmExit() async {
+    final bool confirmed = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text('Leave this quiz?'),
+              content: const Text(
+                'Your current in-progress answers will not be saved as a completed quiz.',
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Keep playing'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Leave quiz'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+    if (!confirmed || !mounted) {
+      return;
+    }
+    _timer?.cancel();
+    setState(() => _allowPop = true);
+    Navigator.of(context).pop();
   }
 
   void _resetTimer() {
@@ -305,6 +361,19 @@ final class _QuizPageState extends State<QuizPage> {
         setState(() => _secondsRemaining -= 1);
       }
     });
+  }
+
+  static String _screenReaderHint(QuestionType type) {
+    switch (type) {
+      case QuestionType.multipleChoice:
+        return 'Choose one answer.';
+      case QuestionType.trueFalse:
+        return 'Choose true or false.';
+      case QuestionType.multiSelect:
+        return 'Choose every answer that applies.';
+      case QuestionType.shortAnswer:
+        return 'Enter a short text answer.';
+    }
   }
 
   static String _typeLabel(QuestionType type) {
