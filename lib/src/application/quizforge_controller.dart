@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 
 import '../core/logging/app_logger.dart';
 import '../data/app_database.dart';
+import '../data/app_database_backup.dart';
 import '../data/app_database_maintenance.dart';
 import '../data/app_database_progress.dart';
+import '../data/local_backup_codec.dart';
 import '../data/profile_preferences.dart';
 import '../data/question_bank_codec.dart';
 import '../data/question_repository.dart';
@@ -26,6 +28,7 @@ final class QuizForgeController extends ChangeNotifier {
     AppLogger? logger,
     this.quizEngine = const QuizEngine(),
     this.codec = const QuestionBankCodec(),
+    this.backupCodec = const LocalBackupCodec(),
     this.deduplicator = const QuestionDeduplicator(),
   }) : logger = logger ?? AppLogger();
 
@@ -36,6 +39,7 @@ final class QuizForgeController extends ChangeNotifier {
   final AppLogger logger;
   final QuizEngine quizEngine;
   final QuestionBankCodec codec;
+  final LocalBackupCodec backupCodec;
   final QuestionDeduplicator deduplicator;
 
   bool _loading = true;
@@ -173,6 +177,84 @@ final class QuizForgeController extends ChangeNotifier {
   String exportJson() => codec.encodeJson(_questions);
 
   String exportCsv() => codec.encodeCsv(_questions);
+
+  Future<String> exportLocalBackup() async {
+    final DatabaseBackupSnapshot snapshot = await database.exportBackupSnapshot();
+    final String archive = backupCodec.encode(
+      LocalBackupPayload(
+        createdAt: DateTime.now(),
+        database: snapshot,
+        settings: _settings,
+        activeProfileId: _activeProfile?.id,
+      ),
+    );
+    logger.info(
+      'backup.export.completed',
+      fields: <String, Object?>{
+        'questionCount': snapshot.questions.length,
+        'profileCount': snapshot.profiles.length,
+        'attemptCount': snapshot.attempts.length,
+        'bookmarkCount': snapshot.bookmarks.length,
+      },
+    );
+    return archive;
+  }
+
+  Future<void> restoreLocalBackup(String source) async {
+    final LocalBackupPayload payload = backupCodec.decode(source);
+    final DatabaseBackupSnapshot previousDatabase =
+        await database.exportBackupSnapshot();
+    final AppSettings previousSettings = await settingsRepository.load();
+    final String? previousProfileId =
+        await profilePreferences.loadActiveProfileId();
+
+    try {
+      await database.restoreBackupSnapshot(payload.database);
+      await settingsRepository.save(payload.settings);
+      final String? activeProfileId = payload.activeProfileId;
+      if (activeProfileId == null) {
+        await profilePreferences.clearActiveProfileId();
+      } else {
+        await profilePreferences.saveActiveProfileId(activeProfileId);
+      }
+      await initialize();
+      if (_errorMessage != null) {
+        throw StateError('Restored local data could not be loaded.');
+      }
+      logger.warning(
+        'backup.restore.completed',
+        fields: <String, Object?>{
+          'questionCount': payload.database.questions.length,
+          'profileCount': payload.database.profiles.length,
+          'attemptCount': payload.database.attempts.length,
+          'bookmarkCount': payload.database.bookmarks.length,
+        },
+      );
+    } on Object catch (error, stackTrace) {
+      logger.error(
+        'backup.restore.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      try {
+        await database.restoreBackupSnapshot(previousDatabase);
+        await settingsRepository.save(previousSettings);
+        if (previousProfileId == null) {
+          await profilePreferences.clearActiveProfileId();
+        } else {
+          await profilePreferences.saveActiveProfileId(previousProfileId);
+        }
+        await initialize();
+      } on Object catch (rollbackError) {
+        logger.error(
+          'backup.restore.rollback_failed',
+          fields: <String, Object?>{
+            'errorType': rollbackError.runtimeType.toString(),
+          },
+        );
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
 
   Future<void> createProfile(String displayName) async {
     final PlayerProfile profile = PlayerProfile(
@@ -403,7 +485,9 @@ final class QuizForgeController extends ChangeNotifier {
     _bookmarkIds = const <String>{};
     _progress = const ProgressSummary();
     _categoryProgress = const <CategoryProgress>[];
-    await _refreshLeaderboardBestEffort('profile.activity.leaderboard_refresh.failed');
+    await _refreshLeaderboardBestEffort(
+      'profile.activity.leaderboard_refresh.failed',
+    );
 
     logger.info('profile.activity.cleared');
     notifyListeners();
@@ -430,8 +514,14 @@ final class QuizForgeController extends ChangeNotifier {
       }
     }
 
-    await runReset(database.resetAllLocalData, 'app.local_data.database_reset.failed');
-    await runReset(settingsRepository.reset, 'app.local_data.settings_reset.failed');
+    await runReset(
+      database.resetAllLocalData,
+      'app.local_data.database_reset.failed',
+    );
+    await runReset(
+      settingsRepository.reset,
+      'app.local_data.settings_reset.failed',
+    );
     await runReset(
       profilePreferences.clearActiveProfileId,
       'app.local_data.profile_preference_reset.failed',
