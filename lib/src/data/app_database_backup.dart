@@ -222,7 +222,30 @@ ORDER BY profile_id COLLATE NOCASE, question_id COLLATE NOCASE
       await customStatement('DELETE FROM profiles');
       await customStatement('DELETE FROM questions');
 
-      await upsertQuestions(snapshot.questions);
+      for (final Question question in snapshot.questions) {
+        await customStatement(
+          '''
+INSERT INTO questions(
+  id, type, prompt, choices_json, correct_answers_json, category, difficulty,
+  tags_json, explanation, time_limit_seconds, fingerprint, created_at
+) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+''',
+          <Object?>[
+            question.id,
+            question.type.name,
+            question.prompt,
+            jsonEncode(question.choices),
+            jsonEncode(question.correctAnswers.toList()..sort()),
+            question.category,
+            question.difficulty.name,
+            jsonEncode(question.tags),
+            question.explanation,
+            question.timeLimitSeconds,
+            question.fingerprint,
+            DateTime.now().millisecondsSinceEpoch,
+          ],
+        );
+      }
       for (final PlayerProfile profile in snapshot.profiles) {
         await upsertProfile(profile);
       }
