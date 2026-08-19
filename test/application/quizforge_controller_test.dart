@@ -95,4 +95,48 @@ void main() {
     );
     expect(controller.questions, isEmpty);
   });
+
+  test('search normalizes query and matches prompt category and tags', () async {
+    await controller.initialize();
+
+    expect(controller.searchQuestions('  TEST  '), <Question>[seedQuestion]);
+    expect(controller.searchQuestions('testing'), <Question>[seedQuestion]);
+    expect(controller.searchQuestions('UNIT'), <Question>[seedQuestion]);
+    expect(controller.searchQuestions('missing'), isEmpty);
+    expect(
+      controller.searchQuestions('test', difficulty: Difficulty.hard),
+      isEmpty,
+    );
+  });
+
+  test('addQuestion persists a unique valid question and rejects duplicate content', () async {
+    await controller.initialize();
+    final Question newQuestion = Question(
+      id: 'controller-q2',
+      type: QuestionType.trueFalse,
+      prompt: 'Controller storage contracts are injectable.',
+      correctAnswers: const <String>{'true'},
+      category: 'Testing',
+      difficulty: Difficulty.medium,
+    );
+
+    await controller.addQuestion(newQuestion);
+
+    expect(controller.questions, hasLength(2));
+    expect(controller.questions.last, same(newQuestion));
+    expect((await questionStore.loadAll()).last, same(newQuestion));
+
+    final Question duplicateContent = Question(
+      id: 'controller-q3',
+      type: QuestionType.trueFalse,
+      prompt: '  controller STORAGE contracts ARE injectable. ',
+      correctAnswers: const <String>{'true'},
+      category: ' testing ',
+      difficulty: Difficulty.hard,
+    );
+    expect(
+      () => controller.addQuestion(duplicateContent),
+      throwsArgumentError,
+    );
+  });
 }
