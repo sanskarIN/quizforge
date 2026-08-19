@@ -1,0 +1,433 @@
+name: Stabilize Baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/stabilize-baseline.yml
+
+permissions:
+  contents: write
+
+jobs:
+  stabilize:
+    name: Stabilize, verify, and document
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+
+      - name: Apply idempotent source hardening patches
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          import re
+
+          arb_path = Path("lib/l10n/app_en.arb")
+          arb_text = arb_path.read_text(encoding="utf-8")
+          arb_text = arb_text.replace('"import": "Import"', '"importLabel": "Import"')
+          arb_text = arb_text.replace('"export": "Export"', '"exportLabel": "Export"')
+          arb_path.write_text(arb_text, encoding="utf-8")
+
+          import_page = Path("lib/src/presentation/import_export_page.dart")
+          source = import_page.read_text(encoding="utf-8")
+          source = re.sub(r"strings\.import\b", "strings.importLabel", source)
+          source = re.sub(r"strings\.export\b", "strings.exportLabel", source)
+          import_page.write_text(source, encoding="utf-8")
+
+          app = Path("lib/src/app.dart")
+          app_source = app.read_text(encoding="utf-8")
+          old_scaler = '''final TextScaler scaler = settings.largeText
+                ? const TextScaler.linear(1.15)
+                : media.textScaler;'''
+          new_scaler = '''final double systemScaleAtBody = media.textScaler.scale(14) / 14;
+            final TextScaler scaler =
+                settings.largeText && systemScaleAtBody < 1.15
+                    ? const TextScaler.linear(1.15)
+                    : media.textScaler;'''
+          if old_scaler in app_source:
+              app_source = app_source.replace(old_scaler, new_scaler)
+          app.write_text(app_source, encoding="utf-8")
+
+          benchmark = Path("tool/benchmark.dart")
+          benchmark_source = benchmark.read_text(encoding="utf-8")
+          marker = "// ignore_for_file: avoid_print\n\n"
+          if not benchmark_source.startswith("// ignore_for_file: avoid_print"):
+              benchmark.write_text(marker + benchmark_source, encoding="utf-8")
+
+          data = json.loads(arb_path.read_text(encoding="utf-8"))
+          reserved = {
+              "abstract", "as", "assert", "async", "await", "base", "break",
+              "case", "catch", "class", "const", "continue", "covariant",
+              "default", "deferred", "do", "dynamic", "else", "enum",
+              "export", "extends", "extension", "external", "factory", "false",
+              "final", "finally", "for", "Function", "get", "hide", "if",
+              "implements", "import", "in", "interface", "is", "late", "library",
+              "mixin", "new", "null", "of", "on", "operator", "part", "required",
+              "rethrow", "return", "sealed", "set", "show", "static", "super",
+              "switch", "sync", "this", "throw", "true", "try", "typedef", "var",
+              "void", "when", "while", "with", "yield"
+          }
+          resources = {key for key in data if not key.startswith("@")}
+          invalid = sorted(resources & reserved)
+          if invalid:
+              raise SystemExit(f"Reserved Dart localization identifiers remain: {invalid}")
+
+      - name: Rewrite review page with live bookmark state
+        shell: python
+        run: |
+          from pathlib import Path
+
+          Path("lib/src/presentation/review_page.dart").write_text(r'''import 'package:flutter/material.dart';
+
+import '../../l10n/app_localizations.dart';
+import '../application/quizforge_controller.dart';
+import '../core/theme/app_theme.dart';
+import '../domain/question.dart';
+import '../domain/quiz_result.dart';
+
+final class ReviewPage extends StatelessWidget {
+  const ReviewPage({
+    required this.controller,
+    required this.questions,
+    required this.result,
+    super.key,
+  });
+
+  final QuizForgeController controller;
+  final List<Question> questions;
+  final QuizResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(strings.review)),
+      body: AnimatedBuilder(
+        animation: controller,
+        builder: (BuildContext context, Widget? child) {
+          return SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: <Widget>[
+                _SummaryCard(result: result),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  strings.answerReview,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                for (int index = 0; index < questions.length; index += 1) ...<Widget>[
+                  _ReviewCard(
+                    question: questions[index],
+                    evaluation: result.evaluations[index],
+                    bookmarked: controller.bookmarkIds.contains(questions[index].id),
+                    onBookmark: () => controller.toggleBookmark(questions[index].id),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+final class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.result});
+
+  final QuizResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Wrap(
+          spacing: AppSpacing.xl,
+          runSpacing: AppSpacing.md,
+          alignment: WrapAlignment.spaceBetween,
+          children: <Widget>[
+            _Metric(
+              label: strings.score,
+              value: '${result.percentage.toStringAsFixed(0)}%',
+            ),
+            _Metric(
+              label: strings.correct,
+              value: '${result.correctCount}/${result.totalCount}',
+            ),
+            _Metric(label: strings.bestStreak, value: '${result.bestStreak}'),
+            _Metric(label: strings.time, value: _formatDuration(result.duration)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatDuration(Duration value) {
+    final int minutes = value.inMinutes;
+    final int seconds = value.inSeconds.remainder(60);
+    return '${minutes}m ${seconds}s';
+  }
+}
+
+final class _Metric extends StatelessWidget {
+  const _Metric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$label: $value',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(value, style: Theme.of(context).textTheme.headlineSmall),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+final class _ReviewCard extends StatelessWidget {
+  const _ReviewCard({
+    required this.question,
+    required this.evaluation,
+    required this.bookmarked,
+    required this.onBookmark,
+  });
+
+  final Question question;
+  final QuestionEvaluation evaluation;
+  final bool bookmarked;
+  final Future<void> Function() onBookmark;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final IconData statusIcon = evaluation.correct ? Icons.check_circle : Icons.cancel;
+    final Color statusColor = evaluation.correct ? colors.primary : colors.error;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(statusIcon, color: statusColor),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    question.prompt,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  tooltip: bookmarked
+                      ? strings.removeBookmark
+                      : strings.bookmarkQuestion,
+                  onPressed: () async {
+                    try {
+                      await onBookmark();
+                    } on Object {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(strings.actionFailed)),
+                        );
+                      }
+                    }
+                  },
+                  icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              '${strings.yourAnswer}: '
+              '${_displayAnswers(evaluation.submittedAnswers, strings)}',
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '${strings.correctAnswer}: '
+              '${_displayAnswers(question.correctAnswers, strings)}',
+            ),
+            if (question.explanation.trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                question.explanation,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _displayAnswers(
+    Iterable<String> answers,
+    AppLocalizations strings,
+  ) {
+    if (answers.isEmpty) {
+      return strings.noAnswer;
+    }
+    return answers.join(', ');
+  }
+}
+''', encoding="utf-8")
+
+      - name: Commit source stabilization
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add lib/l10n/app_en.arb lib/src/app.dart lib/src/presentation/import_export_page.dart lib/src/presentation/review_page.dart tool/benchmark.dart
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: stabilize localization accessibility and review state"
+          fi
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve application dependencies
+        run: flutter pub get
+
+      - name: Commit lockfile when generated or changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f pubspec.lock; then
+            git add pubspec.lock
+            if ! git diff --cached --quiet; then
+              git commit -m "build: refresh Flutter application lockfile"
+            fi
+          fi
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Format project Dart sources
+        run: dart format lib test tool
+
+      - name: Commit formatter corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -u -- lib test tool
+          if ! git diff --cached --quiet; then
+            git commit -m "style: apply Dart formatter"
+          fi
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Automated tests
+        run: flutter test --coverage
+
+      - name: Benchmark smoke test
+        run: dart run tool/benchmark.dart 1000 | tee benchmark-stabilization.jsonl
+
+      - name: Record stabilization evidence
+        shell: bash
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          flutter_version="$(flutter --version | head -n 1)"
+          dart_version="$(dart --version 2>&1)"
+          verified_sha="$(git rev-parse HEAD)"
+          cat > docs/verification.md <<EOF
+          # Verification Evidence — QuizForge 0.1.0 Baseline
+
+          Automated stabilization verification completed on GitHub-hosted Ubuntu.
+
+          - Workflow: ${RUN_URL}
+          - Verified commit before evidence update: ${verified_sha}
+          - Flutter: ${flutter_version}
+          - Dart: ${dart_version}
+          - Dependency resolution: passed
+          - Localization generation: passed
+          - Dart formatting verification: passed
+          - Flutter static analysis: passed
+          - Automated tests with coverage: passed
+          - Deterministic 1,000-question benchmark smoke test: passed
+
+          The run verifies source-level quality on Ubuntu. It does not replace Android/Web/native release-build verification, real screenshot capture, or manual assistive-technology review.
+
+          ## Reproduce the automated checks
+
+          \`\`\`bash
+          flutter pub get
+          flutter gen-l10n
+          dart format --output=none --set-exit-if-changed lib test tool
+          flutter analyze
+          flutter test --coverage
+          dart run tool/benchmark.dart 1000
+          \`\`\`
+
+          **Made by the Sanskar**
+          EOF
+
+          if ! grep -q "Automated stabilization verification update" what_changed.md; then
+            cat >> what_changed.md <<EOF
+
+          ## Automated stabilization verification update — 2026-08-19
+
+          Workflow: ${RUN_URL}
+
+          The baseline stabilization workflow used Git identity \`Sanskar <sanskarin@outlook.in>\`, corrected reserved localization resource identifiers, preserved existing system text scaling when the app large-text preference is enabled, made review-page bookmark state update live, generated localization sources, resolved/locked dependencies, verified Dart formatting, passed Flutter static analysis, passed automated tests with coverage, and passed the deterministic 1,000-question benchmark smoke test before pushing its verified commits.
+
+          Remaining release evidence is platform-specific production builds, real release-build screenshots, and manual accessibility review on representative targets. Those are not falsely marked complete by Linux CI.
+          EOF
+          fi
+
+          git add docs/verification.md what_changed.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: record stabilization verification evidence"
+          fi
+
+      - name: Rebase onto latest main if another maintenance run advanced it
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
+
+      - name: Push verified commits
+        run: git push origin HEAD:main
+
+      - name: Upload verification artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: quizforge-stabilization-verification
+          path: |
+            coverage/lcov.info
+            benchmark-stabilization.jsonl
+            docs/verification.md
+          if-no-files-found: error
+          retention-days: 30
