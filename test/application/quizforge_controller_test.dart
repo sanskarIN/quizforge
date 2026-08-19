@@ -156,6 +156,23 @@ void main() {
     expect(settingsStore.value, same(updated));
   });
 
+  test('updateSettings keeps prior state when persistence fails', () async {
+    await controller.initialize();
+    final AppSettings original = controller.settings;
+    settingsStore.failSave = true;
+    const AppSettings rejected = AppSettings(
+      themeMode: AppThemeMode.light,
+      reducedMotion: true,
+    );
+
+    await expectLater(
+      controller.updateSettings(rejected),
+      throwsStateError,
+    );
+
+    expect(controller.settings, same(original));
+  });
+
   test('profile create rename select and delete stay synchronized', () async {
     await controller.initialize();
 
