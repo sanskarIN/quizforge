@@ -69,14 +69,24 @@ final class _ImportExportPageState extends State<ImportExportPage> {
               'The preview contains your complete local question bank. Copy it and save it with the matching file extension.',
             ),
             const SizedBox(height: AppSpacing.md),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 280),
-              child: TextField(
-                controller: TextEditingController(text: exportText),
-                readOnly: true,
-                maxLines: null,
-                minLines: 6,
-                decoration: const InputDecoration(labelText: 'Export preview'),
+            Semantics(
+              label: '${_format.name.toUpperCase()} export preview',
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 280),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    exportText,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -113,7 +123,9 @@ final class _ImportExportPageState extends State<ImportExportPage> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Row(
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: <Widget>[
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -126,7 +138,6 @@ final class _ImportExportPageState extends State<ImportExportPage> {
                   icon: const Icon(Icons.content_paste),
                   label: const Text('Paste'),
                 ),
-                const SizedBox(width: AppSpacing.sm),
                 FilledButton.icon(
                   onPressed: _importing
                       ? null
@@ -163,6 +174,18 @@ final class _ImportExportPageState extends State<ImportExportPage> {
           : await widget.controller.importCsv(source);
       if (mounted) {
         setState(() => _lastResult = result);
+      }
+    } on Object catch (error) {
+      widget.controller.logger.error(
+        'question.import.persist.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The validated import could not be saved locally.'),
+          ),
+        );
       }
     } finally {
       if (mounted) {
