@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
@@ -57,10 +58,11 @@ final class _QuizPageState extends State<QuizPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     if (widget.questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.title)),
-        body: const Center(child: Text('No questions match this quiz.')),
+        body: Center(child: Text(strings.noQuestionsMatchQuiz)),
       );
     }
 
@@ -83,7 +85,7 @@ final class _QuizPageState extends State<QuizPage> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: Center(
                   child: Semantics(
-                    label: '$_secondsRemaining seconds remaining',
+                    label: '${_secondsRemaining}s',
                     liveRegion: _secondsRemaining <= 5,
                     child: Chip(
                       avatar: const Icon(Icons.timer_outlined, size: 18),
@@ -106,8 +108,7 @@ final class _QuizPageState extends State<QuizPage> {
                       Expanded(
                         child: LinearProgressIndicator(
                           value: progress,
-                          semanticsLabel:
-                              'Question ${_index + 1} of ${widget.questions.length}',
+                          semanticsLabel: '${_index + 1}/${widget.questions.length}',
                         ),
                       ),
                       const SizedBox(width: AppSpacing.md),
@@ -121,14 +122,14 @@ final class _QuizPageState extends State<QuizPage> {
                     children: <Widget>[
                       Chip(label: Text(question.category)),
                       Chip(label: Text(question.difficulty.name)),
-                      Chip(label: Text(_typeLabel(question.type))),
+                      Chip(label: Text(_typeLabel(strings, question.type))),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Semantics(
                     header: true,
                     hint: widget.controller.settings.screenReaderHints
-                        ? _screenReaderHint(question.type)
+                        ? _screenReaderHint(strings, question.type)
                         : null,
                     child: Text(
                       question.prompt,
@@ -146,7 +147,7 @@ final class _QuizPageState extends State<QuizPage> {
                             : () {
                                 unawaited(_submit(forced: true));
                               },
-                        child: const Text('Skip'),
+                        child: Text(strings.skip),
                       ),
                       const Spacer(),
                       FilledButton.icon(
@@ -162,8 +163,8 @@ final class _QuizPageState extends State<QuizPage> {
                         ),
                         label: Text(
                           _index == widget.questions.length - 1
-                              ? 'Finish quiz'
-                              : 'Next',
+                              ? strings.finishQuiz
+                              : strings.next,
                         ),
                       ),
                     ],
@@ -178,6 +179,7 @@ final class _QuizPageState extends State<QuizPage> {
   }
 
   Widget _answerEditor(Question question) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     switch (question.type) {
       case QuestionType.multipleChoice:
         return _singleSelect(question, question.choices);
@@ -211,9 +213,9 @@ final class _QuizPageState extends State<QuizPage> {
         return TextField(
           controller: _shortAnswerController,
           textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(
-            labelText: 'Your answer',
-            hintText: 'Type your answer',
+          decoration: InputDecoration(
+            labelText: strings.yourAnswer,
+            hintText: strings.typeYourAnswer,
           ),
           onChanged: (String value) {
             _answers[question.id] = <String>{value};
@@ -252,7 +254,7 @@ final class _QuizPageState extends State<QuizPage> {
     final bool hasAnswer = submitted.any((String value) => value.trim().isNotEmpty);
     if (!forced && !hasAnswer) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose or enter an answer, or use Skip.')),
+        SnackBar(content: Text(AppLocalizations.of(context).chooseOrSkip)),
       );
       return;
     }
@@ -286,10 +288,8 @@ final class _QuizPageState extends State<QuizPage> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'The quiz is complete, but its result could not be saved locally.',
-            ),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).resultSaveFailed),
           ),
         );
       }
@@ -310,22 +310,21 @@ final class _QuizPageState extends State<QuizPage> {
   }
 
   Future<void> _confirmExit() async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final bool confirmed = await showDialog<bool>(
           context: context,
           builder: (BuildContext dialogContext) {
             return AlertDialog(
-              title: const Text('Leave this quiz?'),
-              content: const Text(
-                'Your current in-progress answers will not be saved as a completed quiz.',
-              ),
+              title: Text(strings.leaveQuizTitle),
+              content: Text(strings.leaveQuizDescription),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Keep playing'),
+                  child: Text(strings.keepPlaying),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Leave quiz'),
+                  child: Text(strings.leaveQuiz),
                 ),
               ],
             );
@@ -363,29 +362,32 @@ final class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  static String _screenReaderHint(QuestionType type) {
+  static String _screenReaderHint(
+    AppLocalizations strings,
+    QuestionType type,
+  ) {
     switch (type) {
       case QuestionType.multipleChoice:
-        return 'Choose one answer.';
+        return strings.chooseOneAnswerHint;
       case QuestionType.trueFalse:
-        return 'Choose true or false.';
+        return strings.chooseTrueFalseHint;
       case QuestionType.multiSelect:
-        return 'Choose every answer that applies.';
+        return strings.chooseEveryAnswerHint;
       case QuestionType.shortAnswer:
-        return 'Enter a short text answer.';
+        return strings.enterShortAnswerHint;
     }
   }
 
-  static String _typeLabel(QuestionType type) {
+  static String _typeLabel(AppLocalizations strings, QuestionType type) {
     switch (type) {
       case QuestionType.multipleChoice:
-        return 'Multiple choice';
+        return strings.multipleChoice;
       case QuestionType.trueFalse:
-        return 'True / false';
+        return strings.trueFalse;
       case QuestionType.multiSelect:
-        return 'Multi-select';
+        return strings.multiSelect;
       case QuestionType.shortAnswer:
-        return 'Short answer';
+        return strings.shortAnswer;
     }
   }
 }
