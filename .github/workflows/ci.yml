@@ -36,6 +36,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Preserve resolved lockfile evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: pubspec-lock-${{ github.sha }}
+          path: pubspec.lock
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Generate localizations
         run: flutter gen-l10n
 
