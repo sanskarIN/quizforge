@@ -75,10 +75,67 @@ void main() {
     expect(categoryProgress.single.correctCount, 1);
     expect(categoryProgress.single.accuracy, 100);
 
+    final List<AttemptSummary> attempts =
+        await database.loadRecentAttempts(profile.id);
+    expect(attempts, hasLength(1));
+    expect(attempts.single.startedAt, start);
+    expect(attempts.single.duration, const Duration(seconds: 42));
+    expect(attempts.single.correctCount, 1);
+    expect(attempts.single.questionCount, 1);
+    expect(attempts.single.bestStreak, 1);
+    expect(attempts.single.earnedScore, 1);
+    expect(attempts.single.accuracy, 100);
+
     final List<LeaderboardEntry> leaderboard = await database.loadLeaderboard();
     expect(leaderboard.single.profileId, profile.id);
     expect(leaderboard.single.points, 110);
     expect(leaderboard.single.accuracy, 100);
+  });
+
+  test('recent attempts are newest first and honor the requested limit', () async {
+    final Question question = Question(
+      id: 'history-q1',
+      type: QuestionType.shortAnswer,
+      prompt: 'History question?',
+      correctAnswers: const <String>{'yes'},
+      category: 'History',
+      difficulty: Difficulty.easy,
+    );
+    const PlayerProfile profile = PlayerProfile(
+      id: 'history-profile',
+      displayName: 'History Tester',
+    );
+    await database.upsertQuestions(<Question>[question]);
+    await database.upsertProfile(profile);
+
+    for (int index = 0; index < 3; index += 1) {
+      final DateTime start = DateTime(2026, 8, 19, 9, index);
+      await database.saveAttempt(
+        profile.id,
+        QuizResult(
+          startedAt: start,
+          completedAt: start.add(Duration(seconds: 10 + index)),
+          evaluations: const <QuestionEvaluation>[
+            QuestionEvaluation(
+              questionId: 'history-q1',
+              submittedAnswers: <String>{'yes'},
+              correct: true,
+              score: 1,
+            ),
+          ],
+        ),
+      );
+    }
+
+    final List<AttemptSummary> attempts =
+        await database.loadRecentAttempts(profile.id, limit: 2);
+    expect(attempts, hasLength(2));
+    expect(attempts[0].startedAt.minute, 2);
+    expect(attempts[1].startedAt.minute, 1);
+    expect(
+      () => database.loadRecentAttempts(profile.id, limit: 0),
+      throwsArgumentError,
+    );
   });
 
   test('clear profile activity preserves profile and questions', () async {
@@ -125,6 +182,7 @@ void main() {
     expect(await database.loadBookmarkIds(profile.id), isEmpty);
     expect((await database.loadProgress(profile.id)).quizCount, 0);
     expect(await database.loadCategoryProgress(profile.id), isEmpty);
+    expect(await database.loadRecentAttempts(profile.id), isEmpty);
   });
 
   test('profile rename and delete respect foreign-key cleanup', () async {
