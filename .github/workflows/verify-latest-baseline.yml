@@ -1,0 +1,305 @@
+name: Verify Latest Baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/verify-latest-baseline.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify latest QuizForge baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Check out latest baseline
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+
+      - name: Apply idempotent baseline corrections
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          import re
+
+          pubspec = Path("pubspec.yaml")
+          pubspec_text = pubspec.read_text(encoding="utf-8")
+          pubspec_text = re.sub(r"^  intl:.*\n", "", pubspec_text, flags=re.MULTILINE)
+          pubspec.write_text(pubspec_text, encoding="utf-8")
+
+          arb = Path("lib/l10n/app_en.arb")
+          arb_text = arb.read_text(encoding="utf-8")
+          arb_text = arb_text.replace('"import": "Import"', '"importLabel": "Import"')
+          arb_text = arb_text.replace('"export": "Export"', '"exportLabel": "Export"')
+          arb.write_text(arb_text, encoding="utf-8")
+
+          import_page = Path("lib/src/presentation/import_export_page.dart")
+          source = import_page.read_text(encoding="utf-8")
+          source = re.sub(r"strings\.import\b", "strings.importLabel", source)
+          source = re.sub(r"strings\.export\b", "strings.exportLabel", source)
+          import_page.write_text(source, encoding="utf-8")
+
+          app = Path("lib/src/app.dart")
+          app_source = app.read_text(encoding="utf-8")
+          old_scaler = '''final TextScaler scaler = settings.largeText
+                ? const TextScaler.linear(1.15)
+                : media.textScaler;'''
+          new_scaler = '''final double systemScaleAtBody = media.textScaler.scale(14) / 14;
+            final TextScaler scaler =
+                settings.largeText && systemScaleAtBody < 1.15
+                    ? const TextScaler.linear(1.15)
+                    : media.textScaler;'''
+          if old_scaler in app_source:
+              app_source = app_source.replace(old_scaler, new_scaler)
+          app.write_text(app_source, encoding="utf-8")
+
+          benchmark = Path("tool/benchmark.dart")
+          benchmark_source = benchmark.read_text(encoding="utf-8")
+          if not benchmark_source.startswith("// ignore_for_file: avoid_print"):
+              benchmark.write_text(
+                  "// ignore_for_file: avoid_print\n\n" + benchmark_source,
+                  encoding="utf-8",
+              )
+
+          semantics_test = Path("test/widget/quiz_accessibility_test.dart")
+          semantics_source = semantics_test.read_text(encoding="utf-8")
+          needle = '''  ) async {
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());'''
+          replacement = '''  ) async {
+    addTearDown(tester.ensureSemantics().dispose);
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());'''
+          if needle in semantics_source and "ensureSemantics" not in semantics_source:
+              semantics_source = semantics_source.replace(needle, replacement)
+          semantics_test.write_text(semantics_source, encoding="utf-8")
+
+          data = json.loads(arb.read_text(encoding="utf-8"))
+          reserved = {
+              "abstract", "as", "assert", "async", "await", "base", "break",
+              "case", "catch", "class", "const", "continue", "covariant",
+              "default", "deferred", "do", "dynamic", "else", "enum",
+              "export", "extends", "extension", "external", "factory", "false",
+              "final", "finally", "for", "Function", "get", "hide", "if",
+              "implements", "import", "in", "interface", "is", "late", "library",
+              "mixin", "new", "null", "on", "operator", "part", "required",
+              "rethrow", "return", "sealed", "set", "show", "static", "super",
+              "switch", "sync", "this", "throw", "true", "try", "typedef", "var",
+              "void", "when", "while", "with", "yield"
+          }
+          invalid = sorted(
+              key for key in data
+              if not key.startswith("@") and key in reserved
+          )
+          if invalid:
+              raise SystemExit(f"Reserved Dart localization identifiers remain: {invalid}")
+
+      - name: Ensure review bookmarks rebuild from controller state
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("lib/src/presentation/review_page.dart")
+          source = path.read_text(encoding="utf-8")
+          if "body: AnimatedBuilder(" not in source:
+              source = source.replace(
+                  '''      body: SafeArea(
+        child: ListView(''',
+                  '''      body: AnimatedBuilder(
+        animation: controller,
+        builder: (BuildContext context, Widget? child) {
+          return SafeArea(
+            child: ListView(''',
+                  1,
+              )
+              source = source.replace(
+                  '''          ],
+        ),
+      ),
+    );
+  }
+}''',
+                  '''              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}''',
+                  1,
+              )
+          path.write_text(source, encoding="utf-8")
+
+      - name: Commit baseline corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add pubspec.yaml lib/l10n/app_en.arb lib/src/app.dart lib/src/presentation/import_export_page.dart lib/src/presentation/review_page.dart test/widget/quiz_accessibility_test.dart tool/benchmark.dart
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: finalize baseline compatibility and accessibility"
+          fi
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Print toolchain
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Commit generated application lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.lock
+          git add pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "build: lock verified Flutter dependencies"
+          fi
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Apply Dart formatter
+        run: dart format lib test tool
+
+      - name: Commit formatter output
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -u -- lib test tool
+          if ! git diff --cached --quiet; then
+            git commit -m "style: normalize Dart formatting"
+          fi
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Run Flutter analyzer
+        run: flutter analyze
+
+      - name: Run complete automated test suite
+        run: flutter test --coverage
+
+      - name: Run deterministic benchmark smoke test
+        run: dart run tool/benchmark.dart 1000 | tee benchmark-latest.jsonl
+
+      - name: Materialize Android and Web runners
+        run: flutter create . --platforms=android,web
+
+      - name: Re-resolve after runner generation
+        run: flutter pub get
+
+      - name: Regenerate localizations after runner generation
+        run: flutter gen-l10n
+
+      - name: Build Android debug APK
+        run: flutter build apk --debug
+
+      - name: Build Web release bundle
+        run: flutter build web --release
+
+      - name: Confirm tracked source stayed clean after generated-runner builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- pubspec.yaml lib test tool l10n.yaml
+
+      - name: Record latest automated evidence
+        shell: bash
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          verified_sha="$(git rev-parse HEAD)"
+          flutter_version="$(flutter --version | head -n 1)"
+          dart_version="$(dart --version 2>&1)"
+          cat > docs/verification.md <<EOF
+          # Verification Evidence — QuizForge 0.1.0 Baseline
+
+          Latest automated baseline verification completed on GitHub-hosted Ubuntu.
+
+          - Workflow: ${RUN_URL}
+          - Verified commit before this evidence commit: ${verified_sha}
+          - Flutter: ${flutter_version}
+          - Dart: ${dart_version}
+          - Dependency resolution: passed
+          - Localization generation: passed
+          - Dart formatting verification: passed
+          - Flutter static analysis: passed
+          - Complete automated test suite with coverage: passed
+          - Deterministic 1,000-question benchmark smoke test: passed
+          - Android debug APK build: passed
+          - Web release build: passed
+
+          This evidence validates the latest source on a GitHub-hosted Ubuntu runner. It does not claim signed Android production packaging, iOS/macOS/Windows/Linux release verification, real screenshot capture, or manual screen-reader/accessibility completion.
+
+          ## Reproduce source checks
+
+          \`\`\`bash
+          flutter pub get
+          flutter gen-l10n
+          dart format --output=none --set-exit-if-changed lib test tool
+          flutter analyze
+          flutter test --coverage
+          dart run tool/benchmark.dart 1000
+          \`\`\`
+
+          ## Reproduce Ubuntu-compatible build checks
+
+          \`\`\`bash
+          flutter create . --platforms=android,web
+          flutter pub get
+          flutter gen-l10n
+          flutter build apk --debug
+          flutter build web --release
+          \`\`\`
+
+          **Made by the Sanskar**
+          EOF
+
+          if ! grep -q "Latest baseline verification update" what_changed.md; then
+            cat >> what_changed.md <<EOF
+
+          ## Latest baseline verification update — 2026-08-19
+
+          Workflow: ${RUN_URL}
+
+          Using Git identity \`Sanskar <sanskarin@outlook.in>\`, the definitive baseline workflow resolved and locked Flutter dependencies, generated localizations, verified formatting, passed Flutter static analysis, passed the complete automated test suite with coverage, passed the deterministic 1,000-question benchmark smoke test, built an Android debug APK, and built a Web release bundle before recording/pushing evidence.
+
+          The workflow also removed an unnecessary direct \`intl\` constraint so Flutter's localization SDK can resolve its compatible transitive version, corrected Dart-reserved localization resource names, preserved existing system text scaling when the optional large-text preference is enabled, made review bookmarks rebuild from controller state, and enabled semantics for the dedicated accessibility widget test.
+
+          Still required before a production release claim: signed/release Android packaging verification, iOS/macOS/Windows/Linux release builds on supported hosts, real release-build screenshots, manual assistive-technology review, and final release-tag verification.
+          EOF
+          fi
+
+          git add docs/verification.md what_changed.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: record latest baseline verification"
+          fi
+
+      - name: Rebase evidence commits onto current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
+
+      - name: Push only verified commits
+        run: git push origin HEAD:main
