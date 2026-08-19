@@ -9,8 +9,10 @@ Run:
 ```bash
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
+python3 tool/test_check_release_metadata.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
+python3 tool/check_release_metadata.py
 flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
@@ -20,7 +22,7 @@ flutter test --coverage
 
 On Windows, use `python` in place of `python3` when that is the configured launcher. `tool/check.sh` and `tool/check.ps1` run the maintained quality sequence for their host shells.
 
-The repository-local Markdown and ARB validators use Python's standard library and do not depend on third-party network availability. Their own regression tests run before Flutter setup in CI so a broken validator cannot silently become the gatekeeper for the rest of the project.
+The repository-local Markdown, ARB, and release-metadata validators use Python's standard library and do not depend on third-party network availability. Their own regression tests run before Flutter setup in CI so a broken validator cannot silently become the gatekeeper for the rest of the project.
 
 CI runs the maintained source-quality checks for every pull request and on pushes to `main`; dedicated workflows add Android/Web and desktop/Apple platform build gates plus dependency and secret scanning. Path-filtered workflows still run only when their relevant files change.
 
@@ -128,7 +130,9 @@ The recent-attempt widget regression specifically avoids depending on platform S
 
 `tool/check_arb_catalogs.py` validates localization catalogs before `flutter gen-l10n`. It rejects duplicate JSON keys, missing/non-empty locale metadata, non-string/empty message values, orphaned metadata entries, and translated catalogs whose message-key sets diverge from the English template.
 
-Both validators have stdlib-only regression tests and run in CI before Flutter setup.
+`tool/check_release_metadata.py` validates release identity before Flutter setup. It requires one valid `MAJOR.MINOR.PATCH+BUILD` package version with a positive build number, a matching dated changelog release entry, unique/descending release headings (including historical zero-major releases), a stable-major versioning policy, and matching maintained package/tag identities in `docs/versioning.md`.
+
+All three validators have stdlib-only regression tests and run in CI before Flutter setup. The release-metadata validator also runs in the tag packaging workflow so a 2.7.4 tag cannot bypass the same package/changelog/versioning consistency check exercised on pull requests.
 
 ## Required tests for future changes
 
@@ -139,6 +143,7 @@ Both validators have stdlib-only regression tests and run in CI before Flutter s
 - New settings should test defaults, persistence, and UI behavior.
 - New progress/history queries should test profile isolation, ordering, bounds, deletion semantics, and empty state.
 - Backup-format changes must test old-version compatibility or explicit rejection, complete reference validation, answer-scoring integrity, session-size bounds, collision-safe composite identities, rollback behavior, and privacy-safe logging.
+- Version changes must update `pubspec.yaml`, `CHANGELOG.md`, and the maintained package/tag identity in `docs/versioning.md`, then pass `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py`.
 - New localization catalogs/messages must pass the ARB validator and localization generation.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
 - Platform clipboard/file-adapter changes should test success and failure paths with platform-channel fakes where practical.
