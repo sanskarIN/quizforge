@@ -7,15 +7,20 @@ QuizForge treats tests as executable product requirements rather than placeholde
 Run:
 
 ```bash
+python3 tool/test_check_markdown_links.py
+python3 tool/test_check_arb_catalogs.py
+python3 tool/check_markdown_links.py
+python3 tool/check_arb_catalogs.py
 flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
-python3 tool/check_markdown_links.py
 flutter analyze
 flutter test --coverage
 ```
 
-On Windows, use `python tool/check_markdown_links.py` when `python` is the configured launcher. The repository-local Markdown checker is deterministic and does not depend on third-party network availability.
+On Windows, use `python` in place of `python3` when that is the configured launcher. `tool/check.sh` and `tool/check.ps1` run the maintained quality sequence for their host shells.
+
+The repository-local Markdown and ARB validators use Python's standard library and do not depend on third-party network availability. Their own regression tests run before Flutter setup in CI so a broken validator cannot silently become the gatekeeper for the rest of the project.
 
 CI runs the maintained source-quality checks for every pull request and on pushes to `main`; dedicated workflows add Android/Web and desktop/Apple platform build gates plus dependency and secret scanning. Path-filtered workflows still run only when their relevant files change.
 
@@ -42,11 +47,14 @@ Controller-level tests use explicit persistence interfaces and an in-memory data
 - failed new-profile activation removes the newly inserted profile instead of leaving a hidden local record;
 - failed replacement-profile preference persistence prevents active-profile deletion before any database row is removed;
 - settings remain unchanged in memory when settings persistence fails;
-- a partial local-data reset failure still reloads controller state from the stores that actually remain, rather than leaving stale pre-reset state in memory.
+- a partial local-data reset failure still reloads controller state from the stores that actually remain, rather than leaving stale pre-reset state in memory;
+- complete local backup restores questions, profiles, bookmarks, quiz progress, settings, and active-profile selection;
+- malformed local backup is rejected before mutating current controller state;
+- a cross-store restore failure rolls the database/settings/profile-preference state back to the pre-restore snapshot when rollback succeeds.
 
 These tests protect the rule that user-visible controller state and durable local state must not claim a preference was saved before its persistence operation succeeds. Post-write derived-data refreshes are isolated from the primary write so a successful persisted action is not incorrectly reported as failed only because a statistics/leaderboard refresh could not be read immediately afterward.
 
-### Codec and fuzz tests
+### Question-bank codec and fuzz tests
 
 - JSON round trips;
 - CSV round trips;
@@ -57,6 +65,17 @@ These tests protect the rule that user-visible controller state and durable loca
 - characters after a quoted CSV field closes;
 - duplicate handling against an existing bank;
 - deterministic malformed-input/fuzz cases that ensure parser failures are reported rather than escaping as uncontrolled crashes.
+
+### Local-backup tests
+
+Backup coverage is deliberately split across layers:
+
+- `test/data/local_backup_codec_test.dart` covers versioned JSON round trips, unsupported versions, invalid active-profile references, inconsistent aggregate metadata, and the maximum archive-size guard;
+- `test/data/app_database_backup_test.dart` covers logical database export/reset/restore, dangling-reference rejection, best-streak consistency, and non-finite aggregate-score rejection;
+- `test/application/quizforge_controller_backup_test.dart` covers whole-controller restoration and cross-store rollback behavior;
+- `test/widget/local_backup_page_test.dart` verifies that restore cannot proceed without the destructive-replacement confirmation dialog.
+
+Backup fixtures must stay fictional. Real backup archives can contain profile names, authored content, and submitted answers and must not be committed as test data.
 
 ### Database integration tests
 
@@ -73,7 +92,8 @@ An in-memory SQLite database exercises:
 - newest-first recent-attempt ordering;
 - recent-attempt query limits and invalid-limit rejection;
 - recent-history cleanup with active-profile activity deletion;
-- local activity/data reset behavior.
+- local activity/data reset behavior;
+- logical backup export and transactional restore.
 
 The current schema is version 1, so there is no historical schema migration path to exercise yet. Recent attempt history is a read-only projection over the existing attempts table and therefore does not require a schema change. The first released schema change must add both migration code and an old-version-to-new-version migration test before it can be merged.
 
@@ -87,6 +107,7 @@ Widget coverage includes:
 - completed-onboarding startup into the dashboard;
 - question creator validation/preview behavior;
 - JSON question-bank import and report rendering;
+- local-backup restore confirmation and success rendering;
 - custom quiz setup;
 - localized quiz metadata and choices;
 - timer/progress accessibility semantics with semantics explicitly enabled;
@@ -96,9 +117,13 @@ Widget coverage includes:
 
 The recent-attempt widget regression specifically avoids depending on platform SharedPreferences so it can remain a deterministic Flutter widget test. It persists an attempt in the in-memory database, opens the Statistics page, and verifies summary score/accuracy/time rendering.
 
-### Documentation integrity
+### Repository validation tooling
 
-`tool/check_markdown_links.py` scans tracked Markdown content for repository-local inline links, image targets, and reference definitions. It ignores fenced code examples, pure anchors, and external URL schemes so results remain deterministic. The CI quality gate runs it on every pull request and relevant push.
+`tool/check_markdown_links.py` scans tracked Markdown content for repository-local inline links, image targets, and reference definitions. It ignores fenced code examples, pure anchors, and external URL schemes so results remain deterministic.
+
+`tool/check_arb_catalogs.py` validates localization catalogs before `flutter gen-l10n`. It rejects duplicate JSON keys, missing/non-empty locale metadata, non-string/empty message values, orphaned metadata entries, and translated catalogs whose message-key sets diverge from the English template.
+
+Both validators have stdlib-only regression tests and run in CI before Flutter setup.
 
 ## Required tests for future changes
 
@@ -108,6 +133,8 @@ The recent-attempt widget regression specifically avoids depending on platform S
 - Scoring changes must add deterministic domain tests.
 - New settings should test defaults, persistence, and UI behavior.
 - New progress/history queries should test profile isolation, ordering, bounds, deletion semantics, and empty state.
+- Backup-format changes must test old-version compatibility or explicit rejection, complete reference validation, rollback behavior, and privacy-safe logging.
+- New localization catalogs/messages must pass the ARB validator and localization generation.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
 - Platform clipboard/file-adapter changes should test success and failure paths with platform-channel fakes where practical.
 
@@ -117,9 +144,10 @@ The app shell and primary quiz journey are covered with deterministic in-memory 
 
 1. create a custom question, persist it, and immediately play it;
 2. export and re-import a complete question bank through platform clipboard/file adapters;
-3. switch local profiles and verify independent bookmarks/progress/recent history through the full UI;
-4. change accessibility/theme preferences and verify persistence across a real app restart/platform-preference boundary;
-5. recover gracefully from malformed imports through the complete navigation flow.
+3. export, mutate state, and restore a complete local backup through real platform clipboard/file adapters;
+4. switch local profiles and verify independent bookmarks/progress/recent history through the full UI;
+5. change accessibility/theme preferences and verify persistence across a real app restart/platform-preference boundary;
+6. recover gracefully from malformed imports through the complete navigation flow.
 
 These should use deterministic local fixtures and must not require production credentials or an external service.
 
@@ -134,13 +162,18 @@ The repository includes deterministic fuzz-style malformed-input coverage withou
 - encoding then decoding a valid question preserves its semantic fields;
 - arbitrary malformed input never causes an uncontrolled application crash;
 - duplicate partitioning never emits the same id/fingerprint twice in the accepted set;
-- CSV quote handling either parses deterministically or reports a format error.
+- CSV quote handling either parses deterministically or reports a format error;
+- a local backup is accepted only when its format version, object graph, aggregate metadata, and active-profile reference are internally consistent.
 
 A dedicated property-testing package should be added only if it provides materially stronger coverage and passes dependency/security review.
 
 ## Performance checks
 
 Performance tests use generated fictional data. `tool/benchmark.dart` exercises deterministic quiz selection plus JSON/CSV encode/decode paths and is included in the formatting gate. Do not add arbitrary benchmark targets without measuring on documented hardware/toolchains. See `docs/performance.md` and `docs/benchmarking.md`.
+
+## Manual backup/restore review
+
+Before a release candidate is described as backup-verified, follow [`local-backup.md`](local-backup.md): create a backup containing a custom question, second profile, bookmark, completed attempt, and non-default settings; mutate the current state; restore the archive; confirm every backed-up field returns; verify the confirmation dialog and failure messaging; and repeat a smoke restore on Android and Web release builds using fictional data.
 
 ## Manual attempt-history review
 
