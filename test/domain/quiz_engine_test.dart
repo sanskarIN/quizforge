@@ -70,17 +70,7 @@ void main() {
 
   group('QuizEngine.selectQuestions', () {
     test('selection is deterministic for the same seed', () {
-      final List<Question> bank = List<Question>.generate(
-        12,
-        (int index) => Question(
-          id: 'q$index',
-          type: QuestionType.shortAnswer,
-          prompt: 'Question $index?',
-          correctAnswers: <String>{'$index'},
-          category: index.isEven ? 'Even' : 'Odd',
-          difficulty: Difficulty.easy,
-        ),
-      );
+      final List<Question> bank = _numberedBank(12);
       const QuizConfig config = QuizConfig(questionCount: 5, seed: 42);
 
       final List<String> first = engine
@@ -93,7 +83,24 @@ void main() {
           .toList();
 
       expect(first, second);
-      expect(first, hasLength(5));
+      expect(first, <String>['q2', 'q9', 'q7', 'q10', 'q5']);
+    });
+
+    test('seeded ordering is stable for negative seeds', () {
+      final List<Question> bank = _numberedBank(8);
+      const QuizConfig config = QuizConfig(questionCount: 8, seed: -42);
+
+      final List<String> first = engine
+          .selectQuestions(bank, config)
+          .map((Question item) => item.id)
+          .toList();
+      final List<String> second = engine
+          .selectQuestions(bank, config)
+          .map((Question item) => item.id)
+          .toList();
+
+      expect(first, second);
+      expect(first.toSet(), hasLength(bank.length));
     });
 
     test('filters by category difficulty and tag', () {
@@ -132,6 +139,20 @@ void main() {
     });
   });
 
+  test('daily quiz is stable for the same local calendar date', () {
+    final List<Question> bank = _numberedBank(12);
+    final List<String> morning = engine
+        .dailyQuiz(bank, DateTime(2026, 8, 19, 8), questionCount: 6)
+        .map((Question item) => item.id)
+        .toList();
+    final List<String> evening = engine
+        .dailyQuiz(bank, DateTime(2026, 8, 19, 22), questionCount: 6)
+        .map((Question item) => item.id)
+        .toList();
+
+    expect(morning, evening);
+  });
+
   test('result computes percentage and best streak', () {
     final DateTime start = DateTime(2026, 1, 1, 10);
     final QuizResult result = engine.finish(
@@ -163,6 +184,20 @@ void main() {
     expect(result.bestStreak, 2);
     expect(result.duration, const Duration(minutes: 2));
   });
+}
+
+List<Question> _numberedBank(int count) {
+  return List<Question>.generate(
+    count,
+    (int index) => Question(
+      id: 'q$index',
+      type: QuestionType.shortAnswer,
+      prompt: 'Question $index?',
+      correctAnswers: <String>{'$index'},
+      category: index.isEven ? 'Even' : 'Odd',
+      difficulty: Difficulty.easy,
+    ),
+  );
 }
 
 Question _question({
