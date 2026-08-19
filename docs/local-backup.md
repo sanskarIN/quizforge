@@ -26,7 +26,10 @@ The current logical backup does not include:
 - signing/provisioning credentials;
 - analytics identifiers, because the baseline application does not include behavioral analytics;
 - remote account/cloud state, because QuizForge does not require a cloud account;
-- generated platform caches or application binaries.
+- generated platform caches or application binaries;
+- the original per-question sequence inside a completed attempt, because schema version 1 stores attempt-answer rows by attempt/question identity rather than a separate answer-position column.
+
+Attempt-level values that depend on original play order, such as `bestStreak`, are therefore preserved from the stored attempt summary rather than recomputed from exported answer-row order. If a future product feature requires exact historical answer sequence, the database schema and backup format must add explicit order metadata through a tested migration/versioning change.
 
 ## Format identity
 
@@ -51,7 +54,7 @@ Restore treats the pasted archive as untrusted data. Before replacing current da
 - attempt profile/question references;
 - attempt completion timestamps;
 - question/correct-count consistency;
-- recomputed best-streak consistency;
+- order-independent best-streak bounds against question/correct counts;
 - finite/non-negative score values and total-score consistency;
 - duplicate question answers inside one attempt;
 - bookmark profile/question references and duplicate bookmarks;
@@ -118,6 +121,7 @@ Before a release candidate is described as backup-verified, the exact candidate 
 
 - codec round-trip tests;
 - invalid/dangling-reference rejection tests;
+- order-independent attempt-summary validation regression coverage;
 - database export/reset/restore integration coverage;
 - controller rollback coverage for cross-store failures;
 - widget coverage for confirmation before restore;
