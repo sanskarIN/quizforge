@@ -46,4 +46,45 @@ void main() {
     expect(controller.questions.single.correctAnswers, <String>{'Alpha'});
     expect(find.text('Question added to the local bank.'), findsOneWidget);
   });
+
+  testWidgets('rejects a non-numeric optional time limit', (
+    WidgetTester tester,
+  ) async {
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final QuizForgeController controller = QuizForgeController(
+      database: database,
+      questionRepository: QuestionRepository(database),
+      settingsRepository: SettingsRepository(),
+      profilePreferences: ProfilePreferences(),
+    );
+
+    await tester.pumpWidget(buildTestApp(CreatorPage(controller: controller)));
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Prompt'),
+      'Which value is the answer?',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Category'),
+      'Testing',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Choices'),
+      'Alpha\nBeta',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Correct answers'),
+      'Alpha',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Optional time limit (seconds)'),
+      'not-a-number',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Add to question bank'));
+    await tester.pump();
+
+    expect(controller.questions, isEmpty);
+    expect(find.text('Time limit must be greater than zero.'), findsOneWidget);
+  });
 }
