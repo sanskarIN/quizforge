@@ -37,6 +37,9 @@ final class DatabaseBackupSnapshot {
       }
     }
 
+    if (profiles.isEmpty) {
+      errors.add('Local backup must contain at least one profile.');
+    }
     final Set<String> profileIds = <String>{};
     for (final PlayerProfile profile in profiles) {
       if (profile.validate().isNotEmpty) {
