@@ -69,6 +69,27 @@ void main() {
     expect(find.text('Ready to forge your next score?'), findsOneWidget);
     expect(find.text('Learn and play offline'), findsNothing);
   });
+
+  testWidgets('onboarding preference load failure does not trap startup', (
+    WidgetTester tester,
+  ) async {
+    final _ControllerFixture fixture = await _buildController();
+    addTearDown(fixture.database.close);
+    final _FakeOnboardingStore onboarding = _FakeOnboardingStore(
+      failLoads: true,
+    );
+
+    await tester.pumpWidget(
+      QuizForgeApp(
+        controller: fixture.controller,
+        onboardingStore: onboarding,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ready to forge your next score?'), findsOneWidget);
+    expect(find.text('Learn and play offline'), findsNothing);
+  });
 }
 
 Future<_ControllerFixture> _buildController() async {
@@ -94,12 +115,21 @@ final class _ControllerFixture {
 }
 
 final class _FakeOnboardingStore implements OnboardingStore {
-  _FakeOnboardingStore({this.completed = false});
+  _FakeOnboardingStore({
+    this.completed = false,
+    this.failLoads = false,
+  });
 
   bool completed;
+  bool failLoads;
 
   @override
-  Future<bool> isCompleted() async => completed;
+  Future<bool> isCompleted() async {
+    if (failLoads) {
+      throw StateError('simulated onboarding preference load failure');
+    }
+    return completed;
+  }
 
   @override
   Future<void> markCompleted() async {
