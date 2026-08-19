@@ -36,7 +36,11 @@ final class SettingsPage extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     leading: const CircleAvatar(child: Icon(Icons.person_outline)),
                     title: Text(profile.displayName),
-                    subtitle: Text(profile.id),
+                    subtitle: Text(
+                      profile.id == controller.activeProfile?.id
+                          ? 'Active local profile'
+                          : 'Local profile',
+                    ),
                     trailing: profile.id == controller.activeProfile?.id
                         ? const Icon(Icons.check_circle)
                         : null,
@@ -46,15 +50,38 @@ final class SettingsPage extends StatelessWidget {
                             unawaited(controller.selectProfile(profile.id));
                           },
                   ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      unawaited(_showCreateProfileDialog(context));
-                    },
-                    icon: const Icon(Icons.person_add_alt_1),
-                    label: const Text('Add local profile'),
-                  ),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: <Widget>[
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        unawaited(_showCreateProfileDialog(context));
+                      },
+                      icon: const Icon(Icons.person_add_alt_1),
+                      label: const Text('Add profile'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: controller.activeProfile == null
+                          ? null
+                          : () {
+                              unawaited(_showRenameProfileDialog(context));
+                            },
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('Rename active'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: controller.profiles.length <= 1 ||
+                              controller.activeProfile == null
+                          ? null
+                          : () {
+                              unawaited(_confirmDeleteActiveProfile(context));
+                            },
+                      icon: const Icon(Icons.person_remove_outlined),
+                      label: const Text('Delete active'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -118,7 +145,7 @@ final class SettingsPage extends StatelessWidget {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Reduced motion'),
-                  subtitle: const Text('Prefer minimal interface motion and transitions.'),
+                  subtitle: const Text('Reduce non-essential interface animation.'),
                   value: settings.reducedMotion,
                   onChanged: (bool value) {
                     unawaited(
@@ -131,7 +158,7 @@ final class SettingsPage extends StatelessWidget {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Screen-reader hints'),
-                  subtitle: const Text('Keep extra semantic hints enabled where helpful.'),
+                  subtitle: const Text('Keep additional semantic guidance enabled.'),
                   value: settings.screenReaderHints,
                   onChanged: (bool value) {
                     unawaited(
@@ -141,15 +168,91 @@ final class SettingsPage extends StatelessWidget {
                     );
                   },
                 ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Confirm before leaving a quiz'),
+                  subtitle: const Text('Protect an in-progress attempt from accidental exit.'),
+                  value: settings.confirmBeforeExitQuiz,
+                  onChanged: (bool value) {
+                    unawaited(
+                      controller.updateSettings(
+                        settings.copyWith(confirmBeforeExitQuiz: value),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const _Section(
+          _Section(
             title: 'Privacy and data',
             icon: Icons.shield_outlined,
-            child: Text(
-              'QuizForge is offline-first. Profiles, questions, bookmarks, and quiz history are stored locally unless you explicitly copy/export a question bank. The core app does not require sign-in.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  'QuizForge is offline-first. Profiles, questions, bookmarks, and quiz history stay in local application storage unless you explicitly export question-bank data.',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _LinkTile(
+                  icon: Icons.privacy_tip_outlined,
+                  label: 'Read privacy details',
+                  value: 'PRIVACY.md',
+                  uri: Uri.parse(AppConstants.privacyUrl),
+                ),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.history_toggle_off),
+                  title: const Text('Clear active profile activity'),
+                  subtitle: const Text(
+                    'Deletes quiz history and bookmarks for the active profile. Questions and other profiles remain.',
+                  ),
+                  onTap: () {
+                    unawaited(_confirmClearActivity(context));
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.delete_forever_outlined,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(
+                    'Reset all local data',
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                  subtitle: const Text(
+                    'Deletes local profiles, attempts, bookmarks, custom/imported questions, and settings, then restores starter data.',
+                  ),
+                  onTap: () {
+                    unawaited(_confirmResetAll(context));
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _Section(
+            title: 'Updates',
+            icon: Icons.system_update_alt,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text('Installed version: ${AppConstants.version}'),
+                const SizedBox(height: AppSpacing.sm),
+                const Text(
+                  'QuizForge does not silently update itself. Review signed/tagged project releases and install through the distribution channel you trust.',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _LinkTile(
+                  icon: Icons.new_releases_outlined,
+                  label: 'View GitHub releases',
+                  value: AppConstants.releasesUrl,
+                  uri: Uri.parse(AppConstants.releasesUrl),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -171,6 +274,12 @@ final class SettingsPage extends StatelessWidget {
                   label: 'GitHub repository',
                   value: AppConstants.githubUrl,
                   uri: Uri.parse(AppConstants.githubUrl),
+                ),
+                _LinkTile(
+                  icon: Icons.security_outlined,
+                  label: 'Security policy',
+                  value: 'SECURITY.md',
+                  uri: Uri.parse(AppConstants.securityUrl),
                 ),
                 _LinkTile(
                   icon: Icons.volunteer_activism_outlined,
@@ -222,13 +331,56 @@ final class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _showCreateProfileDialog(BuildContext context) async {
-    final TextEditingController nameController = TextEditingController();
+    final String? name = await _askForProfileName(
+      context,
+      title: 'Add local profile',
+      actionLabel: 'Add',
+    );
+    if (name == null || !context.mounted) {
+      return;
+    }
+    await _runAction(
+      context,
+      action: () => controller.createProfile(name),
+      successMessage: 'Local profile created.',
+    );
+  }
+
+  Future<void> _showRenameProfileDialog(BuildContext context) async {
+    final PlayerProfile? current = controller.activeProfile;
+    if (current == null) {
+      return;
+    }
+    final String? name = await _askForProfileName(
+      context,
+      title: 'Rename active profile',
+      actionLabel: 'Rename',
+      initialValue: current.displayName,
+    );
+    if (name == null || !context.mounted) {
+      return;
+    }
+    await _runAction(
+      context,
+      action: () => controller.renameActiveProfile(name),
+      successMessage: 'Profile renamed.',
+    );
+  }
+
+  Future<String?> _askForProfileName(
+    BuildContext context, {
+    required String title,
+    required String actionLabel,
+    String initialValue = '',
+  }) async {
+    final TextEditingController nameController =
+        TextEditingController(text: initialValue);
     try {
-      final String? name = await showDialog<String>(
+      return await showDialog<String>(
         context: context,
-        builder: (BuildContext context) {
+        builder: (BuildContext dialogContext) {
           return AlertDialog(
-            title: const Text('Add local profile'),
+            title: Text(title),
             content: TextField(
               controller: nameController,
               autofocus: true,
@@ -237,37 +389,133 @@ final class SettingsPage extends StatelessWidget {
               decoration: const InputDecoration(labelText: 'Display name'),
               onSubmitted: (String value) {
                 if (value.trim().length >= 2) {
-                  Navigator.of(context).pop(value.trim());
+                  Navigator.of(dialogContext).pop(value.trim());
                 }
               },
             ),
             actions: <Widget>[
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                onPressed: () => Navigator.of(context).pop(nameController.text.trim()),
-                child: const Text('Add'),
+                onPressed: () =>
+                    Navigator.of(dialogContext).pop(nameController.text.trim()),
+                child: Text(actionLabel),
               ),
             ],
           );
         },
       );
-      if (name == null || name.isEmpty || !context.mounted) {
-        return;
-      }
-      try {
-        await controller.createProfile(name);
-      } on Object catch (error) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$error')),
-          );
-        }
-      }
     } finally {
       nameController.dispose();
+    }
+  }
+
+  Future<void> _confirmDeleteActiveProfile(BuildContext context) async {
+    final PlayerProfile? profile = controller.activeProfile;
+    if (profile == null || controller.profiles.length <= 1) {
+      return;
+    }
+    final bool confirmed = await _confirm(
+      context,
+      title: 'Delete active profile?',
+      message:
+          'This permanently removes this profile, its quiz history, and its bookmarks from this device. Questions remain.',
+      confirmLabel: 'Delete profile',
+    );
+    if (!confirmed || !context.mounted) {
+      return;
+    }
+    await _runAction(
+      context,
+      action: () => controller.deleteProfile(profile.id),
+      successMessage: 'Profile deleted.',
+    );
+  }
+
+  Future<void> _confirmClearActivity(BuildContext context) async {
+    final bool confirmed = await _confirm(
+      context,
+      title: 'Clear active profile activity?',
+      message:
+          'Quiz history, statistics, and bookmarks for the active profile will be permanently deleted. Questions and profiles remain.',
+      confirmLabel: 'Clear activity',
+    );
+    if (!confirmed || !context.mounted) {
+      return;
+    }
+    await _runAction(
+      context,
+      action: controller.clearActiveProfileActivity,
+      successMessage: 'Active profile activity cleared.',
+    );
+  }
+
+  Future<void> _confirmResetAll(BuildContext context) async {
+    final bool confirmed = await _confirm(
+      context,
+      title: 'Reset all local QuizForge data?',
+      message:
+          'This permanently deletes profiles, history, bookmarks, custom/imported questions, and settings from this app. Starter questions and a default local profile will be recreated.',
+      confirmLabel: 'Reset everything',
+    );
+    if (!confirmed || !context.mounted) {
+      return;
+    }
+    await _runAction(
+      context,
+      action: controller.resetAllLocalData,
+      successMessage: 'QuizForge local data was reset.',
+    );
+  }
+
+  Future<bool> _confirm(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: Text(title),
+              content: Text(message),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(confirmLabel),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+
+  Future<void> _runAction(
+    BuildContext context, {
+    required Future<void> Function() action,
+    required String successMessage,
+  }) async {
+    try {
+      await action();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMessage)),
+        );
+      }
+    } on Object catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error')),
+        );
+      }
     }
   }
 }
