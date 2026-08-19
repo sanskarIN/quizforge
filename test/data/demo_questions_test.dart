@@ -35,6 +35,11 @@ void main() {
         .toSet();
 
     expect(categories.length, greaterThanOrEqualTo(4));
-    expect(categories, containsAll(<String>['Science', 'Computing', 'Mathematics', 'Geography']));
+    expect(
+      categories,
+      containsAll(
+        <String>['Science', 'Computing', 'Mathematics', 'Geography'],
+      ),
+    );
   });
 }
