@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizforge/src/application/quizforge_controller.dart';
 import 'package:quizforge/src/data/app_database.dart';
@@ -43,7 +44,10 @@ void main() {
       buildTestApp(ImportExportPage(controller: controller)),
     );
 
-    final Finder importField = find.byType(TextField);
+    final Finder importField = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is TextField && widget.decoration?.labelText == 'Paste JSON data',
+    );
     expect(importField, findsOneWidget);
     await tester.enterText(importField, source);
     await tester.tap(find.widgetWithText(FilledButton, 'Validate and import'));
