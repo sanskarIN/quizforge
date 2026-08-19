@@ -197,15 +197,72 @@
     }
   },
   "progressForProfile": "Statistics for the active local profile.",
+  "progressForNamedProfile": "Statistics for {name}.",
+  "@progressForNamedProfile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "quizzesCompleted": "Quizzes completed",
   "questionsAnswered": "Questions answered",
   "playTime": "Play time",
   "categoryPerformance": "Category performance",
   "categoryPerformanceDescription": "Accuracy is calculated from questions you have actually answered in each category.",
   "completeQuizForCategoryStats": "Complete a quiz to see category-level statistics.",
+  "correctOfAnswered": "{correct} correct of {total} answered",
+  "@correctOfAnswered": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "localLeaderboard": "Local leaderboard",
   "leaderboardDescription": "Leaderboard points are stored only on this device and are calculated from correct answers plus best-streak bonuses.",
   "completeQuizForLeaderboard": "Complete a quiz to populate the leaderboard.",
+  "accuracyValue": "{value}% accuracy",
+  "@accuracyValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "pointsValue": "{points} pts",
+  "@pointsValue": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutesSeconds": "{minutes}m {seconds}s",
+  "@durationMinutesSeconds": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "profiles": "Profiles",
   "localProfile": "Local profile",
   "activeLocalProfile": "Active local profile",
