@@ -29,8 +29,11 @@ Storage: SQLite `profiles` table. The currently selected profile id is stored as
 Deletion:
 
 - ordinary profile delete removes that profile and cascades its dependent activity/bookmarks;
+- when the active profile is deleted, the replacement profile preference is persisted before the database deletion is attempted;
 - the UI prevents ordinary deletion of the final remaining profile;
 - full reset removes every profile and then restores a default local profile during initialization.
+
+Creation/switching use persistence-first ordering so a failed active-profile preference write does not make the UI claim another profile is active. A failed new-profile activation attempts to remove the newly inserted profile before reporting the failure.
 
 ### Quiz attempts and submitted answers
 
@@ -44,7 +47,7 @@ Deletion:
 - deleting a profile removes dependent activity;
 - full reset removes all activity.
 
-These records are used for local progress/category statistics and the local leaderboard.
+These records are used for local progress/category statistics and the local leaderboard. After a successful attempt/activity write, derived progress/leaderboard refreshes are best-effort reads: a transient refresh error is logged rather than incorrectly reporting the already-persisted write as unsaved.
 
 ### Bookmarks
 
@@ -62,6 +65,21 @@ Storage: platform preference storage through the asynchronous Shared Preferences
 
 Deletion: full reset removes QuizForge-managed setting/profile preference keys; onboarding persistence remains a separate first-run preference unless specifically reset by a future onboarding-reset control.
 
+Settings are serialized as one versioned preference payload for atomic logical updates. Legacy per-setting keys remain readable for migration and are removed by reset.
+
+## Full reset failure semantics
+
+SQLite state, app settings, and the active-profile preference live in separate local stores, so one cross-store reset cannot be a single SQLite transaction. QuizForge therefore treats reset as a coordinated best-effort operation with explicit recovery:
+
+1. attempt the database reset;
+2. attempt the settings reset even if the database reset failed;
+3. attempt the active-profile preference reset even if an earlier store failed;
+4. clear stale in-memory state;
+5. reload the controller from the stores that actually remain;
+6. report the first reset failure after reload rather than leaving pre-reset state visible.
+
+This means a partial platform-storage failure can produce a partially reset durable state, but the running controller is re-synchronized to that durable state before the failure is surfaced. The application does not claim that a failed reset completed successfully.
+
 ## Data movement
 
 Core QuizForge does not intentionally send quiz/profile data to a QuizForge backend.
@@ -73,11 +91,13 @@ Data can cross the application boundary through explicit actions:
 - opening fixed project/support/funding URLs;
 - composing support/business email through the platform mail handler.
 
+Clipboard read/write failures are handled as platform-operation failures and do not crash the import/export screen or log clipboard contents.
+
 A future networking or cloud feature requires an updated privacy policy, threat model, data lifecycle, and architecture decision before release.
 
 ## Transactions and referential integrity
 
-Foreign keys are enabled when SQLite opens. Multi-row writes that must remain consistent are transactional. Destructive maintenance operations are also grouped transactionally.
+Foreign keys are enabled when SQLite opens. Multi-row writes that must remain consistent are transactional. Destructive database maintenance operations are also grouped transactionally.
 
 Released schema changes must use migrations and preserve or explicitly convert existing data rather than silently recreating the database.
 
