@@ -146,6 +146,78 @@ void main() {
     );
   });
 
+  test('snapshot validation does not invent missing answer order', () {
+    final List<Question> questions = <Question>[
+      Question(
+        id: 'order-a',
+        type: QuestionType.shortAnswer,
+        prompt: 'First order fixture?',
+        correctAnswers: const <String>{'yes'},
+        category: 'Backup',
+        difficulty: Difficulty.easy,
+      ),
+      Question(
+        id: 'order-b',
+        type: QuestionType.shortAnswer,
+        prompt: 'Second order fixture?',
+        correctAnswers: const <String>{'yes'},
+        category: 'Backup',
+        difficulty: Difficulty.easy,
+      ),
+      Question(
+        id: 'order-c',
+        type: QuestionType.shortAnswer,
+        prompt: 'Third order fixture?',
+        correctAnswers: const <String>{'yes'},
+        category: 'Backup',
+        difficulty: Difficulty.easy,
+      ),
+    ];
+    const PlayerProfile profile = PlayerProfile(
+      id: 'order-profile',
+      displayName: 'Order Player',
+    );
+    final DateTime startedAt = DateTime.utc(2026, 8, 19, 10, 30);
+    final DatabaseBackupSnapshot snapshot = DatabaseBackupSnapshot(
+      questions: questions,
+      profiles: const <PlayerProfile>[profile],
+      attempts: <BackupAttempt>[
+        BackupAttempt(
+          profileId: profile.id,
+          startedAt: startedAt,
+          completedAt: startedAt.add(const Duration(seconds: 3)),
+          correctCount: 2,
+          questionCount: 3,
+          bestStreak: 2,
+          earnedScore: 2,
+          evaluations: const <QuestionEvaluation>[
+            QuestionEvaluation(
+              questionId: 'order-a',
+              submittedAnswers: <String>{'yes'},
+              correct: true,
+              score: 1,
+            ),
+            QuestionEvaluation(
+              questionId: 'order-b',
+              submittedAnswers: <String>{'no'},
+              correct: false,
+              score: 0,
+            ),
+            QuestionEvaluation(
+              questionId: 'order-c',
+              submittedAnswers: <String>{'yes'},
+              correct: true,
+              score: 1,
+            ),
+          ],
+        ),
+      ],
+      bookmarks: const <BackupBookmark>[],
+    );
+
+    expect(snapshot.validate(), isEmpty);
+  });
+
   test('snapshot validation rejects non-finite total scores', () {
     final Question question = Question(
       id: 'score-q1',
