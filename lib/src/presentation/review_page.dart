@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -45,8 +47,11 @@ final class ReviewPage extends StatelessWidget {
                       bookmarked: controller.bookmarkIds.contains(
                         questions[index].id,
                       ),
-                      onBookmark: () =>
-                          controller.toggleBookmark(questions[index].id),
+                      onBookmark: () {
+                        unawaited(
+                          _toggleBookmark(context, questions[index].id),
+                        );
+                      },
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
@@ -56,6 +61,23 @@ final class ReviewPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _toggleBookmark(BuildContext context, String questionId) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    try {
+      await controller.toggleBookmark(questionId);
+    } on Object catch (error) {
+      controller.logger.error(
+        'bookmark.persist.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.actionFailed)),
+        );
+      }
+    }
   }
 }
 
@@ -131,7 +153,7 @@ final class _ReviewCard extends StatelessWidget {
   final Question question;
   final QuestionEvaluation evaluation;
   final bool bookmarked;
-  final Future<void> Function() onBookmark;
+  final VoidCallback onBookmark;
 
   @override
   Widget build(BuildContext context) {
