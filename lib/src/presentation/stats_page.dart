@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
+import '../application/quizforge_controller_progress.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/profile.dart';
 
@@ -83,6 +84,12 @@ final class StatsPage extends StatelessWidget {
                     .toList(growable: false),
               );
             },
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          _RecentAttemptsPanel(
+            controller: controller,
+            refreshToken:
+                '${controller.activeProfile?.id ?? 'none'}:${progress.quizCount}',
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
@@ -176,6 +183,119 @@ final class StatsPage extends StatelessWidget {
       return '${value.inHours}h ${value.inMinutes.remainder(60)}m';
     }
     return '${value.inMinutes}m ${value.inSeconds.remainder(60)}s';
+  }
+}
+
+final class _RecentAttemptsPanel extends StatefulWidget {
+  const _RecentAttemptsPanel({
+    required this.controller,
+    required this.refreshToken,
+  });
+
+  final QuizForgeController controller;
+  final String refreshToken;
+
+  @override
+  State<_RecentAttemptsPanel> createState() => _RecentAttemptsPanelState();
+}
+
+final class _RecentAttemptsPanelState extends State<_RecentAttemptsPanel> {
+  late Future<List<AttemptSummary>> _attempts;
+
+  @override
+  void initState() {
+    super.initState();
+    _attempts = widget.controller.loadRecentAttempts();
+  }
+
+  @override
+  void didUpdateWidget(_RecentAttemptsPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken ||
+        oldWidget.controller != widget.controller) {
+      _attempts = widget.controller.loadRecentAttempts();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          strings.quizzesCompleted,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(strings.progressForProfile),
+        const SizedBox(height: AppSpacing.md),
+        FutureBuilder<List<AttemptSummary>>(
+          future: _attempts,
+          builder: (
+            BuildContext context,
+            AsyncSnapshot<List<AttemptSummary>> snapshot,
+          ) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(strings.actionFailed),
+                ),
+              );
+            }
+            final List<AttemptSummary> attempts =
+                snapshot.data ?? const <AttemptSummary>[];
+            if (attempts.isEmpty) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(strings.completeQuizForLeaderboard),
+                ),
+              );
+            }
+            return Card(
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: attempts.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (BuildContext context, int index) {
+                  final AttemptSummary attempt = attempts[index];
+                  final String date = MaterialLocalizations.of(context)
+                      .formatShortDate(attempt.completedAt);
+                  final String time = TimeOfDay.fromDateTime(attempt.completedAt)
+                      .format(context);
+                  return ListTile(
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.history_outlined),
+                    ),
+                    title: Text('$date · $time'),
+                    subtitle: Text(
+                      '${strings.correct}: ${attempt.correctCount}/${attempt.questionCount} · '
+                      '${strings.bestStreak}: ${attempt.bestStreak} · '
+                      '${strings.time}: ${StatsPage._formatDuration(attempt.duration)}',
+                    ),
+                    trailing: Text(
+                      '${attempt.accuracy.toStringAsFixed(0)}%',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 }
 
