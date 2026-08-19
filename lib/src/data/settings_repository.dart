@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/app_settings.dart';
@@ -8,13 +10,14 @@ final class SettingsRepository {
 
   final SharedPreferencesAsync _preferences;
 
+  static const String _settingsKey = 'settings.v1';
   static const String _themeKey = 'settings.themeMode';
   static const String _largeTextKey = 'settings.largeText';
   static const String _reducedMotionKey = 'settings.reducedMotion';
   static const String _screenReaderHintsKey = 'settings.screenReaderHints';
   static const String _confirmExitKey = 'settings.confirmBeforeExitQuiz';
 
-  static const List<String> _keys = <String>[
+  static const List<String> _legacyKeys = <String>[
     _themeKey,
     _largeTextKey,
     _reducedMotionKey,
@@ -23,6 +26,40 @@ final class SettingsRepository {
   ];
 
   Future<AppSettings> load() async {
+    final String? payload = await _preferences.getString(_settingsKey);
+    if (payload != null) {
+      try {
+        final Object? decoded = jsonDecode(payload);
+        if (decoded is Map<Object?, Object?>) {
+          return AppSettings.fromJson(
+            decoded.map<String, Object?>(
+              (Object? key, Object? value) => MapEntry<String, Object?>(
+                key.toString(),
+                value,
+              ),
+            ),
+          );
+        }
+      } on FormatException {
+        // Fall through to legacy/default settings if local data is malformed.
+      }
+    }
+    return _loadLegacy();
+  }
+
+  Future<void> save(AppSettings settings) async {
+    final String payload = jsonEncode(settings.toJson());
+    await _preferences.setString(_settingsKey, payload);
+  }
+
+  Future<void> reset() async {
+    await _preferences.remove(_settingsKey);
+    for (final String key in _legacyKeys) {
+      await _preferences.remove(key);
+    }
+  }
+
+  Future<AppSettings> _loadLegacy() async {
     final String? themeName = await _preferences.getString(_themeKey);
     final AppThemeMode themeMode = AppThemeMode.values.firstWhere(
       (AppThemeMode value) => value.name == themeName,
@@ -37,25 +74,5 @@ final class SettingsRepository {
       confirmBeforeExitQuiz:
           await _preferences.getBool(_confirmExitKey) ?? true,
     );
-  }
-
-  Future<void> save(AppSettings settings) async {
-    await _preferences.setString(_themeKey, settings.themeMode.name);
-    await _preferences.setBool(_largeTextKey, settings.largeText);
-    await _preferences.setBool(_reducedMotionKey, settings.reducedMotion);
-    await _preferences.setBool(
-      _screenReaderHintsKey,
-      settings.screenReaderHints,
-    );
-    await _preferences.setBool(
-      _confirmExitKey,
-      settings.confirmBeforeExitQuiz,
-    );
-  }
-
-  Future<void> reset() async {
-    for (final String key in _keys) {
-      await _preferences.remove(key);
-    }
   }
 }
