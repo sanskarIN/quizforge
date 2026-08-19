@@ -36,7 +36,10 @@ final class LocalBackupCodec {
         .map((PlayerProfile profile) => profile.id)
         .toSet();
     final String? activeProfileId = payload.activeProfileId;
-    if (activeProfileId != null && !profileIds.contains(activeProfileId)) {
+    if (activeProfileId == null) {
+      throw StateError('Local backup requires an active profile.');
+    }
+    if (!profileIds.contains(activeProfileId)) {
       throw StateError('Active profile is not present in the backup database.');
     }
 
@@ -83,6 +86,9 @@ final class LocalBackupCodec {
       root['activeProfileId'],
       'activeProfileId',
     );
+    if (activeProfileId == null) {
+      throw const FormatException('Backup active profile is required.');
+    }
     final Map<String, Object?> databaseMap =
         _expectMap(root['database'], 'database');
     final DatabaseBackupSnapshot database = DatabaseBackupSnapshot(
@@ -103,10 +109,9 @@ final class LocalBackupCodec {
     if (errors.isNotEmpty) {
       throw FormatException(errors.first);
     }
-    if (activeProfileId != null &&
-        !database.profiles.any(
-          (PlayerProfile profile) => profile.id == activeProfileId,
-        )) {
+    if (!database.profiles.any(
+      (PlayerProfile profile) => profile.id == activeProfileId,
+    )) {
       throw const FormatException(
         'Backup active profile is not present in the profile list.',
       );
