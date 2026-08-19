@@ -60,6 +60,9 @@
   "allCategories": "All categories",
   "difficulty": "Difficulty",
   "allDifficulties": "All difficulties",
+  "easy": "Easy",
+  "medium": "Medium",
+  "hard": "Hard",
   "tagsAllMustMatch": "Tags (all selected tags must match)",
   "questions": "Questions",
   "timedMode": "Timed mode",
@@ -99,6 +102,12 @@
   "searchQuestions": "Search questions, categories, or tags",
   "allDifficultiesFilter": "All difficulties",
   "bookmarksOnly": "Bookmarks only",
+  "questionCountLabel": "{count} questions",
+  "@questionCountLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "noQuestionsMatch": "No questions match",
   "adjustSearchFilters": "Adjust the search or filters and try again.",
   "createQuestion": "Create a question",
@@ -128,16 +137,52 @@
   "csv": "CSV",
   "export": "Export",
   "exportDescription": "The preview contains your complete local question bank. Copy it and save it with the matching file extension.",
+  "exportPreviewSemantics": "{format} export preview",
+  "@exportPreviewSemantics": {
+    "placeholders": {
+      "format": {"type": "String"}
+    }
+  },
   "copyExport": "Copy export",
   "exportCopied": "Question bank copied to clipboard.",
   "import": "Import",
   "importDescription": "Paste a QuizForge JSON or CSV question bank. Invalid rows are rejected and duplicate ids/content are skipped.",
   "paste": "Paste",
+  "pasteFormatData": "Paste {format} data",
+  "@pasteFormatData": {
+    "placeholders": {
+      "format": {"type": "String"}
+    }
+  },
   "validateAndImport": "Validate and import",
   "importing": "Importing…",
   "pasteQuestionBankFirst": "Paste question-bank data first.",
   "importSaveFailed": "The validated import could not be saved locally.",
   "importReport": "Import report",
+  "importedCount": "Imported: {count}",
+  "@importedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "duplicatesSkippedCount": "Duplicates skipped: {count}",
+  "@duplicatesSkippedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "errorsCount": "Errors: {count}",
+  "@errorsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "moreErrorsCount": "…and {count} more errors.",
+  "@moreErrorsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "progressForProfile": "Statistics for the active local profile.",
   "quizzesCompleted": "Quizzes completed",
   "questionsAnswered": "Questions answered",
