@@ -22,6 +22,9 @@ final class QuestionBankCodec {
     this.deduplicator = const QuestionDeduplicator(),
   });
 
+  static const int maxSourceCharacters = 5 * 1024 * 1024;
+  static const int maxQuestions = 10000;
+
   final QuestionDeduplicator deduplicator;
 
   String encodeJson(Iterable<Question> questions) {
@@ -37,6 +40,9 @@ final class QuestionBankCodec {
     String source, {
     Iterable<Question> existing = const <Question>[],
   }) {
+    if (source.length > maxSourceCharacters) {
+      return _error('Question bank exceeds the maximum supported import size.');
+    }
     try {
       final Object? decoded = jsonDecode(source);
       if (decoded is! Map<String, Object?>) {
@@ -45,6 +51,9 @@ final class QuestionBankCodec {
       final Object? rawQuestions = decoded['questions'];
       if (rawQuestions is! List<Object?>) {
         return _error('JSON field "questions" must be an array.');
+      }
+      if (rawQuestions.length > maxQuestions) {
+        return _error('Question bank contains more than $maxQuestions questions.');
       }
       final List<Question> parsed = <Question>[];
       final List<String> errors = <String>[];
@@ -114,6 +123,9 @@ final class QuestionBankCodec {
     String source, {
     Iterable<Question> existing = const <Question>[],
   }) {
+    if (source.length > maxSourceCharacters) {
+      return _error('Question bank exceeds the maximum supported import size.');
+    }
     final List<List<String>> rows;
     try {
       rows = _parseCsv(source);
@@ -122,6 +134,9 @@ final class QuestionBankCodec {
     }
     if (rows.isEmpty) {
       return _error('CSV is empty.');
+    }
+    if (rows.length - 1 > maxQuestions) {
+      return _error('Question bank contains more than $maxQuestions questions.');
     }
 
     const List<String> expectedHeaders = <String>[
@@ -256,6 +271,9 @@ final class QuestionBankCodec {
         row.add(cell.toString());
         cell.clear();
         rows.add(row);
+        if (rows.length > maxQuestions + 1) {
+          throw const FormatException('Question count limit exceeded.');
+        }
         row = <String>[];
       } else {
         cell.write(character);
