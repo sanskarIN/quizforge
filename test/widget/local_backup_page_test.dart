@@ -45,7 +45,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Replace current local data?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Restore backup'));
+    final Finder confirmRestore = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(FilledButton, 'Restore backup'),
+    );
+    expect(confirmRestore, findsOneWidget);
+    await tester.tap(confirmRestore);
     await tester.pumpAndSettle();
 
     expect(find.text('Local backup restored.'), findsOneWidget);
