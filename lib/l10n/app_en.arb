@@ -60,6 +60,9 @@
   "allCategories": "All categories",
   "difficulty": "Difficulty",
   "allDifficulties": "All difficulties",
+  "easy": "Easy",
+  "medium": "Medium",
+  "hard": "Hard",
   "tagsAllMustMatch": "Tags (all selected tags must match)",
   "questions": "Questions",
   "timedMode": "Timed mode",
@@ -99,6 +102,14 @@
   "searchQuestions": "Search questions, categories, or tags",
   "allDifficultiesFilter": "All difficulties",
   "bookmarksOnly": "Bookmarks only",
+  "questionCount": "{count, plural, =1{1 question} other{{count} questions}}",
+  "@questionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "noQuestionsMatch": "No questions match",
   "adjustSearchFilters": "Adjust the search or filters and try again.",
   "createQuestion": "Create a question",
