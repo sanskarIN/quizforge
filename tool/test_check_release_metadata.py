@@ -60,6 +60,13 @@ class ReleaseMetadataValidatorTest(unittest.TestCase):
             errors = validate_release_metadata(root)
             self.assertTrue(any("positive build number" in error for error in errors))
 
+    def test_rejects_leading_zero_semver_components(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_repo(root, pubspec_version="2.07.4+1")
+            errors = validate_release_metadata(root)
+            self.assertTrue(any("MAJOR.MINOR.PATCH+BUILD" in error for error in errors))
+
     def test_requires_matching_in_app_version(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -81,6 +88,13 @@ class ReleaseMetadataValidatorTest(unittest.TestCase):
             errors = validate_release_metadata(root)
             self.assertTrue(any("exactly one semantic" in error for error in errors))
 
+    def test_rejects_leading_zero_in_app_version_components(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_repo(root, app_version="2.07.4")
+            errors = validate_release_metadata(root)
+            self.assertTrue(any("leading-zero" in error for error in errors))
+
     def test_requires_matching_changelog_release(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -90,6 +104,20 @@ class ReleaseMetadataValidatorTest(unittest.TestCase):
             )
             errors = validate_release_metadata(root)
             self.assertTrue(any("matching pubspec.yaml" in error for error in errors))
+
+    def test_rejects_invalid_changelog_release_date(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_repo(
+                root,
+                changelog=(
+                    "# Changelog\n\n## [Unreleased]\n\n"
+                    "## [2.7.4] - 2026-02-30\n\n"
+                    "## [0.1.0] - 2026-08-19\n"
+                ),
+            )
+            errors = validate_release_metadata(root)
+            self.assertTrue(any("invalid date 2026-02-30" in error for error in errors))
 
     def test_rejects_duplicate_or_out_of_order_release_entries(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
