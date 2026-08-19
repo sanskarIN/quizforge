@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
@@ -28,6 +29,7 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final List<String> categories = widget.controller.questions
         .map((Question question) => question.category)
         .toSet()
@@ -43,7 +45,7 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
     final int effectiveCount = _questionCount.clamp(1, maximumCount).toInt();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Build a quiz')),
+      appBar: AppBar(title: Text(strings.quizSetupTitle)),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -52,13 +54,11 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: <Widget>[
                 Text(
-                  'Choose your practice set',
+                  strings.quizSetupHeading,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  'Filter the local question bank, choose timing, then start a deterministic set for this session.',
-                ),
+                Text(strings.quizSetupDescription),
                 const SizedBox(height: AppSpacing.xl),
                 Card(
                   child: Padding(
@@ -68,12 +68,12 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                       children: <Widget>[
                         DropdownMenu<String>(
                           initialSelection: _category,
-                          label: const Text('Category'),
+                          label: Text(strings.category),
                           expandedInsets: EdgeInsets.zero,
                           dropdownMenuEntries: <DropdownMenuEntry<String>>[
-                            const DropdownMenuEntry<String>(
+                            DropdownMenuEntry<String>(
                               value: 'all',
-                              label: 'All categories',
+                              label: strings.allCategories,
                             ),
                             ...categories.map(
                               (String category) => DropdownMenuEntry<String>(
@@ -94,12 +94,12 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                         const SizedBox(height: AppSpacing.md),
                         DropdownMenu<String>(
                           initialSelection: _difficulty,
-                          label: const Text('Difficulty'),
+                          label: Text(strings.difficulty),
                           expandedInsets: EdgeInsets.zero,
                           dropdownMenuEntries: <DropdownMenuEntry<String>>[
-                            const DropdownMenuEntry<String>(
+                            DropdownMenuEntry<String>(
                               value: 'all',
-                              label: 'All difficulties',
+                              label: strings.allDifficulties,
                             ),
                             ...Difficulty.values.map(
                               (Difficulty value) => DropdownMenuEntry<String>(
@@ -120,7 +120,7 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                         if (tags.isNotEmpty) ...<Widget>[
                           const SizedBox(height: AppSpacing.lg),
                           Text(
-                            'Tags (all selected tags must match)',
+                            strings.tagsAllMustMatch,
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                           const SizedBox(height: AppSpacing.sm),
@@ -150,11 +150,11 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                           children: <Widget>[
                             Expanded(
                               child: Text(
-                                'Questions',
+                                strings.questions,
                                 style: Theme.of(context).textTheme.titleSmall,
                               ),
                             ),
-                            Text('$effectiveCount of $available available'),
+                            Text('$effectiveCount / $available'),
                           ],
                         ),
                         Slider(
@@ -172,10 +172,8 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                         const Divider(),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('Timed mode'),
-                          subtitle: const Text(
-                            'Automatically submit a question when its timer expires.',
-                          ),
+                          title: Text(strings.timedMode),
+                          subtitle: Text(strings.timedModeDescription),
                           value: _timed,
                           onChanged: (bool value) => setState(() => _timed = value),
                         ),
@@ -183,16 +181,16 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                           const SizedBox(height: AppSpacing.sm),
                           DropdownMenu<int>(
                             initialSelection: _secondsPerQuestion,
-                            label: const Text('Default seconds per question'),
+                            label: Text(strings.defaultSecondsPerQuestion),
                             expandedInsets: EdgeInsets.zero,
                             dropdownMenuEntries: const <DropdownMenuEntry<int>>[
-                              DropdownMenuEntry<int>(value: 10, label: '10 seconds'),
-                              DropdownMenuEntry<int>(value: 20, label: '20 seconds'),
-                              DropdownMenuEntry<int>(value: 30, label: '30 seconds'),
-                              DropdownMenuEntry<int>(value: 45, label: '45 seconds'),
-                              DropdownMenuEntry<int>(value: 60, label: '60 seconds'),
-                              DropdownMenuEntry<int>(value: 90, label: '90 seconds'),
-                              DropdownMenuEntry<int>(value: 120, label: '120 seconds'),
+                              DropdownMenuEntry<int>(value: 10, label: '10 s'),
+                              DropdownMenuEntry<int>(value: 20, label: '20 s'),
+                              DropdownMenuEntry<int>(value: 30, label: '30 s'),
+                              DropdownMenuEntry<int>(value: 45, label: '45 s'),
+                              DropdownMenuEntry<int>(value: 60, label: '60 s'),
+                              DropdownMenuEntry<int>(value: 90, label: '90 s'),
+                              DropdownMenuEntry<int>(value: 120, label: '120 s'),
                             ],
                             onSelected: (int? value) {
                               if (value != null) {
@@ -205,7 +203,7 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                         FilledButton.icon(
                           onPressed: available == 0 ? null : _startQuiz,
                           icon: const Icon(Icons.play_arrow),
-                          label: const Text('Start custom quiz'),
+                          label: Text(strings.startCustomQuiz),
                         ),
                       ],
                     ),
@@ -213,19 +211,15 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                 ),
                 if (available == 0) ...<Widget>[
                   const SizedBox(height: AppSpacing.md),
-                  const Card(
+                  Card(
                     child: Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Icon(Icons.info_outline),
-                          SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              'No local questions match these filters. Remove a filter or add/import matching questions.',
-                            ),
-                          ),
+                          const Icon(Icons.info_outline),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(child: Text(strings.noMatchingSetupQuestions)),
                         ],
                       ),
                     ),
@@ -285,7 +279,7 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
         builder: (BuildContext context) => QuizPage(
           controller: widget.controller,
           questions: selected,
-          title: 'Custom Quiz',
+          title: AppLocalizations.of(context).customQuizTitle,
           config: config,
         ),
       ),
