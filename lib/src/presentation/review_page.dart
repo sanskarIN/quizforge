@@ -127,6 +127,7 @@ final class _ReviewCard extends StatelessWidget {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final IconData statusIcon = evaluation.correct ? Icons.check_circle : Icons.cancel;
     final Color statusColor = evaluation.correct ? colors.primary : colors.error;
+    final String statusLabel = evaluation.correct ? strings.correct : strings.incorrect;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -136,7 +137,10 @@ final class _ReviewCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Icon(statusIcon, color: statusColor),
+                Semantics(
+                  label: statusLabel,
+                  child: Icon(statusIcon, color: statusColor),
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
