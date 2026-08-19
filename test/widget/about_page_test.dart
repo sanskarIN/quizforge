@@ -10,7 +10,7 @@ void main() {
     await tester.pumpWidget(buildTestApp(const AboutPage()));
 
     expect(find.text('QuizForge'), findsWidgets);
-    expect(find.text('Installed version: 0.1.0'), findsOneWidget);
+    expect(find.text('Installed version: 2.7.4'), findsOneWidget);
     expect(find.text('GitHub repository'), findsOneWidget);
     expect(find.text('Buy Me a Coffee'), findsOneWidget);
     expect(find.text('sanskarin@outlook.in'), findsOneWidget);
