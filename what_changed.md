@@ -2,477 +2,352 @@
 
 Last updated: 2026-08-19 (Asia/Kolkata)
 
-This is the primary handoff file for continuing QuizForge in another chat/session. It records what has actually been implemented, what has actually been verified, and what must happen next. Do not replace verified facts with assumptions.
+This is the primary handoff file for continuing QuizForge in another chat/session. It records what was implemented, what was actually verified, what is still blocked, and the exact next work. Do not turn a pending check into a passing claim.
 
 ## Current milestone
 
 - Package version: `0.1.0+1`
 - Repository: `https://github.com/sanskarIN/quizforge`
+- Active audit branch: `audit/phase-6-verification-2026-08-19`
+- Active pull request: `#9` — `ci: verify Phase 6 release-candidate baseline`
+- Audit base: `main` at `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
 - Visibility/source model: public / open source
 - License: MIT
 - Primary stack: Flutter + Dart + Drift/SQLite
 - Intended targets: Android, iOS-ready, Web, Windows, macOS, Linux
-- Current development milestone: Phases 0–4 substantially implemented; Phase 5 release engineering/documentation substantially implemented; Phase 6 clean-build/release-candidate verification is still required before any production-ready claim.
 - Required product credit: **Made by the Sanskar**
+- Current status: Phases 0–5 are substantially implemented. Phase 6 source/configuration hardening is well advanced, but final release-candidate verification is **blocked/pending** on final-head CI/build/security evidence, a reviewed Flutter-generated `pubspec.lock`, platform/database build checks, manual accessibility review, and real screenshots.
 
-## Git author / commit-email note
+## Git commit identity
 
-The requested maintainer commit email is `sanskarin@outlook.in`.
+The requested commit email is `sanskarin@outlook.in`.
 
-The GitHub connector used in this session exposes repository content/commit mutation operations but does **not** expose a commit-author/commit-email argument for `create_file` / `update_file`. Therefore the connector-created GitHub commits cannot be forced to use a supplied author email from this interface. This limitation is documented rather than hidden.
-
-For normal local Git commits, the setup documentation instructs the maintainer to configure:
+The raw Git commit metadata inspected during this audit shows connector-created commits using the requested email even though some higher-level GitHub wrapper responses omit the email field. A temporary workflow created for lockfile generation also explicitly configured:
 
 ```bash
+git config user.name "Sanskar"
 git config user.email "sanskarin@outlook.in"
 ```
 
-## Completed product work
+That temporary workflow was later removed because it had not executed and there was no reason to leave extra `contents: write` automation in the repository.
 
-### Application foundation
+## Repository/PR continuity work
 
-- Created Flutter/Dart application package metadata.
-- Added strict analyzer/lint configuration.
-- Added reusable Material 3 design tokens for spacing, breakpoints, theme, and adaptive layouts.
-- Added light, dark, and system theme support.
-- Added adaptive phone/tablet/desktop navigation using `NavigationBar` and `NavigationRail`.
-- Added persistent first-run onboarding.
-- Added reduced-motion integration through theme/media-query animation settings.
-- Added large-text setting while preserving system text scaling behavior.
-- Added generated Flutter localization architecture and an externalized English ARB catalog.
+- Inspected the existing repository instead of replacing working history.
+- Created the dedicated Phase 6 branch `audit/phase-6-verification-2026-08-19` from the latest inspected `main` state.
+- Opened PR #9 to keep verification work reviewable and avoid directly rewriting `main`.
+- Closed older PRs #6, #7, and #8 as superseded so only the current audit path remains active.
+- Preserved granular atomic commits rather than collapsing unrelated fixes into one change.
+- Added `docs/verification.md` as the evidence ledger for Phase 6.
 
-### Question model and quiz engine
+## Product work already present and retained
 
-Implemented:
+QuizForge already includes the major master-prompt product requirements and they were preserved while auditing:
 
-- multiple-choice questions;
-- true/false questions;
-- multi-select questions;
-- short-answer questions;
-- categories;
-- difficulty levels;
-- tags;
-- optional per-question time limits;
-- timed and untimed quiz configurations;
-- deterministic seeded selection;
-- deterministic daily quiz seed derived from the local date;
-- normalized answer matching;
-- exact-set multi-select scoring;
-- quiz score and percentage calculation;
-- streak/best-streak calculation;
-- quiz duration tracking;
-- validation rules for authored/imported questions.
+- multiple-choice, true/false, multi-select, and short-answer questions;
+- categories, difficulty, tags, timed/untimed quiz configuration;
+- daily quiz, random practice, timed sprint, and custom quiz builder;
+- deterministic selection/scoring fixtures;
+- explanations, review mode, streaks, bookmarks;
+- offline profiles, progress statistics, category statistics, and local leaderboard;
+- JSON/CSV question-bank import/export;
+- quiz creator with validation and preview;
+- duplicate id/content protection;
+- Drift/SQLite persistence;
+- local data/activity reset controls;
+- adaptive Material 3 UI;
+- light/dark/system themes;
+- large-text/reduced-motion/screen-reader-oriented settings;
+- offline-first architecture and a disabled-by-default private-room transport boundary;
+- onboarding, About, support/funding/project identity UI;
+- editable branding SVG;
+- deterministic test fixtures and benchmark harness.
 
-### Question-bank duplicate protection
+## Phase 6 localization and UI hardening completed
 
-Implemented duplicate partitioning by:
+### Localization architecture
 
-1. stable question id; and
-2. normalized content fingerprint derived from question category/type/prompt.
+- Kept `flutter_localizations` + generated localization architecture.
+- Kept `intl: any` so the Flutter SDK selects the compatible `intl` version instead of using an arbitrary conflicting manual version.
+- Fixed localization message identifiers that conflicted with Dart language keywords.
+- Expanded `lib/l10n/app_en.arb` for primary product workflows.
+- Localized import/export labels and reports.
+- Localized question creator labels, difficulty values, validation state, and preview text.
+- Localized question-bank search/filter metadata.
+- Localized quiz setup difficulty controls.
+- Localized quiz progress/timer semantics and true/false choices.
+- Localized answer review, score/correctness labels, and bookmark tooltips.
+- Localized statistics/category progress/leaderboard labels.
+- Localized settings, privacy/data, profile management, About, support, and update sections.
+- Kept user-authored/imported question content as domain data rather than pretending it is translated UI copy.
 
-Whitespace/casing-only prompt/category changes therefore do not silently create duplicate accepted questions.
+### Accessibility fixes
 
-### Quiz play and review
+- Fixed large-text handling so enabling QuizForge large text never reduces a larger OS/system text scale.
+- Preserved OS `disableAnimations` while also honoring QuizForge reduced-motion settings.
+- Added/maintained semantic quiz progress and timer labels.
+- Explicitly enabled semantics in accessibility widget tests.
+- Preserved non-color-only correct/incorrect status cues.
+- Updated review UI to listen to controller state so bookmark icons refresh immediately after changes.
 
-Implemented:
+### Error/privacy handling
 
-- daily quiz;
-- random practice;
-- five-question timed sprint;
-- custom quiz builder;
-- category/difficulty/tag filters;
-- configurable question count;
-- configurable default timer duration;
-- question progress indicator;
-- timer countdown with semantic/live-region behavior near expiry;
-- skip action;
-- in-progress exit protection controlled by a setting;
-- result persistence;
-- result summary;
-- correct/incorrect state with text/icon cues rather than color alone;
-- submitted-answer and correct-answer review;
-- explanations;
-- bookmarks from review.
+- Startup UI no longer displays arbitrary raw initialization details.
+- Creator/import/settings persistence errors use user-safe localized messages.
+- Logging paths report stable event names and safe metadata such as runtime error type instead of serializing raw imported/user content.
+- Structured logger remains the supported path rather than ad-hoc `print` calls.
 
-### Question creator
+## Phase 6 reliability/security hardening completed
 
-Implemented a responsive authoring workspace with:
+### Settings persistence ordering
 
-- type selection;
-- prompt;
-- category;
-- difficulty;
-- choices;
-- accepted answers;
-- tags;
-- explanation;
-- optional timer;
-- live preview;
-- domain validation before save;
-- duplicate rejection;
-- user-safe persistence failure behavior.
+Fixed `QuizForgeController.updateSettings` so settings are persisted first and are only assigned to in-memory controller state after persistence succeeds. This avoids UI/controller state claiming a setting was saved when the local preference write failed.
 
-### JSON / CSV import and export
+### Import resource bounds
 
-Implemented:
+`QuestionBankCodec` now defines explicit in-process safety limits:
 
-- deterministic JSON export;
-- deterministic CSV export;
-- clipboard copy/paste workflow;
-- JSON import;
-- CSV import;
-- row/entry validation;
-- malformed-input reporting;
-- duplicate reporting/skipping;
-- support for quoted CSV fields including commas/quotes;
-- import report;
-- user-safe storage failure behavior.
+- maximum import source size: `5 * 1024 * 1024` characters;
+- maximum questions per imported bank: `10000`.
 
-The canonical interchange format is documented in `docs/question-bank-format.md`.
+Both JSON and CSV paths reject oversized payloads before expensive item-level parsing. JSON rejects excessive question arrays before item parsing. CSV stops when the row limit is exceeded.
 
-### Offline profiles and data
+### Question content bounds and canonical validation
 
-Implemented:
+`Question.validate()` now bounds and validates untrusted/authored content:
 
-- default local profile creation;
-- multiple local profiles;
-- active-profile persistence;
-- add profile;
-- rename active profile;
-- delete active profile while keeping at least one profile;
-- profile-specific bookmarks;
-- profile-specific quiz history/progress;
-- clear active profile activity;
-- reset all local application data with explicit confirmation and starter-data restoration.
+- id: max 120 characters;
+- prompt: max 2000 characters;
+- category: max 120 characters;
+- choices: max 20;
+- each choice: max 500 characters;
+- accepted/correct answers: max 20;
+- each answer: max 500 characters;
+- tags: max 20;
+- each tag: max 80 characters;
+- explanation: max 5000 characters;
+- timer: max 3600 seconds.
 
-### Statistics and leaderboard
+Additional canonical validation now rejects blank accepted answers, accepted answers duplicated after normalization, blank tags, tags duplicated after normalization, and custom choices on true/false questions.
 
-Implemented:
+The fictional starter question bank was inspected and does not define custom true/false choices, so this stricter rule does not conflict with the existing starter fixtures.
 
-- quiz count;
-- answered-question count;
-- correct-answer count;
-- accuracy;
-- best streak;
-- accumulated play time;
-- bookmark count;
-- category-level answered/correct/accuracy aggregation;
-- device-local leaderboard across local profiles.
-
-No online leaderboard/account is required.
-
-### Persistence
-
-Implemented SQLite persistence through Drift infrastructure with explicit schema version 1.
-
-Schema tables:
-
-- `questions`
-- `profiles`
-- `attempts`
-- `attempt_answers`
-- `bookmarks`
-
-Reliability work includes:
-
-- foreign keys enabled on database open;
-- transactions for multi-row question writes;
-- transactions for attempt + attempt-answer writes;
-- transactions for maintenance/reset operations;
-- explicit indexes for current query patterns;
-- schema version field;
-- documented rule that released schema changes require migrations rather than editing an old schema in place.
-
-### Starter fixtures
-
-Added a deterministic fictional starter question bank covering multiple categories and all supported question types. It contains no real personal data and does not require internet access.
-
-### Accessibility
-
-Implemented or documented:
-
-- scalable text;
-- large-text preference;
-- light/dark/system theme;
-- reduced-motion preference wired into application media/theme behavior;
-- screen-reader hints preference;
-- semantic progress/timer labels;
-- non-color-only correct/incorrect cues;
-- standard keyboard/focus-capable Material controls;
-- adaptive layouts;
-- untimed quiz availability;
-- manual release accessibility checklist in `docs/accessibility.md`.
-
-### Internationalization readiness
-
-Added:
-
-- `flutter_localizations` dependency;
-- `intl` dependency;
-- `flutter.generate: true`;
-- `l10n.yaml`;
-- `lib/l10n/app_en.arb`;
-- generated-localization delegates wired into `QuizForgeApp`;
-- externalized English copy across the app root, onboarding, navigation shell, dashboard, quiz builder, quiz play, review, question creator, import/export, question bank, statistics, and settings/about flows;
-- localization workflow documentation in `docs/localization.md`.
-
-User-authored/imported question content remains data and is intentionally not translated by the UI localization layer.
-
-### Structured logging and privacy hardening
-
-Added a structured JSON application logger that:
-
-- supports log levels;
-- permits sink injection for tests;
-- rejects unsafe event-name shapes;
-- redacts sensitive keys such as password/token/secret/authorization/API key/credential/cookie/email;
-- redacts user-content keys such as prompt/answer/content/profile display names/import/export data;
-- redacts long and multiline string values;
-- logs error *types* instead of dumping raw exceptions/user data in key persistence paths.
-
-Initialization and UI operation errors use user-safe messages rather than raw internal details in major flows.
-
-### Optional private-room multiplayer boundary
-
-Added a transport-neutral `PrivateRoomTransport` architecture boundary and a disabled-by-default implementation that performs no networking and fails closed.
-
-Real network multiplayer has **not** been deceptively claimed as implemented. A future transport must first satisfy the security/privacy requirements in ADR 0003.
-
-### Branding
-
-Added editable source branding artwork:
-
-- `assets/branding/quizforge_logo.svg`
-
-The logo is an editable SVG source and the product credit remains **Made by the Sanskar**.
-
-## Automated tests added
+## Automated test work added or corrected
 
 ### Domain tests
 
-- question validation;
-- answer normalization;
-- question fingerprint behavior;
-- multiple-choice scoring;
-- exact-set multi-select scoring;
-- short-answer accepted variants;
-- deterministic seeded question selection;
-- category/difficulty/tag filtering;
-- result percentage;
-- result duration;
-- best-streak calculation;
-- duplicate id/content handling.
+Coverage includes question validation, normalized-answer behavior, normalized fingerprint duplicate behavior, multiple-choice scoring, exact-set multi-select scoring, canonical true/false scoring, short-answer accepted variants, deterministic selection/filtering, result percentage/duration/streak behavior, private-room transport fail-closed behavior, blank/normalized-duplicate accepted answers, normalized-duplicate tags, true/false custom-choice rejection, and content/time-bound validation.
 
 ### Import/export tests
 
-- JSON round trip;
-- CSV round trip;
-- commas/quotes in CSV content;
-- duplicate import reporting;
-- malformed JSON reporting;
-- malformed CSV quote reporting.
+Coverage includes JSON round trip, CSV round trip, commas/quotes in CSV content, duplicate reporting, malformed JSON, malformed CSV quoting, oversized import rejection before parsing, and excessive JSON question-count rejection.
 
 ### Deterministic fuzz-style parser tests
 
-- 500 deterministic random malformed JSON samples;
-- 500 deterministic random malformed CSV samples;
-- invariant: parser entry points should report malformed input rather than let parser exceptions escape the public decode call.
+The repository retains deterministic malformed-input coverage using fixed random seeds:
+
+- 500 malformed/random JSON samples;
+- 500 malformed/random CSV samples;
+- invariant: public decoder entry points report errors instead of allowing parser exceptions to escape uncontrolled.
 
 ### Database integration tests
 
-Using in-memory SQLite:
+The in-memory SQLite suite covers question/profile/bookmark/attempt persistence, statistics, category aggregation, leaderboard, maintenance/reset flows, rename/delete behavior, and the transactional application behavior represented by the database implementation.
 
-- question persistence;
-- profile persistence;
-- bookmark persistence;
-- transactional attempt persistence;
-- progress aggregation;
-- category progress aggregation;
-- leaderboard aggregation;
-- clear-profile-activity behavior;
-- profile rename;
-- profile delete;
-- full local-data reset.
+### Widget/journey tests
 
-### Widget tests
+Phase 6 added or corrected coverage for localization harness usage, quiz metadata/choices/progress, quiz progress/timer semantics, creator UI, import report, settings sections and required credit, viewport-independent settings scrolling, onboarding/custom quiz setup, and the primary one-question play → finish → review journey including deterministic score/correct-answer/explanation rendering.
 
-- localized widget-test harness;
-- quiz question/choice/progress rendering;
-- onboarding step navigation/completion;
-- custom quiz builder empty/no-match state.
+## CI/security/release workflow work completed
 
-## GitHub repository engineering completed
+### Maintained recurring workflows
 
-Added:
+The audit branch keeps focused recurring workflows for Flutter quality, Android/Web build, Linux/Windows/macOS/iOS platform builds, dependency review, OSV vulnerability scanning, full-history Gitleaks secret scanning, and tagged Android/Web release packaging.
 
-- structured bug-report template;
-- structured feature-request template;
-- issue intake config;
-- pull-request template;
-- `CODEOWNERS`;
-- Dependabot configuration for Dart/Flutter and GitHub Actions;
-- BMC funding configuration;
-- CI workflow for dependency install, localization generation, format, analysis, and tests;
-- dependency-review workflow;
-- scheduled/push OSV dependency vulnerability scan;
-- tagged Android/web release workflow;
-- artifact checksums in release workflow;
-- repository governance/branch-protection/security-setting guidance.
+### Workflow improvements
 
-## Build and developer tooling added
+- Added concurrency cancellation to recurring PR workflows so superseded commits do not unnecessarily consume runner capacity.
+- Hardened checkouts with `persist-credentials: false` where write credentials are not needed.
+- Ensured CI runs `flutter gen-l10n` before analysis/tests.
+- Extended formatting verification to `lib`, `test`, and `tool`.
+- Added OSV scanning to relevant pull-request dependency changes.
+- Kept the secret scanner on full history for actual history coverage.
+- Updated release workflow to regenerate localizations, verify formatting/analyzer/tests, build Android/Web release artifacts, generate SHA-256 checksums, upload workflow artifacts, and create GitHub releases for valid version tags.
 
-- `tool/bootstrap.sh`
-- `tool/bootstrap.ps1`
-- `tool/check.sh`
-- `tool/check.ps1`
+### Obsolete workflows removed
 
-The bootstrap scripts run Flutter diagnostics, materialize platform runners, install dependencies, and generate localizations.
+Removed one-shot/bootstrap workflows that had served earlier repository creation/repair purposes and should not remain as recurring source-mutating automation:
 
-The quality scripts generate localizations, verify formatting, run analysis, and run tests with coverage.
+- `.github/workflows/fix-intl-dependency.yml`
+- `.github/workflows/finalize-baseline.yml`
+- `.github/workflows/stabilize-baseline.yml`
+- `.github/workflows/verify-latest-baseline.yml`
+- `.github/workflows/materialize-platform-runners.yml`
 
-## Documentation completed
+A temporary `.github/workflows/generate-audit-lockfile.yml` was also removed after GitHub Actions did not execute it. This avoided retaining unnecessary `contents: write` capability.
 
-Root documentation/policies:
+## Local developer tooling synchronized
+
+Updated `tool/check.sh` and `tool/check.ps1`. Both now perform the maintained quality sequence:
+
+```text
+flutter pub get
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test tool
+flutter analyze
+flutter test --coverage
+```
+
+The CI and release documentation now use the same source-quality scope.
+
+## Documentation updated in Phase 6
+
+Updated or added:
 
 - `README.md`
-- `LICENSE`
-- `CONTRIBUTING.md`
-- `CODE_OF_CONDUCT.md`
-- `SECURITY.md`
-- `SUPPORT.md`
-- `PRIVACY.md`
 - `CHANGELOG.md`
 - `ROADMAP.md`
 - `what_changed.md`
-
-Development/release documentation:
-
-- `docs/architecture.md`
 - `docs/setup.md`
 - `docs/development.md`
 - `docs/testing.md`
+- `docs/ci.md`
 - `docs/release.md`
-- `docs/troubleshooting.md`
-- `docs/accessibility.md`
-- `docs/performance.md`
-- `docs/localization.md`
-- `docs/question-bank-format.md`
-- `docs/repository-settings.md`
-- `docs/screenshots/README.md`
+- `docs/verification.md`
 
-Architecture decisions:
+The README now contains explicit real-screenshot placeholders and links to `docs/screenshots/README.md`. Fake/mock screenshots are intentionally not presented as evidence of a working build.
 
-- `docs/adr/0001-modular-monolith.md`
-- `docs/adr/0002-drift-explicit-sql.md`
-- `docs/adr/0003-offline-first-multiplayer-boundary.md`
+`docs/testing.md` matches the implemented domain, codec/fuzz, database, widget, accessibility, and primary-journey coverage.
 
-## Commands / checks that have actually been run in this session
+`docs/ci.md` no longer documents deleted self-mutating baseline workflows as maintained automation.
+
+`docs/release.md` explicitly requires the reviewed application lockfile, localization generation, current formatting scope, final-head CI evidence, and manual release checks.
+
+`ROADMAP.md` was reconciled so work that is genuinely implemented is checked off while real Phase 6 blockers remain open.
+
+`CHANGELOG.md` records localization, accessibility, CI, security, resource-limit, test, workflow-cleanup, and verification changes without claiming a verified release.
+
+## Verification actually observed in this session
 
 ### Repository inspection
 
-The GitHub repository and existing files/commits were inspected before continuing work.
+The repository tree, source, tests, docs, workflows, recent commits, PR state, and multiple critical source files were inspected through the connected GitHub repository.
 
-### Local toolchain availability
+### Local container limitation
 
-The execution container available to this chat does not provide a usable Flutter/Dart SDK, so a trustworthy local `flutter analyze`, `flutter test`, or cross-platform build could not be executed from the chat container.
+The available chat execution container did **not** provide a usable Flutter/Dart SDK, and direct container GitHub cloning/network access was unavailable. Therefore this session did not fabricate local output for `flutter pub get`, `flutter gen-l10n`, `dart format`, `flutter analyze`, `flutter test`, or platform builds. Those gates remain evidence requirements.
 
-No passing-build claim is being made on the basis of source inspection alone.
+### GitHub Actions state
 
-### GitHub Actions
+On audit head `501b32282c68bde32cc51c328cddd27da497b753`, these PR-triggered runs were observed:
 
-A verification pull request was created earlier to trigger CI/dependency-review checks. Its early run state was queued when last explicitly inspected. Because substantial additional work has since landed on `main`, a **new final audit branch/PR against the latest main state is still required** after the remaining source audit below.
+- CI — run `32219052359` — pending;
+- Build Gate — run `32219052296` — pending;
+- Platform Build Matrix — run `32219052449` — pending;
+- Dependency Review — run `32219052382` — queued;
+- OSV Vulnerability Scan — run `32219052881` — queued;
+- Secret Scan — run `32219052453` — pending.
 
-The main CI workflow also triggers on pushes to `main`; final release-candidate status must use completed workflow evidence from the latest commit, not an older run.
+Subsequent documentation/handoff commits create a newer PR head and newer runs. The latest head must be used for the real release decision. The observed queue/pending state is explicitly **not** a pass.
 
-## Known limitations / not-yet-verified items
+## `pubspec.lock` status
 
-These are intentionally explicit:
+`pubspec.lock` is still missing from the audit branch.
 
-1. **Clean Flutter verification is pending.** Source has not yet been proven by a completed latest-commit `flutter analyze` + `flutter test` run in this chat.
-2. **Production platform builds are pending.** Android/web/desktop/iOS release builds must be executed on supported hosts before they can be called release-verified.
-3. **Platform runner directories are reproducibly generated by documented `flutter create . --platforms=...` commands rather than currently being treated as hand-maintained source.** Final release audit must verify this clean-checkout path.
-4. **`pubspec.lock` should be generated/validated by Flutter in the final clean-build environment and committed for the application if the final repository policy keeps application lockfiles.** It must not be fabricated manually.
-5. **Real private-room networking is intentionally not implemented/enabled.** Only the safe architecture boundary exists.
-6. **Real screenshots are not committed yet.** `docs/screenshots/README.md` defines the required real-capture set. Fake screenshots are intentionally avoided.
-7. **Performance budgets are documented, but measured benchmark evidence still needs a verified Flutter profile/release environment.**
-8. **A manual accessibility pass with representative screen readers/keyboard/platform text scaling is still required before release-candidate status.**
-9. **Store signing/provisioning credentials are intentionally absent from the public repository.**
-10. **GitHub repository settings such as branch rulesets/secret scanning must be enabled in GitHub settings where available; tracked guidance exists in `docs/repository-settings.md`.**
+A temporary one-shot GitHub Actions workflow was created to use Flutter stable, run `flutter pub get`, verify the lockfile exists, commit it with email `sanskarin@outlook.in`, and remove itself. GitHub Actions remained queued/pending and the file was not generated. The temporary workflow was then deleted rather than leaving a write-capable workflow in source control.
+
+The next verified Flutter environment must generate and review `pubspec.lock`, and the normal Flutter application lockfile should be committed before a release-candidate tag. Do **not** hand-author a lockfile.
+
+## Current database/migration state
+
+- Database schema version: `1`.
+- Current database creation is explicit in `AppDatabase`.
+- Foreign keys are enabled before normal use.
+- Current multi-step writes use transactions where needed.
+- In-memory database creation/persistence tests exist in source control.
+- There is no historical schema migration to test yet because no schema version greater than 1 has been released.
+- The first schema increment must add a real migration and an old-version-to-new-version migration test.
+
+## Known limitations / release blockers
+
+1. Final-head CI has not yet completed successfully.
+2. `pubspec.lock` has not yet been generated/reviewed in a verified Flutter environment.
+3. Android release build evidence is pending.
+4. Web release build and Drift persistence/reload evidence are pending.
+5. Windows/Linux/macOS host build evidence is pending on the final head.
+6. iOS no-codesign compile evidence is pending on the final head; signing/device validation is external to public source control.
+7. Real private-room networking is intentionally not implemented; only a disabled/fail-closed architecture boundary exists.
+8. Production/store icon/splash output still needs actual platform-generation/visual verification.
+9. Real release-candidate screenshots are pending; fabricated screenshots are intentionally prohibited.
+10. Manual keyboard/focus/screen-reader/large-text/reduced-motion/contrast review is pending.
+11. Representative performance measurements are pending even though the deterministic benchmark harness exists.
+12. Final documentation-link checking is pending.
+13. Final repository/history secret review must be performed on the final release head.
+14. Store signing/provisioning secrets are intentionally absent from the public repository.
 
 ## Exact next tasks
 
-Execute these in order; do not skip directly to a release tag:
+Continue in this order:
 
-1. Finish a source-level analyzer-risk audit for recently changed localization/widget code.
-2. Create a fresh audit branch from the latest `main`.
-3. Add/update a small verification-evidence file on that branch so a pull request has an actual diff.
-4. Open a fresh PR into `main` to trigger the current CI + dependency-review workflows.
-5. Wait only through tool execution in the active session; inspect completed workflow status/jobs/logs using GitHub tooling.
-6. If CI fails, fix every source/test/config defect with regression coverage where appropriate and rerun the failed/current workflow.
-7. Obtain a clean Flutter-generated dependency lockfile in the verified toolchain; commit it if normal Flutter application policy is retained.
-8. Run/build Android and Web from a clean checkout; verify Drift persistence behavior on both.
-9. On the correct native hosts, verify Windows/macOS/Linux and iOS builds as applicable.
-10. Record exact command output/evidence in `docs/verification.md` / this file.
-11. Capture real release-build screenshots listed in `docs/screenshots/README.md`.
-12. Perform manual accessibility review.
-13. Update `CHANGELOG.md`, `ROADMAP.md`, and this file based on *actual* verification results.
-14. Only then create a release-candidate/version tag and let `.github/workflows/release.yml` package verified Android/web artifacts.
+1. Read this file and `docs/verification.md` first.
+2. Read the latest PR #9 head because documentation updates after the run ids above create new workflow runs.
+3. Check whether the final-head CI, Build Gate, Platform Build Matrix, Dependency Review, OSV, and Secret Scan have completed.
+4. For any failed workflow, fetch the failing job steps/logs, fix the defect in a focused commit, add regression coverage where appropriate, and rerun the affected checks.
+5. Do not merge PR #9 while required final-head checks are queued/pending/failing.
+6. In a verified Flutter stable environment, run `flutter pub get`, review and commit `pubspec.lock`, then rerun all affected dependency/build/security gates.
+7. From a clean checkout run the documented localization/format/analyzer/test commands.
+8. Verify Android and Web builds; exercise Drift database creation, persistence, import/export, and Web refresh/reload behavior.
+9. Verify Windows/Linux/macOS on their proper hosts and iOS no-codesign compile on macOS.
+10. Perform manual keyboard/focus/screen-reader/large-text/reduced-motion/contrast checks.
+11. Capture real screenshots listed in `docs/screenshots/README.md` from the exact verified release candidate using fictional data.
+12. Check documentation links.
+13. Update `docs/verification.md`, `CHANGELOG.md`, `ROADMAP.md`, and this file with actual final evidence.
+14. Merge PR #9 using a normal merge strategy that preserves the meaningful atomic commit history unless repository policy requires a different strategy.
+15. Only after all applicable blockers are cleared, create the release-candidate/version tag and allow `.github/workflows/release.yml` to package the verified Android/Web release artifacts.
 
-## Migration notes
+## Recent meaningful commits from this audit
 
-- Current database schema version: **1**.
-- There are no prior public database-schema migrations in this repository baseline.
-- Future schema changes must increment `schemaVersion`, implement an explicit migration path, and add migration tests.
-- Question-bank format changes that rename/remove fields or enum identifiers are release-format changes and require compatibility notes/tests.
-- Localization values are presentation-only and must not replace stable serialized domain enum identifiers.
+Recent commits include, among others:
 
-## Release notes draft — 0.1.0 development baseline
+- `d110ea9` — `docs: start phase 6 verification evidence`
+- `bff20cf` — `feat: localize question creator and harden save errors`
+- `c780c45` — `feat: localize question bank browsing and filters`
+- `424cc2c` — `feat: localize quiz progress timers and true false choices`
+- `5cb7cc8` — `feat: localize custom quiz difficulty controls`
+- `d6f0cbe` — `feat: localize statistics and local leaderboard`
+- `40b1e0b` — `feat: localize settings and redact action errors`
+- `750f4be` — `test: verify private room transport fails closed`
+- `1da9dc8` — `test: cover canonical true false scoring`
+- `573cfd7` — `build: declare Flutter-pinned intl dependency`
+- `9c3b0b1` — `test: cover primary quiz completion journey`
+- `20b8e0b` — `docs: add verified screenshot placeholders and current quality commands`
+- `0cd299f` — `docs: align setup guide with localization and tooling gates`
+- `eae5a36` — `docs: update development guide for logging and localization`
+- `bcccec2` — `docs: synchronize testing strategy with implemented coverage`
+- `ebf26b4` — `docs: document maintained CI and remove obsolete workflow guidance`
+- `34afb5a` — `build: align shell quality check with CI`
+- `87afb15` — `build: align PowerShell quality check with CI`
+- `cbe7a08` — `docs: strengthen release reproducibility requirements`
+- `47495b1` — `security: bound question bank import size and row count`
+- `919121d` — `test: cover question bank import resource limits`
+- `89356a2` — `security: enforce bounded question content and canonical answers`
+- `0fad6f0` — `test: cover bounded question validation and canonical inputs`
+- `f2adf27` — `fix: apply settings only after persistence succeeds`
+- `2810e81` — `docs: reconcile roadmap with completed phases and audit blockers`
+- `7d827e1` — `docs: record phase 6 hardening and verification status`
+- `501b322` — `ci: remove blocked one-shot lockfile workflow`
+- `5a6ccc2` — `docs: update phase 6 evidence and blocked verification state`
 
-QuizForge 0.1.0 establishes an offline-first cross-platform quiz-game and quiz-authoring foundation with four question types, deterministic daily/random/custom practice, timed quizzes, review/explanations/bookmarks, local profiles, SQLite progress tracking, category statistics, a local leaderboard, JSON/CSV question-bank interchange, a validated quiz creator, accessibility preferences, adaptive Material 3 UI, first-run onboarding, externalized English UI strings, privacy-first structured logging, public documentation, automated tests, and GitHub CI/security/release automation.
+The audit branch also contains separate focused commits removing obsolete bootstrap/self-mutating workflows and separate CI concurrency/security improvements. Keep those atomic commits when merging if possible.
 
-This draft must not be promoted to a production-release claim until the Phase 6 verification tasks above are completed.
+## Release notes draft — development baseline / pending RC
 
-## Recent meaningful commit themes
+QuizForge now has an offline-first cross-platform quiz-game and quiz-authoring foundation with four question types, deterministic daily/random/custom practice, timed play, review/explanations/bookmarks, local profiles, SQLite progress tracking, category statistics, a local leaderboard, bounded JSON/CSV question-bank interchange, validated authoring, adaptive Material 3 UI, first-run onboarding, externalized English product strings, accessibility preferences, privacy-first structured logging, deterministic fuzz-style tests, primary quiz-journey automation, platform build/security workflows, extensive documentation, and a Phase 6 evidence ledger.
 
-The repository history contains many small atomic commits as requested. Recent meaningful commit groups include:
+Phase 6 additionally hardens import resource usage, question content bounds, settings persistence ordering, localization identifiers, system text scaling, error redaction, and workflow permissions/maintenance.
 
-- `feat: localize settings privacy profiles and about`
-- `feat: localize progress and leaderboard views`
-- `feat: localize question creator and preview`
-- `feat: localize quiz result review experience`
-- `feat: localize quiz play and exit protection copy`
-- `feat: localize custom quiz setup controls`
-- `feat: localize dashboard and practice actions`
-- `feat: localize adaptive navigation shell`
-- `feat: wire generated localization delegates into app root`
-- `feat: add externalized English application strings`
-- `build: enable Flutter localization generation`
-- `fix: keep custom quiz count calculations strongly typed`
-- `fix: use a valid typed result for protected route pops`
-- `feat: add polished first-run onboarding experience`
-- `feat: add profile maintenance detailed stats and data reset`
-- `feat: protect in-progress quizzes and improve semantics`
-- `feat: add structured redacting application logger`
-- `test: fuzz question bank parsers with deterministic malformed input`
-- `test: cover category statistics and local data maintenance`
-- `ci: verify localization generation in quality gate`
-- `ci: add tagged Android and web release workflow`
-- `ci: add scheduled OSV dependency vulnerability scan`
-- `ci: block vulnerable dependency changes in pull requests`
-- documentation commits for architecture/setup/testing/release/security/privacy/accessibility/performance/localization/question-bank format/community/repository settings.
+This remains a **development baseline / release-candidate audit**, not a production-release claim, until the blockers above are cleared with actual evidence.
 
-Use `git log --oneline` or GitHub commit history for exact current hashes; this file should be updated with final release/audit hashes after completed CI evidence exists.
+## Continuation rule
 
-## Handoff rule
-
-When continuing QuizForge:
-
-1. read this file first;
-2. inspect latest `main` tree and recent commits;
-3. inspect open PRs/issues and latest workflow results;
-4. continue from the first unfinished item in **Exact next tasks**;
-5. do not rewrite completed work unnecessarily;
-6. do not claim a clean/broken state without running or inspecting the relevant verification;
-7. update this file after every meaningful verification/milestone.
-
-**Made by the Sanskar**
+When another session continues this repository, do not restart completed phases and do not create duplicate replacement scaffolding. Continue from PR #9 / the latest repository state, inspect the latest workflow evidence first, fix only actual remaining defects/blockers, keep commits atomic and meaningful, and update this file after every substantial continuation.
