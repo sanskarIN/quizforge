@@ -5,6 +5,7 @@ import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
 import '../domain/quiz_config.dart';
 import 'quiz_page.dart';
+import 'quiz_setup_page.dart';
 
 final class DashboardPage extends StatelessWidget {
   const DashboardPage({
@@ -38,9 +39,9 @@ final class DashboardPage extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
-              final int columns = constraints.maxWidth >= 900
-                  ? 3
-                  : constraints.maxWidth >= 560
+              final int columns = constraints.maxWidth >= 1000
+                  ? 4
+                  : constraints.maxWidth >= 700
                       ? 2
                       : 1;
               return GridView.count(
@@ -49,7 +50,7 @@ final class DashboardPage extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: AppSpacing.md,
                 mainAxisSpacing: AppSpacing.md,
-                childAspectRatio: columns == 1 ? 2.4 : 1.65,
+                childAspectRatio: columns == 1 ? 2.4 : 1.55,
                 children: <Widget>[
                   _ActionCard(
                     icon: Icons.today_outlined,
@@ -71,6 +72,13 @@ final class DashboardPage extends StatelessWidget {
                     description: 'A quick five-question round with 20 seconds per question.',
                     actionLabel: 'Start sprint',
                     onPressed: () => _openTimed(context),
+                  ),
+                  _ActionCard(
+                    icon: Icons.tune,
+                    title: 'Build a quiz',
+                    description: 'Choose category, difficulty, tags, question count, and timing.',
+                    actionLabel: 'Customize',
+                    onPressed: () => _openBuilder(context),
                   ),
                 ],
               );
@@ -122,9 +130,10 @@ final class DashboardPage extends StatelessWidget {
   }
 
   Future<void> _openDaily(BuildContext context) async {
+    final DateTime now = DateTime.now();
     final List<Question> questions = controller.quizEngine.dailyQuiz(
       controller.questions,
-      DateTime.now(),
+      now,
       questionCount: 10,
     );
     await _pushQuiz(
@@ -133,9 +142,7 @@ final class DashboardPage extends StatelessWidget {
       questions: questions,
       config: QuizConfig(
         questionCount: 10,
-        seed: DateTime.now().year * 10000 +
-            DateTime.now().month * 100 +
-            DateTime.now().day,
+        seed: now.year * 10000 + now.month * 100 + now.day,
       ),
     );
   }
@@ -143,7 +150,7 @@ final class DashboardPage extends StatelessWidget {
   Future<void> _openPractice(BuildContext context) async {
     final QuizConfig config = QuizConfig(
       questionCount: 10,
-      seed: DateTime.now().millisecondsSinceEpoch,
+      seed: DateTime.now().microsecondsSinceEpoch,
     );
     final List<Question> questions =
         controller.quizEngine.selectQuestions(controller.questions, config);
@@ -160,7 +167,7 @@ final class DashboardPage extends StatelessWidget {
       questionCount: 5,
       timed: true,
       defaultSecondsPerQuestion: 20,
-      seed: DateTime.now().millisecondsSinceEpoch,
+      seed: DateTime.now().microsecondsSinceEpoch,
     );
     final List<Question> questions =
         controller.quizEngine.selectQuestions(controller.questions, config);
@@ -169,6 +176,14 @@ final class DashboardPage extends StatelessWidget {
       title: 'Timed Sprint',
       questions: questions,
       config: config,
+    );
+  }
+
+  Future<void> _openBuilder(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => QuizSetupPage(controller: controller),
+      ),
     );
   }
 
