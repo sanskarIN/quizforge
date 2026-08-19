@@ -25,6 +25,18 @@ QuizForge is a production-minded **Simple Quiz Game** that supports multiple-cho
 - No sign-in requirement and no donation gating.
 - Private-room multiplayer is represented by a clean local protocol/architecture boundary so a transport can be added without coupling it to quiz logic.
 
+## Screenshots
+
+Real screenshots are intentionally not fabricated. The release-candidate capture checklist and README gallery placeholders are maintained in [`docs/screenshots/README.md`](docs/screenshots/README.md). Verified captures will be added only from an actually built release candidate and will use fictional/demo quiz data.
+
+Planned gallery slots:
+
+- Home dashboard — compact/mobile, light theme.
+- Quiz play and answer review.
+- Question bank search/filter and creator preview.
+- Progress/local leaderboard.
+- Settings/About — dark theme with accessibility controls.
+
 ## Supported targets
 
 The codebase is designed for Android, iOS, Windows, macOS, Linux, and Web. Flutter platform runner files can be regenerated safely with the documented setup command when needed.
@@ -44,6 +56,7 @@ git clone https://github.com/sanskarIN/quizforge.git
 cd quizforge
 flutter create . --platforms=android,ios,web,windows,macos,linux
 flutter pub get
+flutter gen-l10n
 flutter analyze
 flutter test
 flutter run
@@ -56,8 +69,8 @@ The `flutter create .` step is idempotent for standard runner scaffolding and is
 1. Install the current Flutter stable channel and ensure `flutter doctor` is healthy for the platform you plan to build.
 2. Clone the repository.
 3. Run `flutter create . --platforms=android,ios,web,windows,macos,linux` to materialize platform runners.
-4. Run `flutter pub get`.
-5. Run `dart format --output=none --set-exit-if-changed lib test`.
+4. Run `flutter pub get` and `flutter gen-l10n`.
+5. Run `dart format --output=none --set-exit-if-changed lib test tool`.
 6. Run `flutter analyze` and `flutter test`.
 
 See [`docs/setup.md`](docs/setup.md) and [`docs/development.md`](docs/development.md) for details.
@@ -65,12 +78,13 @@ See [`docs/setup.md`](docs/setup.md) and [`docs/development.md`](docs/developmen
 ## Testing
 
 ```bash
-dart format --output=none --set-exit-if-changed lib test
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
-flutter test
+flutter test --coverage
 ```
 
-The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs, validation, and controller-level behavior. See [`docs/testing.md`](docs/testing.md).
+The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, validation, accessibility semantics, settings, and the primary quiz-completion journey. See [`docs/testing.md`](docs/testing.md).
 
 ## Build and release
 
