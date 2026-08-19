@@ -53,11 +53,9 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
               : const Duration(milliseconds: 200),
           builder: (BuildContext context, Widget? child) {
             final MediaQueryData media = MediaQuery.of(context);
-            final double systemScaleAtBody = media.textScaler.scale(14) / 14;
-            final TextScaler scaler =
-                settings.largeText && systemScaleAtBody < 1.15
-                    ? const TextScaler.linear(1.15)
-                    : media.textScaler;
+            final TextScaler scaler = settings.largeText
+                ? media.textScaler.clamp(minScaleFactor: 1.15)
+                : media.textScaler;
             return MediaQuery(
               data: media.copyWith(
                 textScaler: scaler,
