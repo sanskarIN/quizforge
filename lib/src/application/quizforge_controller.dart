@@ -380,18 +380,41 @@ final class QuizForgeController extends ChangeNotifier {
 
   Future<void> resetAllLocalData() async {
     logger.warning('app.local_data.reset.started');
-    await database.resetAllLocalData();
-    await settingsRepository.reset();
-    await profilePreferences.clearActiveProfileId();
-    _questions = const <Question>[];
-    _profiles = const <PlayerProfile>[];
-    _leaderboard = const <LeaderboardEntry>[];
-    _categoryProgress = const <CategoryProgress>[];
-    _activeProfile = null;
-    _bookmarkIds = const <String>{};
-    _progress = const ProgressSummary();
-    _settings = const AppSettings();
+    Object? firstError;
+    StackTrace? firstStackTrace;
+
+    Future<void> runReset(
+      Future<void> Function() action,
+      String failureEvent,
+    ) async {
+      try {
+        await action();
+      } on Object catch (error, stackTrace) {
+        firstError ??= error;
+        firstStackTrace ??= stackTrace;
+        logger.error(
+          failureEvent,
+          fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+        );
+      }
+    }
+
+    await runReset(database.resetAllLocalData, 'app.local_data.database_reset.failed');
+    await runReset(settingsRepository.reset, 'app.local_data.settings_reset.failed');
+    await runReset(
+      profilePreferences.clearActiveProfileId,
+      'app.local_data.profile_preference_reset.failed',
+    );
+
+    _clearInMemoryState();
     await initialize();
+
+    if (firstError != null) {
+      Error.throwWithStackTrace(firstError!, firstStackTrace!);
+    }
+    if (_errorMessage != null) {
+      throw StateError('QuizForge could not reload after resetting local data.');
+    }
     logger.warning('app.local_data.reset.completed');
   }
 
@@ -457,6 +480,17 @@ final class QuizForgeController extends ChangeNotifier {
     _bookmarkIds = data.bookmarkIds;
     _progress = data.progress;
     _categoryProgress = data.categoryProgress;
+  }
+
+  void _clearInMemoryState() {
+    _questions = const <Question>[];
+    _profiles = const <PlayerProfile>[];
+    _leaderboard = const <LeaderboardEntry>[];
+    _categoryProgress = const <CategoryProgress>[];
+    _activeProfile = null;
+    _bookmarkIds = const <String>{};
+    _progress = const ProgressSummary();
+    _settings = const AppSettings();
   }
 
   @override
