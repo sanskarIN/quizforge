@@ -89,13 +89,10 @@ final class QuizEngine {
     required DateTime completedAt,
     required Iterable<QuestionEvaluation> evaluations,
   }) {
-    if (completedAt.isBefore(startedAt)) {
-      throw ArgumentError('Completion time cannot be before start time.');
-    }
     return QuizResult(
       startedAt: startedAt,
       completedAt: completedAt,
-      evaluations: List<QuestionEvaluation>.unmodifiable(evaluations),
+      evaluations: evaluations,
     );
   }
 }
