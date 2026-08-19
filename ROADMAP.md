@@ -29,6 +29,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Search and filters
 - [x] Bookmarks
 - [x] Local leaderboard
+- [x] Recent per-profile attempt history
 - [x] Question creator with validation and preview
 - [x] JSON/CSV import/export
 - [x] Duplicate handling
@@ -61,6 +62,8 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Accessibility semantics tests for quiz progress/timing
 - [x] Private-room disabled-transport/fail-closed tests
 - [x] Primary quiz completion → review journey automation
+- [x] Recent-attempt ordering/limit/database cleanup tests
+- [x] Recent-attempt statistics rendering test
 - [x] Deterministic benchmark harness for quiz selection and codecs
 - [ ] Expand full-app restart/platform-adapter end-to-end journeys after stable test adapters are available
 - [ ] Record representative performance measurements and budgets from documented hardware/toolchains
@@ -102,6 +105,6 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 
 ## Future ideas after the baseline is verified
 
-Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer statistics, optional cloud-independent LAN rooms, additional localization packs, and educator-oriented batch authoring.
+Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer longitudinal statistics beyond the implemented recent-attempt list, optional cloud-independent LAN rooms, additional localization packs, and educator-oriented batch authoring.
 
 **Made by the Sanskar**
