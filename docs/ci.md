@@ -2,7 +2,9 @@
 
 QuizForge uses focused GitHub Actions workflows rather than a single opaque job. A pull request should be considered healthy only when all relevant current checks have completed successfully.
 
-All recurring pull-request workflows use least-privilege permissions and concurrency cancellation so superseded commits do not consume runner capacity unnecessarily.
+All recurring pull-request workflows use least-privilege permissions and concurrency cancellation so superseded commits do not consume runner capacity unnecessarily. Pull-request verification is intentionally available for **every pull request base branch**, not only PRs targeting `main`. This allows stacked review flows such as a feature PR into an active audit/release branch to receive the same applicable gates before the parent audit PR is merged into `main`.
+
+Push-triggered verification remains scoped to `main` where configured. Path-filtered workflows still run only when their relevant paths change.
 
 ## Quality gate
 
@@ -29,19 +31,33 @@ The build job is a compatibility gate, not a substitute for signed production An
 
 `.github/workflows/platform-builds.yml` provides host-appropriate release compile/build checks for Linux, Windows, macOS, and iOS. It materializes the relevant generated runner in each ephemeral checkout. iOS uses a no-codesign release compile because CI does not contain distribution signing credentials.
 
+The platform workflow retains path filters, so documentation-only PRs do not consume all host runners. A relevant code/platform change in a stacked feature PR can still trigger the matrix even when that PR targets an audit/release branch rather than `main`.
+
 A passing compile/build matrix is necessary evidence, but signing, store provisioning, installer UX, and manual device/accessibility review remain separate release activities.
 
 ## Dependency review
 
-`.github/workflows/dependency-review.yml` reviews dependency changes in pull requests and fails on newly introduced dependencies at or above its configured severity threshold.
+`.github/workflows/dependency-review.yml` reviews dependency changes in pull requests and fails on newly introduced dependencies at or above its configured severity threshold. It is not limited to PRs targeting `main`, so dependency changes cannot bypass review merely by being staged through an intermediate integration branch.
 
 ## Vulnerability scan
 
-`.github/workflows/osv-scan.yml` runs OSV scanning for relevant dependency changes on pull requests/pushes and on its scheduled/manual triggers. Results must be investigated rather than suppressed without a documented reason.
+`.github/workflows/osv-scan.yml` runs OSV scanning for relevant dependency/workflow changes on pull requests, for relevant pushes to `main`, and on its scheduled/manual triggers. Its pull-request trigger is base-branch agnostic but remains path-filtered. Results must be investigated rather than suppressed without a documented reason.
 
 ## Secret scan
 
-`.github/workflows/secret-scan.yml` scans full Git history with Gitleaks on pull requests, pushes to `main`, its schedule, and manual dispatch. The checkout intentionally uses full history for this job.
+`.github/workflows/secret-scan.yml` scans full Git history with Gitleaks on every pull request, pushes to `main`, its schedule, and manual dispatch. The checkout intentionally uses full history for this job.
+
+## Stacked pull requests
+
+When a feature is developed on top of an unmerged audit/release branch:
+
+1. Open the feature PR against that audit/release branch rather than directly against `main`.
+2. Use the feature PR's **exact head SHA** when reading check results.
+3. Wait for all applicable feature checks to complete; queued/pending is not a pass.
+4. Merge the feature PR into the audit/release branch only after its applicable gates are acceptable.
+5. Then treat the resulting audit/release branch head as a new candidate and rerun/re-read the parent PR checks against `main`.
+
+A green child PR does not automatically make the parent release PR green because the parent head changes when the child is merged.
 
 ## Tagged release workflow
 
