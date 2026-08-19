@@ -42,6 +42,9 @@ jobs:
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed lib test tool
 
+      - name: Validate repository-local Markdown links
+        run: python3 tool/check_markdown_links.py
+
       - name: Analyze
         run: flutter analyze
 
