@@ -46,6 +46,11 @@ final class StatsPage extends StatelessWidget {
                     value: '${progress.quizCount}',
                   ),
                   _StatCard(
+                    icon: Icons.fact_check_outlined,
+                    label: 'Questions answered',
+                    value: '${progress.questionCount}',
+                  ),
+                  _StatCard(
                     icon: Icons.track_changes,
                     label: 'Accuracy',
                     value: '${progress.accuracy.toStringAsFixed(1)}%',
@@ -60,10 +65,52 @@ final class StatsPage extends StatelessWidget {
                     label: 'Play time',
                     value: _formatDuration(progress.playTime),
                   ),
+                  _StatCard(
+                    icon: Icons.bookmark_outline,
+                    label: 'Bookmarks',
+                    value: '${controller.bookmarkIds.length}',
+                  ),
                 ],
               );
             },
           ),
+          const SizedBox(height: AppSpacing.xl),
+          Text('Category performance', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
+            'Accuracy is calculated from questions you have actually answered in each category.',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (controller.categoryProgress.isEmpty)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: Text('Complete a quiz to see category-level statistics.'),
+              ),
+            )
+          else
+            Card(
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: controller.categoryProgress.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (BuildContext context, int index) {
+                  final CategoryProgress item = controller.categoryProgress[index];
+                  return ListTile(
+                    leading: const Icon(Icons.category_outlined),
+                    title: Text(item.category),
+                    subtitle: Text(
+                      '${item.correctCount} correct of ${item.questionCount} answered',
+                    ),
+                    trailing: Text(
+                      '${item.accuracy.toStringAsFixed(1)}%',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  );
+                },
+              ),
+            ),
           const SizedBox(height: AppSpacing.xl),
           Text('Local leaderboard', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.sm),
