@@ -46,43 +46,50 @@ final class DashboardPage extends StatelessWidget {
                   : constraints.maxWidth >= 700
                       ? 2
                       : 1;
-              return GridView.count(
-                crossAxisCount: columns,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: AppSpacing.md,
-                mainAxisSpacing: AppSpacing.md,
-                childAspectRatio: columns == 1 ? 2.4 : 1.55,
-                children: <Widget>[
-                  _ActionCard(
-                    icon: Icons.today_outlined,
-                    title: strings.dailyQuiz,
-                    description: strings.dailyQuizDescription,
-                    actionLabel: strings.playDaily,
-                    onPressed: () => _openDaily(context),
-                  ),
-                  _ActionCard(
-                    icon: Icons.shuffle,
-                    title: strings.randomPractice,
-                    description: strings.randomPracticeDescription,
-                    actionLabel: strings.startPractice,
-                    onPressed: () => _openPractice(context),
-                  ),
-                  _ActionCard(
-                    icon: Icons.timer_outlined,
-                    title: strings.timedSprint,
-                    description: strings.timedSprintDescription,
-                    actionLabel: strings.startSprint,
-                    onPressed: () => _openTimed(context),
-                  ),
-                  _ActionCard(
-                    icon: Icons.tune,
-                    title: strings.buildQuiz,
-                    description: strings.buildQuizDescription,
-                    actionLabel: strings.customize,
-                    onPressed: () => _openBuilder(context),
-                  ),
-                ],
+              final double totalSpacing = AppSpacing.md * (columns - 1);
+              final double cardWidth =
+                  (constraints.maxWidth - totalSpacing) / columns;
+              final List<_ActionCard> cards = <_ActionCard>[
+                _ActionCard(
+                  icon: Icons.today_outlined,
+                  title: strings.dailyQuiz,
+                  description: strings.dailyQuizDescription,
+                  actionLabel: strings.playDaily,
+                  onPressed: () => _openDaily(context),
+                ),
+                _ActionCard(
+                  icon: Icons.shuffle,
+                  title: strings.randomPractice,
+                  description: strings.randomPracticeDescription,
+                  actionLabel: strings.startPractice,
+                  onPressed: () => _openPractice(context),
+                ),
+                _ActionCard(
+                  icon: Icons.timer_outlined,
+                  title: strings.timedSprint,
+                  description: strings.timedSprintDescription,
+                  actionLabel: strings.startSprint,
+                  onPressed: () => _openTimed(context),
+                ),
+                _ActionCard(
+                  icon: Icons.tune,
+                  title: strings.buildQuiz,
+                  description: strings.buildQuizDescription,
+                  actionLabel: strings.customize,
+                  onPressed: () => _openBuilder(context),
+                ),
+              ];
+              return Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.md,
+                children: cards
+                    .map(
+                      (_ActionCard card) => SizedBox(
+                        width: cardWidth,
+                        child: card,
+                      ),
+                    )
+                    .toList(growable: false),
               );
             },
           ),
@@ -242,12 +249,13 @@ final class _ActionCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Icon(icon, size: 32),
             const SizedBox(height: AppSpacing.md),
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            Expanded(child: Text(description)),
+            Text(description),
             const SizedBox(height: AppSpacing.md),
             FilledButton(onPressed: onPressed, child: Text(actionLabel)),
           ],
