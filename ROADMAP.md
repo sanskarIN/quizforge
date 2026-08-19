@@ -31,7 +31,8 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Local leaderboard
 - [x] Recent per-profile attempt history
 - [x] Question creator with validation and preview
-- [x] JSON/CSV import/export
+- [x] JSON/CSV question-bank import/export
+- [x] Versioned complete local backup/restore with validation and rollback handling
 - [x] Duplicate handling
 - [x] Theme and accessibility preferences
 - [x] In-app profile rename/delete with safe data handling
@@ -47,7 +48,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Reproducible generated platform-runner strategy and host build matrix
 - [ ] Implement and security-review an optional private-room transport
 - [ ] Complete platform-specific production icon/splash generation and visual verification
-- [ ] Add file-picker based import/export where supported and justified
+- [ ] Add file-picker based question-bank/backup import-export where supported and justified
 - [ ] Validate web database worker/WASM packaging in a verified release build
 - [ ] Profile very large banks on representative hardware and add pagination/virtualization only when measured thresholds justify it
 
@@ -64,7 +65,10 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Primary quiz completion → review journey automation
 - [x] Recent-attempt ordering/limit/database cleanup tests
 - [x] Recent-attempt statistics rendering test
+- [x] Local-backup codec/database/controller/widget regression coverage
 - [x] Deterministic benchmark harness for quiz selection and codecs
+- [x] Repository Markdown-validator regression tests
+- [x] Localization ARB-validator regression tests
 - [ ] Expand full-app restart/platform-adapter end-to-end journeys after stable test adapters are available
 - [ ] Record representative performance measurements and budgets from documented hardware/toolchains
 
@@ -72,28 +76,34 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 
 - [x] README and core policy documentation
 - [x] Setup/development/testing/release/troubleshooting/accessibility/performance documentation
+- [x] Local backup/restore format, privacy, compatibility, and verification documentation
 - [x] CI, dependency review, vulnerability scan, secret scan, and platform build workflows
 - [x] Tagged Android/Web release workflow with checksums and generated notes
 - [x] Release workflow lockfile enforcement and deterministic local-link validation
+- [x] Deterministic ARB localization-catalog validation before Flutter localization generation
 - [x] Verified-screenshot capture policy and gallery placeholders
 - [ ] Replace screenshot placeholders with real captures from the verified release candidate
 - [ ] Produce signed/store-specific artifacts where applicable without committing credentials
 
 ## Phase 6 — Final audit
 
-- [x] Create a dedicated Phase 6 audit branch and evidence ledger
+- [x] Create dedicated audit branches and an evidence ledger
+- [x] Consolidate Phase 6 hardening with the newer recent-attempt feature line
+- [x] Consolidate full local backup/restore from the parallel audit line without weakening persistence hardening
 - [x] Remove obsolete self-mutating bootstrap workflows from maintained release-candidate changes
 - [x] Harden import resource limits and question content bounds
 - [x] Harden CSV structural parsing for malformed quoted fields
 - [x] Harden settings and profile persistence ordering plus rollback/error handling
+- [x] Harden local-backup aggregate/reference validation and cross-store rollback behavior
 - [x] Refresh documentation and local check scripts to match maintained CI commands
 - [x] Add deterministic repository-local Markdown link checking to CI/local tooling
+- [x] Add deterministic ARB localization validation to CI/local tooling
 - [x] Preserve CI-generated `pubspec.lock` as a reviewable workflow artifact when CI executes
 - [ ] Generate, review, and commit the application `pubspec.lock` from verified Flutter-generated evidence
 - [ ] Build from a clean checkout
-- [ ] Pass formatting, localization generation, documentation-link validation, analysis, and all automated tests on the final head
+- [ ] Pass repository validator tests, Markdown validation, ARB validation, formatting, localization generation, analysis, and all automated tests on the final head
 - [ ] Pass dependency review, OSV scan, and secret scan on the final head
-- [ ] Validate database creation on release builds; add migration verification when schema version first changes
+- [ ] Validate database creation and local backup/restore on release builds; add migration verification when schema version first changes
 - [ ] Verify Android release build
 - [ ] Verify web release build and Drift persistence/reload behavior
 - [ ] Verify supported desktop builds on their host operating systems
@@ -105,6 +115,6 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 
 ## Future ideas after the baseline is verified
 
-Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer longitudinal statistics beyond the implemented recent-attempt list, optional cloud-independent LAN rooms, additional localization packs, and educator-oriented batch authoring.
+Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer longitudinal statistics beyond the implemented recent-attempt list, optional cloud-independent LAN rooms, additional localization packs, educator-oriented batch authoring, and optional file-picker adapters for the already-versioned local backup format.
 
 **Made by the Sanskar**
