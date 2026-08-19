@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../core/app_constants.dart';
+import '../../l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 
 final class OnboardingPage extends StatefulWidget {
@@ -22,27 +22,6 @@ final class _OnboardingPageState extends State<OnboardingPage> {
   int _page = 0;
   bool _finishing = false;
 
-  static const List<_OnboardingStep> _steps = <_OnboardingStep>[
-    _OnboardingStep(
-      icon: Icons.offline_bolt_outlined,
-      title: 'Learn and play offline',
-      description:
-          'QuizForge keeps core quiz play, profiles, bookmarks, and progress on this device. No sign-in is required.',
-    ),
-    _OnboardingStep(
-      icon: Icons.auto_awesome_outlined,
-      title: 'Practice your way',
-      description:
-          'Use daily quizzes, random practice, timed sprints, or build a custom set by category, difficulty, tags, and question count.',
-    ),
-    _OnboardingStep(
-      icon: Icons.accessibility_new,
-      title: 'Review, improve, repeat',
-      description:
-          'See explanations, bookmark useful questions, track local statistics, and adjust theme, text size, motion, and semantic hints.',
-    ),
-  ];
-
   @override
   void dispose() {
     _pageController.dispose();
@@ -51,7 +30,25 @@ final class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool lastPage = _page == _steps.length - 1;
+    final AppLocalizations strings = AppLocalizations.of(context);
+    final List<_OnboardingStep> steps = <_OnboardingStep>[
+      _OnboardingStep(
+        icon: Icons.offline_bolt_outlined,
+        title: strings.onboardingStepOneTitle,
+        description: strings.onboardingStepOneDescription,
+      ),
+      _OnboardingStep(
+        icon: Icons.auto_awesome_outlined,
+        title: strings.onboardingStepTwoTitle,
+        description: strings.onboardingStepTwoDescription,
+      ),
+      _OnboardingStep(
+        icon: Icons.accessibility_new,
+        title: strings.onboardingStepThreeTitle,
+        description: strings.onboardingStepThreeDescription,
+      ),
+    ];
+    final bool lastPage = _page == steps.length - 1;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -64,13 +61,13 @@ final class _OnboardingPageState extends State<OnboardingPage> {
               child: Row(
                 children: <Widget>[
                   Text(
-                    AppConstants.appName,
+                    strings.appName,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const Spacer(),
                   TextButton(
                     onPressed: _finishing ? null : () => unawaited(_finish()),
-                    child: const Text('Skip'),
+                    child: Text(strings.onboardingSkip),
                   ),
                 ],
               ),
@@ -78,10 +75,10 @@ final class _OnboardingPageState extends State<OnboardingPage> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _steps.length,
+                itemCount: steps.length,
                 onPageChanged: (int value) => setState(() => _page = value),
                 itemBuilder: (BuildContext context, int index) {
-                  return _StepView(step: _steps[index]);
+                  return _StepView(step: steps[index]);
                 },
               ),
             ),
@@ -95,11 +92,11 @@ final class _OnboardingPageState extends State<OnboardingPage> {
               child: Column(
                 children: <Widget>[
                   Semantics(
-                    label: 'Onboarding step ${_page + 1} of ${_steps.length}',
+                    label: '${_page + 1} / ${steps.length}',
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List<Widget>.generate(
-                        _steps.length,
+                        steps.length,
                         (int index) => AnimatedContainer(
                           duration: MediaQuery.disableAnimationsOf(context)
                               ? Duration.zero
@@ -124,7 +121,7 @@ final class _OnboardingPageState extends State<OnboardingPage> {
                         OutlinedButton.icon(
                           onPressed: _finishing ? null : _previous,
                           icon: const Icon(Icons.arrow_back),
-                          label: const Text('Back'),
+                          label: Text(strings.back),
                         )
                       else
                         const SizedBox.shrink(),
@@ -140,10 +137,10 @@ final class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                         label: Text(
                           _finishing
-                              ? 'Starting…'
+                              ? strings.onboardingStarting
                               : lastPage
-                                  ? 'Start QuizForge'
-                                  : 'Next',
+                                  ? strings.onboardingStart
+                                  : strings.next,
                         ),
                       ),
                     ],
