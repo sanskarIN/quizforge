@@ -72,6 +72,27 @@
   "noMatchingSetupQuestions": "No local questions match these filters. Remove a filter or add/import matching questions.",
   "customQuizTitle": "Custom Quiz",
   "noQuestionsMatchQuiz": "No questions match this quiz.",
+  "questionProgress": "Question {current} of {total}",
+  "@questionProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "secondsShort": "{seconds}s",
+  "@secondsShort": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "secondsRemaining": "{seconds} seconds remaining",
+  "@secondsRemaining": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "trueOption": "True",
+  "falseOption": "False",
   "yourAnswer": "Your answer",
   "typeYourAnswer": "Type your answer",
   "chooseOrSkip": "Choose or enter an answer, or use Skip.",
@@ -91,6 +112,7 @@
   "review": "Review",
   "score": "Score",
   "correct": "Correct",
+  "incorrect": "Incorrect",
   "time": "Time",
   "answerReview": "Answer review",
   "removeBookmark": "Remove bookmark",
