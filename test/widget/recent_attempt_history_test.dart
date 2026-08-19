@@ -6,6 +6,7 @@ import 'package:quizforge/src/data/app_database.dart';
 import 'package:quizforge/src/data/profile_preferences.dart';
 import 'package:quizforge/src/data/question_repository.dart';
 import 'package:quizforge/src/data/settings_repository.dart';
+import 'package:quizforge/src/domain/app_settings.dart';
 import 'package:quizforge/src/domain/quiz_result.dart';
 import 'package:quizforge/src/presentation/stats_page.dart';
 
@@ -20,8 +21,8 @@ void main() {
     final QuizForgeController controller = QuizForgeController(
       database: database,
       questionRepository: QuestionRepository(database),
-      settingsRepository: SettingsRepository(),
-      profilePreferences: ProfilePreferences(),
+      settingsRepository: _MemorySettingsStore(),
+      profilePreferences: _MemoryProfilePreferences(),
     );
     await controller.initialize();
 
@@ -50,4 +51,38 @@ void main() {
     expect(find.textContaining('100%'), findsWidgets);
     expect(find.textContaining('18s'), findsOneWidget);
   });
+}
+
+final class _MemorySettingsStore implements AppSettingsStore {
+  AppSettings _settings = const AppSettings();
+
+  @override
+  Future<AppSettings> load() async => _settings;
+
+  @override
+  Future<void> reset() async {
+    _settings = const AppSettings();
+  }
+
+  @override
+  Future<void> save(AppSettings settings) async {
+    _settings = settings;
+  }
+}
+
+final class _MemoryProfilePreferences implements ActiveProfilePreferences {
+  String? _activeProfileId;
+
+  @override
+  Future<void> clearActiveProfileId() async {
+    _activeProfileId = null;
+  }
+
+  @override
+  Future<String?> loadActiveProfileId() async => _activeProfileId;
+
+  @override
+  Future<void> saveActiveProfileId(String profileId) async {
+    _activeProfileId = profileId;
+  }
 }
