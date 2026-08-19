@@ -196,7 +196,7 @@ final class QuizForgeController extends ChangeNotifier {
       _activeProfile = profile;
       _applyProfileData(profileData);
       _leaderboard = leaderboard;
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
       try {
         await database.deleteProfile(profile.id);
       } on Object catch (rollbackError) {
@@ -207,7 +207,7 @@ final class QuizForgeController extends ChangeNotifier {
           },
         );
       }
-      Error.throwWithStackTrace(error, StackTrace.current);
+      Error.throwWithStackTrace(error, stackTrace);
     }
 
     logger.info(
@@ -268,7 +268,7 @@ final class QuizForgeController extends ChangeNotifier {
 
     try {
       await database.deleteProfile(profileId);
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
       if (replacement != null) {
         try {
           await profilePreferences.saveActiveProfileId(profileId);
@@ -281,7 +281,7 @@ final class QuizForgeController extends ChangeNotifier {
           );
         }
       }
-      Error.throwWithStackTrace(error, StackTrace.current);
+      Error.throwWithStackTrace(error, stackTrace);
     }
 
     _profiles = remainingProfiles;
