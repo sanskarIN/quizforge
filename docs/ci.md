@@ -11,10 +11,13 @@ All recurring pull-request workflows use least-privilege permissions and concurr
 - dependency resolution;
 - Flutter localization generation;
 - Dart formatting across `lib/`, `test/`, and `tool/`;
+- repository-local Markdown links and image targets with `tool/check_markdown_links.py`;
 - Flutter static analysis;
 - automated tests with coverage.
 
-The same core commands are available locally through `tool/check.sh` and `tool/check.ps1`.
+The Markdown checker is intentionally deterministic and network-independent. It validates relative/local links and reference definitions while ignoring fenced code examples and network URLs. External HTTP availability is still a manual release review concern because third-party availability is inherently nondeterministic.
+
+The same core Flutter commands are available locally through `tool/check.sh` and `tool/check.ps1`; the documentation-link gate can be reproduced with `python3 tool/check_markdown_links.py` (or `python tool/check_markdown_links.py` on Windows where that is the configured launcher).
 
 ## Android/Web build gate
 
@@ -58,6 +61,7 @@ Normal development uses pull requests and the focused quality/build/security wor
 flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
+python3 tool/check_markdown_links.py
 flutter analyze
 flutter test --coverage
 ```
