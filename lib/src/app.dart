@@ -11,22 +11,25 @@ import 'presentation/onboarding_page.dart';
 final class QuizForgeApp extends StatefulWidget {
   const QuizForgeApp({
     required this.controller,
+    this.onboardingStore,
     super.key,
   });
 
   final QuizForgeController controller;
+  final OnboardingStore? onboardingStore;
 
   @override
   State<QuizForgeApp> createState() => _QuizForgeAppState();
 }
 
 final class _QuizForgeAppState extends State<QuizForgeApp> {
-  final OnboardingRepository _onboardingRepository = OnboardingRepository();
+  late final OnboardingStore _onboardingStore;
   bool? _onboardingComplete;
 
   @override
   void initState() {
     super.initState();
+    _onboardingStore = widget.onboardingStore ?? OnboardingRepository();
     _loadOnboarding();
   }
 
@@ -85,7 +88,7 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
 
   Future<void> _loadOnboarding() async {
     try {
-      final bool completed = await _onboardingRepository.isCompleted();
+      final bool completed = await _onboardingStore.isCompleted();
       if (mounted) {
         setState(() => _onboardingComplete = completed);
       }
@@ -102,7 +105,7 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
 
   Future<void> _completeOnboarding() async {
     try {
-      await _onboardingRepository.markCompleted();
+      await _onboardingStore.markCompleted();
     } on Object catch (error) {
       widget.controller.logger.warning(
         'onboarding.persist.failed',
