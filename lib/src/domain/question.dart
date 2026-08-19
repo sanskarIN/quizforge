@@ -70,6 +70,7 @@ final class Question {
         if (correctAnswers.length != 1) {
           errors.add('Multiple-choice questions need exactly one correct answer.');
         }
+        break;
       case QuestionType.trueFalse:
         if (correctAnswers.length != 1) {
           errors.add('True/false questions need exactly one correct answer.');
@@ -78,6 +79,7 @@ final class Question {
         if (answer != 'true' && answer != 'false') {
           errors.add('True/false answer must be true or false.');
         }
+        break;
       case QuestionType.multiSelect:
         if (choices.length < 2) {
           errors.add('Multi-select questions need at least two choices.');
@@ -85,10 +87,12 @@ final class Question {
         if (correctAnswers.length < 2) {
           errors.add('Multi-select questions need at least two correct answers.');
         }
+        break;
       case QuestionType.shortAnswer:
         if (choices.isNotEmpty) {
           errors.add('Short-answer questions must not define choices.');
         }
+        break;
     }
 
     if (type == QuestionType.multipleChoice || type == QuestionType.multiSelect) {
