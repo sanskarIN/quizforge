@@ -23,6 +23,20 @@ void main() {
       expect(evaluation.score, 1);
     });
 
+    test('true false accepts canonical case-insensitive values', () {
+      final Question question = Question(
+        id: 'tf',
+        type: QuestionType.trueFalse,
+        prompt: 'The test runner is deterministic.',
+        correctAnswers: const <String>{'true'},
+        category: 'Testing',
+        difficulty: Difficulty.easy,
+      );
+
+      expect(engine.evaluate(question, const <String>[' TRUE ']).correct, isTrue);
+      expect(engine.evaluate(question, const <String>['false']).correct, isFalse);
+    });
+
     test('multi-select requires exact set', () {
       final Question question = _question(
         id: 'multi',
