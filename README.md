@@ -22,6 +22,7 @@ QuizForge is a production-minded **Simple Quiz Game** that supports multiple-cho
 - Streaks, bookmarks, attempt history, progress summaries, and a local leaderboard.
 - Light, dark, and system themes plus large-text and reduced-motion preferences.
 - Keyboard-friendly responsive UI foundations for mobile, desktop, and web.
+- Persistence-ordering safeguards for settings and local-profile changes, with rollback regression coverage.
 - No sign-in requirement and no donation gating.
 - Private-room multiplayer is represented by a clean local protocol/architecture boundary so a transport can be added without coupling it to quiz logic.
 
@@ -47,7 +48,7 @@ The codebase is designed for Android, iOS, Windows, macOS, Linux, and Web. Flutt
 - Drift + SQLite
 - Flutter SDK state primitives (`ChangeNotifier` / `ListenableBuilder`)
 - Deterministic pure-Dart quiz engine and codecs
-- GitHub Actions for formatting, analysis, tests, and security checks
+- GitHub Actions for formatting, analysis, tests, builds, documentation integrity, and security checks
 
 ## Quick start
 
@@ -71,7 +72,8 @@ The `flutter create .` step is idempotent for standard runner scaffolding and is
 3. Run `flutter create . --platforms=android,ios,web,windows,macos,linux` to materialize platform runners.
 4. Run `flutter pub get` and `flutter gen-l10n`.
 5. Run `dart format --output=none --set-exit-if-changed lib test tool`.
-6. Run `flutter analyze` and `flutter test`.
+6. Run `python3 tool/check_markdown_links.py` (`python` may be the Windows launcher).
+7. Run `flutter analyze` and `flutter test`.
 
 See [`docs/setup.md`](docs/setup.md) and [`docs/development.md`](docs/development.md) for details.
 
@@ -80,11 +82,12 @@ See [`docs/setup.md`](docs/setup.md) and [`docs/development.md`](docs/developmen
 ```bash
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
+python3 tool/check_markdown_links.py
 flutter analyze
 flutter test --coverage
 ```
 
-The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, validation, accessibility semantics, settings, and the primary quiz-completion journey. See [`docs/testing.md`](docs/testing.md).
+The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, controller persistence/rollback ordering, validation, accessibility semantics, settings, and the primary quiz-completion journey. See [`docs/testing.md`](docs/testing.md).
 
 ## Build and release
 
@@ -95,7 +98,7 @@ flutter build web --release
 # Desktop builds require the corresponding host OS.
 ```
 
-Release, signing, platform runner generation, and verification are documented in [`docs/release.md`](docs/release.md).
+Release, signing, platform runner generation, locked dependency resolution, and verification are documented in [`docs/release.md`](docs/release.md).
 
 ## Architecture
 
