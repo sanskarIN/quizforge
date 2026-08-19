@@ -196,6 +196,19 @@
       }
     }
   },
+  "localBackup": "Local backup",
+  "localBackupDescription": "Create a versioned JSON archive containing local questions, profiles, bookmarks, quiz history, active-profile selection, and settings. Keep backup archives private because they can contain user-authored content and profile names.",
+  "copyLocalBackup": "Copy local backup",
+  "localBackupCopied": "Local backup copied to clipboard.",
+  "restoreLocalBackup": "Restore local backup",
+  "restoreLocalBackupDescription": "Paste a QuizForge local-backup archive. Restore validates the entire archive before replacing current local data.",
+  "pasteLocalBackup": "Paste local backup JSON",
+  "restoreBackup": "Restore backup",
+  "restoringBackup": "Restoring…",
+  "restoreBackupTitle": "Replace current local data?",
+  "restoreBackupConfirmation": "Restoring this archive replaces current profiles, questions, bookmarks, quiz history, active-profile selection, and settings. Export a current backup first if you may need to undo this change.",
+  "backupRestoreSuccess": "Local backup restored.",
+  "backupRestoreFailed": "The local backup could not be restored. Current data was kept when rollback was possible.",
   "progressForProfile": "Statistics for the active local profile.",
   "progressForNamedProfile": "Statistics for {name}.",
   "@progressForNamedProfile": {
