@@ -4,6 +4,8 @@
 
 QuizForge favors small, testable modules and incremental changes. Keep business rules in the domain layer, persistence details in the data layer, orchestration in the application layer, and Flutter-specific concerns in presentation.
 
+The maintained release-candidate line is currently `2.7.4+1`, with `v2.7.4` reserved for the exact verified release head.
+
 ## Daily workflow
 
 From the repository root, prefer the maintained quality scripts:
@@ -23,8 +25,10 @@ The equivalent sequence is:
 ```bash
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
+python3 tool/test_check_release_metadata.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
+python3 tool/check_release_metadata.py
 flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
@@ -32,7 +36,22 @@ flutter analyze
 flutter test --coverage
 ```
 
-Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization inputs and broken validator tests fail early.
+Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization/release metadata inputs and broken validator tests fail early.
+
+## Release/version metadata changes
+
+Treat version metadata as a release contract rather than a cosmetic edit.
+
+When changing the package version:
+
+1. update `pubspec.yaml` using `MAJOR.MINOR.PATCH+BUILD`;
+2. create/update the matching dated release entry in `CHANGELOG.md` while retaining a fresh Unreleased section;
+3. update the maintained package/tag identity and compatibility policy in `docs/versioning.md`;
+4. update release notes/evidence documentation when applicable;
+5. run `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py` before Flutter work;
+6. do not create/promote the public Git tag until exact-head release verification is complete.
+
+`tool/check_release_metadata.py` validates current package/changelog/versioning consistency and rejects a stable-major documentation state that still claims a pre-1.0 policy. Its release-heading parser is regression-tested against historical zero-major entries such as `0.1.0`.
 
 ## Adding a question rule
 
@@ -50,6 +69,8 @@ Do not let widgets execute SQL. Add database/repository methods and expose the c
 Multi-step mutations must use transactions. Released schema changes must increment `schemaVersion`, include migration code, and include tests that exercise the old-to-new path.
 
 Schema version 1 does not store the original per-answer position inside completed attempts. Code working with historical attempts must not infer play order from database row order. See `docs/local-backup.md` and `docs/architecture.md` for the backup/streak consequence of this boundary.
+
+Changing application SemVer alone does not require a database schema increment. The 2.7.4 package update therefore retains database schema version 1 because it does not change the SQLite layout.
 
 ## Import/export and backup changes
 
@@ -69,7 +90,13 @@ Add regression cases for malformed quoting, unexpected JSON types, duplicate ids
 
 Question-bank JSON/CSV and complete local backup JSON are different contracts. Changes to the local backup format must preserve or explicitly reject older versions, validate the complete object graph before destructive replacement, preserve rollback behavior, and update `docs/local-backup.md`, `PRIVACY.md`, `docs/data-lifecycle.md`, tests, and the changelog.
 
+Backup-format versioning is independent from application SemVer. QuizForge 2.7.4 continues to use local-backup format version 1.
+
 Do not increase the backup encoder's supported output beyond what the decoder can accept. The current codec refuses to emit an archive above its supported restore limit so it cannot intentionally create an archive that the same version will reject solely for size.
+
+For restored historical attempt data, preserve schema-v1 order limitations: the database does not store original answer sequence. Validate only order-independent streak invariants unless a future schema migration adds explicit sequence metadata.
+
+Every restored answer row must remain consistent with normal QuizForge scoring. Backup validation re-evaluates submitted answers against the archived question and rejects correctness/score metadata that does not agree with the normal `QuizEngine` result.
 
 ## UI development
 
@@ -105,7 +132,9 @@ flutter analyze
 flutter test
 ```
 
-For this Flutter application, keep `intl: any` paired with `flutter_localizations` so Flutter stable chooses its SDK-compatible `intl` version. Review and commit the application `pubspec.lock` after dependency resolution in a verified Flutter environment.
+For this Flutter application, keep `intl: any` paired with `flutter_localizations` so Flutter stable chooses its SDK-compatible `intl` version unless a future verified compatibility reason changes that policy.
+
+Review and commit the application `pubspec.lock` after dependency resolution in a supported verified Flutter environment. Do not hand-author a lockfile. The tagged release workflow requires a committed lockfile and enforces it with `flutter pub get --enforce-lockfile`.
 
 ## Commit discipline
 
@@ -117,4 +146,4 @@ The maintainer-requested commit email is `sanskarin@outlook.in`; configure it lo
 
 A change is complete when relevant regression tests exist, repository validators pass, localization generation succeeds when applicable, format/analyze/tests pass, error states are handled, accessibility/privacy impact has been considered, documentation reflects the behavior, and no secrets/private data were introduced.
 
-Release-candidate completion is stricter: final-head GitHub Actions/build/security gates and applicable manual platform/accessibility checks must also be observed as successful rather than inferred from source review.
+Release-candidate completion is stricter: final-head GitHub Actions/build/security gates, reviewed locked dependency state, and applicable manual platform/accessibility/data-restore checks must also be observed as successful rather than inferred from source review.
