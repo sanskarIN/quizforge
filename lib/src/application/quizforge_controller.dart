@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../core/logging/app_logger.dart';
 import '../data/app_database.dart';
+import '../data/app_database_maintenance.dart';
+import '../data/app_database_progress.dart';
 import '../data/profile_preferences.dart';
 import '../data/question_bank_codec.dart';
 import '../data/question_repository.dart';
@@ -41,6 +43,7 @@ final class QuizForgeController extends ChangeNotifier {
   List<Question> _questions = const <Question>[];
   List<PlayerProfile> _profiles = const <PlayerProfile>[];
   List<LeaderboardEntry> _leaderboard = const <LeaderboardEntry>[];
+  List<CategoryProgress> _categoryProgress = const <CategoryProgress>[];
   PlayerProfile? _activeProfile;
   Set<String> _bookmarkIds = const <String>{};
   ProgressSummary _progress = const ProgressSummary();
@@ -52,6 +55,8 @@ final class QuizForgeController extends ChangeNotifier {
   List<PlayerProfile> get profiles => List<PlayerProfile>.unmodifiable(_profiles);
   List<LeaderboardEntry> get leaderboard =>
       List<LeaderboardEntry>.unmodifiable(_leaderboard);
+  List<CategoryProgress> get categoryProgress =>
+      List<CategoryProgress>.unmodifiable(_categoryProgress);
   PlayerProfile? get activeProfile => _activeProfile;
   Set<String> get bookmarkIds => Set<String>.unmodifiable(_bookmarkIds);
   ProgressSummary get progress => _progress;
@@ -189,6 +194,58 @@ final class QuizForgeController extends ChangeNotifier {
     );
   }
 
+  Future<void> renameActiveProfile(String displayName) async {
+    final PlayerProfile? current = _activeProfile;
+    if (current == null) {
+      throw StateError('No active profile.');
+    }
+    final PlayerProfile updated = PlayerProfile(
+      id: current.id,
+      displayName: displayName.trim(),
+      createdAt: current.createdAt,
+    );
+    final List<String> errors = updated.validate();
+    if (errors.isNotEmpty) {
+      throw ArgumentError(errors.join(' '));
+    }
+    await database.renameProfile(
+      profileId: current.id,
+      displayName: updated.displayName,
+    );
+    _profiles = _profiles
+        .map((PlayerProfile profile) => profile.id == current.id ? updated : profile)
+        .toList(growable: false);
+    _activeProfile = updated;
+    _leaderboard = await database.loadLeaderboard();
+    logger.info('profile.rename.completed');
+    notifyListeners();
+  }
+
+  Future<void> deleteProfile(String profileId) async {
+    if (_profiles.length <= 1) {
+      throw StateError('At least one local profile must remain.');
+    }
+    final bool deletingActive = _activeProfile?.id == profileId;
+    if (!_profiles.any((PlayerProfile profile) => profile.id == profileId)) {
+      throw ArgumentError('Unknown profile id.');
+    }
+    await database.deleteProfile(profileId);
+    _profiles = _profiles
+        .where((PlayerProfile profile) => profile.id != profileId)
+        .toList(growable: false);
+    if (deletingActive) {
+      _activeProfile = _profiles.first;
+      await profilePreferences.saveActiveProfileId(_activeProfile!.id);
+      await _refreshProfileData();
+    }
+    _leaderboard = await database.loadLeaderboard();
+    logger.info(
+      'profile.delete.completed',
+      fields: <String, Object?>{'profileCount': _profiles.length},
+    );
+    notifyListeners();
+  }
+
   Future<void> selectProfile(String profileId) async {
     final PlayerProfile selected = _profiles.firstWhere(
       (PlayerProfile profile) => profile.id == profileId,
@@ -232,7 +289,7 @@ final class QuizForgeController extends ChangeNotifier {
       throw StateError('No active profile.');
     }
     await database.saveAttempt(profile.id, result);
-    _progress = await database.loadProgress(profile.id);
+    await _refreshProfileData();
     _leaderboard = await database.loadLeaderboard();
     logger.info(
       'quiz.completed',
@@ -243,6 +300,35 @@ final class QuizForgeController extends ChangeNotifier {
       },
     );
     notifyListeners();
+  }
+
+  Future<void> clearActiveProfileActivity() async {
+    final PlayerProfile? profile = _activeProfile;
+    if (profile == null) {
+      throw StateError('No active profile.');
+    }
+    await database.clearProfileActivity(profile.id);
+    await _refreshProfileData();
+    _leaderboard = await database.loadLeaderboard();
+    logger.info('profile.activity.cleared');
+    notifyListeners();
+  }
+
+  Future<void> resetAllLocalData() async {
+    logger.warning('app.local_data.reset.started');
+    await database.resetAllLocalData();
+    await settingsRepository.reset();
+    await profilePreferences.clearActiveProfileId();
+    _questions = const <Question>[];
+    _profiles = const <PlayerProfile>[];
+    _leaderboard = const <LeaderboardEntry>[];
+    _categoryProgress = const <CategoryProgress>[];
+    _activeProfile = null;
+    _bookmarkIds = const <String>{};
+    _progress = const ProgressSummary();
+    _settings = const AppSettings();
+    await initialize();
+    logger.warning('app.local_data.reset.completed');
   }
 
   Future<void> updateSettings(AppSettings settings) async {
@@ -285,10 +371,12 @@ final class QuizForgeController extends ChangeNotifier {
     if (profile == null) {
       _bookmarkIds = const <String>{};
       _progress = const ProgressSummary();
+      _categoryProgress = const <CategoryProgress>[];
       return;
     }
     _bookmarkIds = await database.loadBookmarkIds(profile.id);
     _progress = await database.loadProgress(profile.id);
+    _categoryProgress = await database.loadCategoryProgress(profile.id);
   }
 
   @override
