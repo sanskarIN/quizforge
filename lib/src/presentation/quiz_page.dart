@@ -67,9 +67,9 @@ final class _QuizPageState extends State<QuizPage> {
     final Question question = _question;
     final double progress = (_index + 1) / widget.questions.length;
     final bool confirmExit = widget.controller.settings.confirmBeforeExitQuiz;
-    return PopScope<void>(
+    return PopScope<Object?>(
       canPop: _allowPop || !confirmExit,
-      onPopInvokedWithResult: (bool didPop, void result) {
+      onPopInvokedWithResult: (bool didPop, Object? result) {
         if (!didPop && confirmExit && !_allowPop) {
           unawaited(_confirmExit());
         }
