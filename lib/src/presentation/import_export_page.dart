@@ -24,13 +24,16 @@ enum _BankFormat { json, csv }
 
 final class _ImportExportPageState extends State<ImportExportPage> {
   final TextEditingController _importController = TextEditingController();
+  final TextEditingController _backupController = TextEditingController();
   _BankFormat _format = _BankFormat.json;
   bool _importing = false;
+  bool _restoringBackup = false;
   QuestionBankImportResult? _lastResult;
 
   @override
   void dispose() {
     _importController.dispose();
+    _backupController.dispose();
     super.dispose();
   }
 
@@ -154,6 +157,71 @@ final class _ImportExportPageState extends State<ImportExportPage> {
               const SizedBox(height: AppSpacing.lg),
               _ImportSummary(result: _lastResult!, strings: strings),
             ],
+            const SizedBox(height: AppSpacing.xxl),
+            const Divider(),
+            const SizedBox(height: AppSpacing.xl),
+            Text(strings.localBackup, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.sm),
+            Text(strings.localBackupDescription),
+            const SizedBox(height: AppSpacing.md),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: () {
+                  unawaited(_copyLocalBackup());
+                },
+                icon: const Icon(Icons.backup_outlined),
+                label: Text(strings.copyLocalBackup),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              strings.restoreLocalBackup,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(strings.restoreLocalBackupDescription),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _backupController,
+              minLines: 6,
+              maxLines: 14,
+              decoration: InputDecoration(
+                labelText: strings.pasteLocalBackup,
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: <Widget>[
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final ClipboardData? data =
+                        await Clipboard.getData(Clipboard.kTextPlain);
+                    if (data?.text != null) {
+                      _backupController.text = data!.text!;
+                    }
+                  },
+                  icon: const Icon(Icons.content_paste),
+                  label: Text(strings.paste),
+                ),
+                FilledButton.icon(
+                  onPressed: _restoringBackup
+                      ? null
+                      : () {
+                          unawaited(_restoreLocalBackup());
+                        },
+                  icon: const Icon(Icons.restore),
+                  label: Text(
+                    _restoringBackup
+                        ? strings.restoringBackup
+                        : strings.restoreBackup,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -190,6 +258,90 @@ final class _ImportExportPageState extends State<ImportExportPage> {
     } finally {
       if (mounted) {
         setState(() => _importing = false);
+      }
+    }
+  }
+
+  Future<void> _copyLocalBackup() async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    try {
+      final String archive = await widget.controller.exportLocalBackup();
+      await Clipboard.setData(ClipboardData(text: archive));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.localBackupCopied)),
+        );
+      }
+    } on Object catch (error) {
+      widget.controller.logger.error(
+        'backup.export.ui_failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.actionFailed)),
+        );
+      }
+    }
+  }
+
+  Future<void> _restoreLocalBackup() async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    final String source = _backupController.text.trim();
+    if (source.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.pasteLocalBackup)),
+      );
+      return;
+    }
+    final bool confirmed = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext dialogContext) {
+            final AppLocalizations dialogStrings =
+                AppLocalizations.of(dialogContext);
+            return AlertDialog(
+              title: Text(dialogStrings.restoreBackupTitle),
+              content: Text(dialogStrings.restoreBackupConfirmation),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: Text(dialogStrings.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(dialogStrings.restoreBackup),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    setState(() => _restoringBackup = true);
+    try {
+      await widget.controller.restoreLocalBackup(source);
+      if (mounted) {
+        _backupController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).backupRestoreSuccess)),
+        );
+      }
+    } on Object catch (error) {
+      widget.controller.logger.error(
+        'backup.restore.ui_failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).backupRestoreFailed)),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _restoringBackup = false);
       }
     }
   }
