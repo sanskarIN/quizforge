@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/profile.dart';
 import '../domain/question.dart';
+import '../domain/quiz_engine.dart';
 import '../domain/quiz_result.dart';
 import 'app_database.dart';
 
@@ -27,6 +28,7 @@ final class DatabaseBackupSnapshot {
     }
     final Set<String> questionIds = <String>{};
     final Set<String> fingerprints = <String>{};
+    final Map<String, Question> questionsById = <String, Question>{};
     for (final Question question in questions) {
       final List<String> questionErrors = question.validate();
       if (questionErrors.isNotEmpty) {
@@ -35,6 +37,7 @@ final class DatabaseBackupSnapshot {
       if (!questionIds.add(question.id)) {
         errors.add('Duplicate question id ${question.id}.');
       }
+      questionsById.putIfAbsent(question.id, () => question);
       if (!fingerprints.add(question.fingerprint)) {
         errors.add('Duplicate question content detected.');
       }
@@ -53,6 +56,7 @@ final class DatabaseBackupSnapshot {
       }
     }
 
+    const QuizEngine quizEngine = QuizEngine();
     for (final BackupAttempt attempt in attempts) {
       if (!profileIds.contains(attempt.profileId)) {
         errors.add('Quiz attempt references an unknown profile.');
@@ -96,8 +100,22 @@ final class DatabaseBackupSnapshot {
       }
       final Set<String> answeredQuestionIds = <String>{};
       for (final QuestionEvaluation evaluation in attempt.evaluations) {
-        if (!questionIds.contains(evaluation.questionId)) {
+        final Question? question = questionsById[evaluation.questionId];
+        if (question == null) {
           errors.add('Quiz attempt references an unknown question.');
+        } else {
+          final QuestionEvaluation expected = quizEngine.evaluate(
+            question,
+            evaluation.submittedAnswers,
+          );
+          if (expected.correct != evaluation.correct) {
+            errors.add(
+              'Quiz attempt answer correctness is inconsistent with its question.',
+            );
+          }
+          if ((expected.score - evaluation.score).abs() > 0.000001) {
+            errors.add('Quiz attempt answer score is inconsistent with its question.');
+          }
         }
         if (!answeredQuestionIds.add(evaluation.questionId)) {
           errors.add('Quiz attempt contains a duplicate question answer.');
