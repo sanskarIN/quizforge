@@ -9,6 +9,7 @@ import '../core/app_constants.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/app_settings.dart';
 import '../domain/profile.dart';
+import 'about_page.dart';
 
 final class SettingsPage extends StatelessWidget {
   const SettingsPage({
@@ -280,6 +281,20 @@ final class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(strings.aboutDescription),
+                const SizedBox(height: AppSpacing.md),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    unawaited(
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (BuildContext context) => const AboutPage(),
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.info_outline),
+                  label: Text(strings.about),
+                ),
                 const SizedBox(height: AppSpacing.md),
                 _LinkTile(
                   icon: Icons.code,
