@@ -52,6 +52,8 @@ void main() {
     expect(controller.questions, hasLength(1));
     expect(controller.questions.single.id, 'import-widget-1');
     expect(find.text('Import report'), findsOneWidget);
-    expect(find.text('Import: 1'), findsOneWidget);
+    expect(find.text('Imported: 1'), findsOneWidget);
+    expect(find.text('Duplicates skipped: 0'), findsOneWidget);
+    expect(find.text('Errors: 0'), findsOneWidget);
   });
 }
