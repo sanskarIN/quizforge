@@ -75,10 +75,7 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
       return const _LoadingPage();
     }
     if (widget.controller.errorMessage != null) {
-      return _ErrorPage(
-        message: widget.controller.errorMessage!,
-        onRetry: widget.controller.initialize,
-      );
+      return _ErrorPage(onRetry: widget.controller.initialize);
     }
     if (!_onboardingComplete!) {
       return OnboardingPage(onComplete: _completeOnboarding);
@@ -147,12 +144,8 @@ final class _LoadingPage extends StatelessWidget {
 }
 
 final class _ErrorPage extends StatelessWidget {
-  const _ErrorPage({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorPage({required this.onRetry});
 
-  final String message;
   final Future<void> Function() onRetry;
 
   @override
@@ -175,8 +168,6 @@ final class _ErrorPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(message, textAlign: TextAlign.center),
                   const SizedBox(height: AppSpacing.lg),
                   FilledButton.icon(
                     onPressed: onRetry,
