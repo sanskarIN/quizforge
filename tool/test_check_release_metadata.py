@@ -26,7 +26,11 @@ class ReleaseMetadataValidatorTest(unittest.TestCase):
         )
         (root / "CHANGELOG.md").write_text(
             changelog
-            or "# Changelog\n\n## [Unreleased]\n\n## [2.7.4] - 2026-08-19\n",
+            or (
+                "# Changelog\n\n## [Unreleased]\n\n"
+                "## [2.7.4] - 2026-08-19\n\n"
+                "## [0.1.0] - 2026-08-19\n"
+            ),
             encoding="utf-8",
         )
         (root / "docs" / "versioning.md").write_text(
@@ -35,7 +39,7 @@ class ReleaseMetadataValidatorTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def test_accepts_consistent_release_metadata(self) -> None:
+    def test_accepts_consistent_release_metadata_with_zero_major_history(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             self._write_repo(root)
@@ -66,7 +70,7 @@ class ReleaseMetadataValidatorTest(unittest.TestCase):
                 changelog=(
                     "# Changelog\n\n## [Unreleased]\n\n"
                     "## [2.7.4] - 2026-08-19\n\n"
-                    "## [2.7.3] - 2026-08-18\n\n"
+                    "## [0.1.0] - 2026-08-18\n\n"
                     "## [2.7.4] - 2026-08-17\n"
                 ),
             )
