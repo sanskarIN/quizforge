@@ -21,6 +21,20 @@ Before committing, use the non-mutating formatting gate:
 dart format --output=none --set-exit-if-changed lib test
 ```
 
+Documentation/localization repository checks do not require Flutter. On macOS/Linux:
+
+```bash
+sh tool/check_docs.sh
+```
+
+On Windows PowerShell:
+
+```powershell
+./tool/check_docs.ps1
+```
+
+Set `PYTHON_BIN` if your Python executable uses a different name.
+
 ## Adding a question rule
 
 1. Change the domain model or engine first.
@@ -50,6 +64,20 @@ Treat all file/pasted content as untrusted. Parsers should:
 
 Add regression cases for malformed quoting, unexpected JSON types, duplicate ids/content, large fields, and relevant edge cases.
 
+## Localization changes
+
+Before generating localization Dart sources, run:
+
+```bash
+python tool/check_arb_catalogs.py .
+```
+
+All locale catalogs must retain the English template's message-key set. Do not rename stable message keys merely to improve translated wording.
+
+## Documentation links
+
+Repository-local Markdown targets are validated by `tool/check_markdown_links.py` and CI. The checker intentionally does not make network requests; external-site health remains part of release/manual review.
+
 ## UI development
 
 Use the design tokens in `lib/src/core/theme/app_theme.dart`. Prefer responsive constraints and `LayoutBuilder` over hardcoded device assumptions.
@@ -64,7 +92,7 @@ Use `unawaited` only when intentionally discarding a future. User-visible mutati
 
 ## Logging
 
-Do not use ad-hoc `print` calls. The analyzer forbids them. A future logging abstraction must support structured fields and redact secrets, authentication material, and user-authored content by default.
+Do not use ad-hoc `print` calls in application code. The structured logger should redact secrets, authentication material, and user-authored content by default.
 
 ## Dependencies
 
