@@ -15,6 +15,7 @@ void main() {
   testWidgets('exposes localized quiz progress and timer semantics', (
     WidgetTester tester,
   ) async {
+    addTearDown(tester.ensureSemantics().dispose);
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(
