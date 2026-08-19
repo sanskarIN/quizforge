@@ -1,0 +1,179 @@
+name: Finalize Baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/finalize-baseline.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    name: Fix, verify, and record baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository for verified maintenance commits
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+
+      - name: Fix localization resource identifiers reserved by Dart
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          arb = Path("lib/l10n/app_en.arb")
+          text = arb.read_text(encoding="utf-8")
+          text = text.replace('"import": "Import"', '"importLabel": "Import"')
+          text = text.replace('"export": "Export"', '"exportLabel": "Export"')
+          arb.write_text(text, encoding="utf-8")
+
+          page = Path("lib/src/presentation/import_export_page.dart")
+          source = page.read_text(encoding="utf-8")
+          source = re.sub(r"strings\.import\b", "strings.importLabel", source)
+          source = re.sub(r"strings\.export\b", "strings.exportLabel", source)
+          page.write_text(source, encoding="utf-8")
+
+      - name: Commit localization identifier fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add lib/l10n/app_en.arb lib/src/presentation/import_export_page.dart
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: avoid reserved localization resource identifiers"
+          fi
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show toolchain
+        run: flutter --version
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Commit application dependency lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f pubspec.lock; then
+            git add pubspec.lock
+            if ! git diff --cached --quiet; then
+              git commit -m "build: lock Flutter application dependencies"
+            fi
+          fi
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Format project Dart sources
+        run: dart format lib test tool
+
+      - name: Commit formatter corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -u -- lib test tool
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format Dart sources"
+          fi
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run automated tests
+        run: flutter test --coverage
+
+      - name: Run deterministic benchmark smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart run tool/benchmark.dart 1000 | tee benchmark.jsonl
+
+      - name: Record verified workflow evidence
+        shell: bash
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          flutter_version="$(flutter --version | head -n 1)"
+          dart_version="$(dart --version 2>&1)"
+          cat > docs/verification.md <<EOF
+          # Verification Evidence — QuizForge 0.1.0 Baseline
+
+          Automated baseline verification completed on GitHub-hosted Ubuntu during the one-shot finalization workflow.
+
+          - Workflow run: ${RUN_URL}
+          - Source branch: main
+          - Verified local commit before evidence commit: $(git rev-parse HEAD)
+          - Flutter: ${flutter_version}
+          - Dart: ${dart_version}
+          - Host: GitHub Actions / ubuntu-latest
+          - Dependency resolution: passed
+          - Localization generation: passed
+          - Formatting: passed
+          - Static analysis: passed
+          - Automated tests: passed
+          - Deterministic 1,000-question benchmark smoke test: passed
+
+          This automated evidence does **not** replace release-build verification on Android, Web, Windows, macOS, Linux, or iOS hosts, nor the manual accessibility/screenshot review required by the release documentation.
+
+          ## Reproduce
+
+          \`\`\`bash
+          flutter pub get
+          flutter gen-l10n
+          dart format --output=none --set-exit-if-changed lib test tool
+          flutter analyze
+          flutter test --coverage
+          dart run tool/benchmark.dart 1000
+          \`\`\`
+
+          **Made by the Sanskar**
+          EOF
+
+          cat >> what_changed.md <<EOF
+
+          ## Automated verification update — 2026-08-19
+
+          GitHub Actions finalization run: ${RUN_URL}
+
+          The workflow applied the localization reserved-identifier correction, generated/locked application dependencies, formatted project Dart sources, generated localizations, passed static analysis, passed automated tests with coverage, and passed a deterministic 1,000-question benchmark smoke test before pushing its verified commits.
+
+          The workflow commits use the requested Git email \`sanskarin@outlook.in\`.
+
+          Release-platform builds, real screenshot capture, and manual accessibility review remain separate Phase 6 evidence requirements and are not falsely marked complete by this Linux CI run.
+          EOF
+
+          git add docs/verification.md what_changed.md
+          git commit -m "docs: record automated baseline verification"
+
+      - name: Push verified commits to main
+        run: git push origin HEAD:main
+
+      - name: Upload verification artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: quizforge-baseline-verification
+          path: |
+            coverage/lcov.info
+            benchmark.jsonl
+            docs/verification.md
+          if-no-files-found: error
+          retention-days: 30
