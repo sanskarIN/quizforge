@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../core/logging/app_logger.dart';
 import '../data/app_database.dart';
 import '../data/profile_preferences.dart';
 import '../data/question_bank_codec.dart';
@@ -20,15 +21,17 @@ final class QuizForgeController extends ChangeNotifier {
     required this.questionRepository,
     required this.settingsRepository,
     required this.profilePreferences,
+    AppLogger? logger,
     this.quizEngine = const QuizEngine(),
     this.codec = const QuestionBankCodec(),
     this.deduplicator = const QuestionDeduplicator(),
-  });
+  }) : logger = logger ?? AppLogger();
 
   final AppDatabase database;
   final QuestionRepository questionRepository;
   final SettingsRepository settingsRepository;
   final ProfilePreferences profilePreferences;
+  final AppLogger logger;
   final QuizEngine quizEngine;
   final QuestionBankCodec codec;
   final QuestionDeduplicator deduplicator;
@@ -58,6 +61,7 @@ final class QuizForgeController extends ChangeNotifier {
     _loading = true;
     _errorMessage = null;
     notifyListeners();
+    logger.info('app.initialize.started');
     try {
       _settings = await settingsRepository.load();
       _questions = await questionRepository.loadAll();
@@ -79,8 +83,19 @@ final class QuizForgeController extends ChangeNotifier {
       await profilePreferences.saveActiveProfileId(_activeProfile!.id);
       await _refreshProfileData();
       _leaderboard = await database.loadLeaderboard();
+      logger.info(
+        'app.initialize.completed',
+        fields: <String, Object?>{
+          'questionCount': _questions.length,
+          'profileCount': _profiles.length,
+        },
+      );
     } on Object catch (error) {
-      _errorMessage = 'Unable to initialize QuizForge: $error';
+      logger.error(
+        'app.initialize.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      _errorMessage = 'Unable to initialize QuizForge. Please try again.';
     } finally {
       _loading = false;
       notifyListeners();
@@ -117,38 +132,36 @@ final class QuizForgeController extends ChangeNotifier {
   Future<void> addQuestion(Question question) async {
     final List<String> errors = question.validate();
     if (errors.isNotEmpty) {
+      logger.warning(
+        'question.create.rejected',
+        fields: <String, Object?>{'errorCount': errors.length},
+      );
       throw ArgumentError(errors.join(' '));
     }
     final DuplicateReport report =
         deduplicator.partition(<Question>[question], existing: _questions);
     if (report.unique.isEmpty) {
+      logger.warning('question.create.duplicate');
       throw ArgumentError('A question with the same id or content already exists.');
     }
     await questionRepository.saveAll(report.unique);
     _questions = <Question>[..._questions, ...report.unique];
     _errorMessage = null;
+    logger.info('question.create.completed');
     notifyListeners();
   }
 
   Future<QuestionBankImportResult> importJson(String source) async {
     final QuestionBankImportResult result =
         codec.decodeJson(source, existing: _questions);
-    if (result.questions.isNotEmpty) {
-      await questionRepository.saveAll(result.questions);
-      _questions = <Question>[..._questions, ...result.questions];
-      notifyListeners();
-    }
+    await _persistImportResult(result, format: 'json');
     return result;
   }
 
   Future<QuestionBankImportResult> importCsv(String source) async {
     final QuestionBankImportResult result =
         codec.decodeCsv(source, existing: _questions);
-    if (result.questions.isNotEmpty) {
-      await questionRepository.saveAll(result.questions);
-      _questions = <Question>[..._questions, ...result.questions];
-      notifyListeners();
-    }
+    await _persistImportResult(result, format: 'csv');
     return result;
   }
 
@@ -170,6 +183,10 @@ final class QuizForgeController extends ChangeNotifier {
     _profiles = <PlayerProfile>[..._profiles, profile];
     _leaderboard = await database.loadLeaderboard();
     await selectProfile(profile.id);
+    logger.info(
+      'profile.create.completed',
+      fields: <String, Object?>{'profileCount': _profiles.length},
+    );
   }
 
   Future<void> selectProfile(String profileId) async {
@@ -180,6 +197,7 @@ final class QuizForgeController extends ChangeNotifier {
     _activeProfile = selected;
     await profilePreferences.saveActiveProfileId(selected.id);
     await _refreshProfileData();
+    logger.info('profile.select.completed');
     notifyListeners();
   }
 
@@ -201,6 +219,10 @@ final class QuizForgeController extends ChangeNotifier {
       updated.remove(questionId);
     }
     _bookmarkIds = updated;
+    logger.info(
+      'bookmark.changed',
+      fields: <String, Object?>{'bookmarked': nextValue},
+    );
     notifyListeners();
   }
 
@@ -212,12 +234,21 @@ final class QuizForgeController extends ChangeNotifier {
     await database.saveAttempt(profile.id, result);
     _progress = await database.loadProgress(profile.id);
     _leaderboard = await database.loadLeaderboard();
+    logger.info(
+      'quiz.completed',
+      fields: <String, Object?>{
+        'questionCount': result.totalCount,
+        'correctCount': result.correctCount,
+        'bestStreak': result.bestStreak,
+      },
+    );
     notifyListeners();
   }
 
   Future<void> updateSettings(AppSettings settings) async {
     _settings = settings;
     await settingsRepository.save(settings);
+    logger.info('settings.updated');
     notifyListeners();
   }
 
@@ -227,6 +258,26 @@ final class QuizForgeController extends ChangeNotifier {
     }
     _errorMessage = null;
     notifyListeners();
+  }
+
+  Future<void> _persistImportResult(
+    QuestionBankImportResult result, {
+    required String format,
+  }) async {
+    if (result.questions.isNotEmpty) {
+      await questionRepository.saveAll(result.questions);
+      _questions = <Question>[..._questions, ...result.questions];
+      notifyListeners();
+    }
+    logger.info(
+      'question.import.completed',
+      fields: <String, Object?>{
+        'format': format,
+        'acceptedCount': result.questions.length,
+        'duplicateCount': result.duplicates.length,
+        'errorCount': result.errors.length,
+      },
+    );
   }
 
   Future<void> _refreshProfileData() async {
