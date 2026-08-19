@@ -8,18 +8,23 @@ Push-triggered verification remains scoped to `main` where configured. Path-filt
 
 ## Quality gate
 
-`.github/workflows/ci.yml` verifies:
+`.github/workflows/ci.yml` verifies, in order:
 
-- dependency resolution;
+- regression tests for the repository-local Markdown and ARB validators;
+- repository-local Markdown links and image targets with `tool/check_markdown_links.py`;
+- ARB localization-catalog structure/key consistency with `tool/check_arb_catalogs.py`;
+- Flutter toolchain setup and dependency resolution;
+- capture of the resolved `pubspec.lock` as short-lived review evidence;
 - Flutter localization generation;
 - Dart formatting across `lib/`, `test/`, and `tool/`;
-- repository-local Markdown links and image targets with `tool/check_markdown_links.py`;
 - Flutter static analysis;
 - automated tests with coverage.
 
 The Markdown checker is intentionally deterministic and network-independent. It validates relative/local links and reference definitions while ignoring fenced code examples and network URLs. External HTTP availability is still a manual release review concern because third-party availability is inherently nondeterministic.
 
-The same core Flutter commands are available locally through `tool/check.sh` and `tool/check.ps1`; the documentation-link gate can be reproduced with `python3 tool/check_markdown_links.py` (or `python tool/check_markdown_links.py` on Windows where that is the configured launcher).
+The ARB checker is also stdlib-only. It rejects duplicate JSON keys, missing/non-empty locale metadata, empty/non-string messages, orphan metadata records, and translated catalogs whose message key sets diverge from the English template. `flutter gen-l10n` remains the authoritative Flutter generator check after this early structural gate.
+
+The same maintained sequence is available locally through `tool/check.sh` and `tool/check.ps1`.
 
 ## Android/Web build gate
 
@@ -47,17 +52,17 @@ A passing compile/build matrix is necessary evidence, but signing, store provisi
 
 `.github/workflows/secret-scan.yml` scans full Git history with Gitleaks on every pull request, pushes to `main`, its schedule, and manual dispatch. The checkout intentionally uses full history for this job.
 
-## Stacked pull requests
+## Stacked and consolidated pull requests
 
 When a feature is developed on top of an unmerged audit/release branch:
 
-1. Open the feature PR against that audit/release branch rather than directly against `main`.
+1. Open the feature PR against that audit/release branch rather than directly against `main` when it truly depends on the parent branch.
 2. Use the feature PR's **exact head SHA** when reading check results.
 3. Wait for all applicable feature checks to complete; queued/pending is not a pass.
 4. Merge the feature PR into the audit/release branch only after its applicable gates are acceptable.
 5. Then treat the resulting audit/release branch head as a new candidate and rerun/re-read the parent PR checks against `main`.
 
-A green child PR does not automatically make the parent release PR green because the parent head changes when the child is merged.
+When multiple parallel audit branches contain overlapping work, prefer a deliberate consolidation branch over blind branch merging when that is necessary to preserve the stronger implementation from each line. The consolidated branch becomes a new candidate and must receive its own complete final-head verification; historical green checks on source branches do not transfer automatically.
 
 ## Tagged release workflow
 
@@ -74,13 +79,18 @@ Normal development uses pull requests and the focused quality/build/security wor
 ## Local reproduction
 
 ```bash
+python3 tool/test_check_markdown_links.py
+python3 tool/test_check_arb_catalogs.py
+python3 tool/check_markdown_links.py
+python3 tool/check_arb_catalogs.py
 flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
-python3 tool/check_markdown_links.py
 flutter analyze
 flutter test --coverage
 ```
+
+Use `python` instead of `python3` on Windows when that is the configured launcher.
 
 For Android/Web build reproduction on a compatible host:
 
