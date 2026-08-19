@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
@@ -19,15 +20,19 @@ final class ReviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Review')),
+      appBar: AppBar(title: Text(strings.review)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: <Widget>[
-            _SummaryCard(result: result),
+            _SummaryCard(result: result, strings: strings),
             const SizedBox(height: AppSpacing.lg),
-            Text('Answer review', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              strings.answerReview,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.md),
             for (int index = 0; index < questions.length; index += 1) ...<Widget>[
               _ReviewCard(
@@ -35,6 +40,7 @@ final class ReviewPage extends StatelessWidget {
                 evaluation: result.evaluations[index],
                 bookmarked: controller.bookmarkIds.contains(questions[index].id),
                 onBookmark: () => controller.toggleBookmark(questions[index].id),
+                strings: strings,
               ),
               const SizedBox(height: AppSpacing.md),
             ],
@@ -46,9 +52,13 @@ final class ReviewPage extends StatelessWidget {
 }
 
 final class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.result});
+  const _SummaryCard({
+    required this.result,
+    required this.strings,
+  });
 
   final QuizResult result;
+  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +70,22 @@ final class _SummaryCard extends StatelessWidget {
           runSpacing: AppSpacing.md,
           alignment: WrapAlignment.spaceBetween,
           children: <Widget>[
-            _Metric(label: 'Score', value: '${result.percentage.toStringAsFixed(0)}%'),
-            _Metric(label: 'Correct', value: '${result.correctCount}/${result.totalCount}'),
-            _Metric(label: 'Best streak', value: '${result.bestStreak}'),
-            _Metric(label: 'Time', value: _formatDuration(result.duration)),
+            _Metric(
+              label: strings.score,
+              value: '${result.percentage.toStringAsFixed(0)}%',
+            ),
+            _Metric(
+              label: strings.correct,
+              value: '${result.correctCount}/${result.totalCount}',
+            ),
+            _Metric(
+              label: strings.bestStreak,
+              value: '${result.bestStreak}',
+            ),
+            _Metric(
+              label: strings.time,
+              value: _formatDuration(result.duration),
+            ),
           ],
         ),
       ),
@@ -105,12 +127,14 @@ final class _ReviewCard extends StatelessWidget {
     required this.evaluation,
     required this.bookmarked,
     required this.onBookmark,
+    required this.strings,
   });
 
   final Question question;
   final QuestionEvaluation evaluation;
   final bool bookmarked;
   final Future<void> Function() onBookmark;
+  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
@@ -135,16 +159,24 @@ final class _ReviewCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: bookmarked ? 'Remove bookmark' : 'Bookmark question',
+                  tooltip: bookmarked
+                      ? strings.removeBookmark
+                      : strings.bookmarkQuestion,
                   onPressed: onBookmark,
                   icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            Text('Your answer: ${_displayAnswers(evaluation.submittedAnswers)}'),
+            Text(
+              '${strings.yourAnswer}: '
+              '${_displayAnswers(evaluation.submittedAnswers, strings.noAnswer)}',
+            ),
             const SizedBox(height: AppSpacing.xs),
-            Text('Correct answer: ${_displayAnswers(question.correctAnswers)}'),
+            Text(
+              '${strings.correctAnswer}: '
+              '${_displayAnswers(question.correctAnswers, strings.noAnswer)}',
+            ),
             if (question.explanation.trim().isNotEmpty) ...<Widget>[
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -158,9 +190,9 @@ final class _ReviewCard extends StatelessWidget {
     );
   }
 
-  static String _displayAnswers(Iterable<String> answers) {
+  static String _displayAnswers(Iterable<String> answers, String noAnswerLabel) {
     if (answers.isEmpty) {
-      return 'No answer';
+      return noAnswerLabel;
     }
     return answers.join(', ');
   }
