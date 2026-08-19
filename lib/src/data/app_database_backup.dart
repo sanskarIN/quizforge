@@ -68,8 +68,14 @@ final class DatabaseBackupSnapshot {
       if (attempt.correctCount != correctCount) {
         errors.add('Quiz attempt correct-answer count is inconsistent.');
       }
-      final int bestStreak = _bestStreak(attempt.evaluations);
-      if (attempt.bestStreak != bestStreak) {
+      final bool streakOutOfRange =
+          attempt.bestStreak > attempt.correctCount ||
+          attempt.bestStreak > attempt.questionCount ||
+          (attempt.correctCount == 0 && attempt.bestStreak != 0) ||
+          (attempt.correctCount > 0 && attempt.bestStreak == 0) ||
+          (attempt.correctCount == attempt.questionCount &&
+              attempt.bestStreak != attempt.questionCount);
+      if (streakOutOfRange) {
         errors.add('Quiz attempt best streak is inconsistent.');
       }
       if (!attempt.earnedScore.isFinite || attempt.earnedScore < 0) {
@@ -109,22 +115,6 @@ final class DatabaseBackupSnapshot {
       }
     }
     return errors;
-  }
-
-  static int _bestStreak(Iterable<QuestionEvaluation> evaluations) {
-    int current = 0;
-    int best = 0;
-    for (final QuestionEvaluation evaluation in evaluations) {
-      if (evaluation.correct) {
-        current += 1;
-        if (current > best) {
-          best = current;
-        }
-      } else {
-        current = 0;
-      }
-    }
-    return best;
   }
 }
 
