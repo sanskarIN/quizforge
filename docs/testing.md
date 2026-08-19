@@ -7,12 +7,14 @@ QuizForge treats tests as executable product requirements rather than placeholde
 Run:
 
 ```bash
-dart format --output=none --set-exit-if-changed lib test
+flutter pub get
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test --coverage
 ```
 
-CI runs the same core checks on pushes and pull requests targeting `main`.
+CI runs the same source-quality checks on pushes and pull requests targeting `main`; dedicated workflows add Android/Web and desktop/Apple platform build gates plus dependency and secret scanning.
 
 ## Current coverage areas
 
@@ -22,19 +24,22 @@ CI runs the same core checks on pushes and pull requests targeting `main`.
 - answer normalization;
 - duplicate fingerprints;
 - exact-set scoring;
+- canonical true/false scoring;
 - accepted short-answer variants;
 - deterministic seeded selection;
 - category/difficulty/tag filtering;
-- result percentage, duration, and streak calculations.
+- result percentage, duration, and streak calculations;
+- private-room protocol validation and fail-closed disabled transport behavior.
 
-### Codec tests
+### Codec and fuzz tests
 
 - JSON round trips;
 - CSV round trips;
 - quoted commas/quotes;
 - malformed JSON;
 - malformed CSV quoting;
-- duplicate handling against an existing bank.
+- duplicate handling against an existing bank;
+- deterministic malformed-input/fuzz cases that ensure parser failures are reported rather than escaping as uncontrolled crashes.
 
 ### Database integration tests
 
@@ -45,11 +50,24 @@ An in-memory SQLite database exercises:
 - bookmarks;
 - transactional attempt persistence;
 - progress aggregation;
-- leaderboard aggregation.
+- category statistics;
+- leaderboard aggregation;
+- local activity/data reset behavior.
 
-### Widget tests
+The current schema is version 1, so there is no historical schema migration path to exercise yet. The first released schema change must add both migration code and an old-version-to-new-version migration test before it can be merged.
 
-Initial widget coverage verifies rendering of a playable question, metadata, choices, and progress indicator.
+### Widget and journey tests
+
+Widget coverage includes:
+
+- onboarding content;
+- question creator validation/preview behavior;
+- JSON question-bank import and report rendering;
+- custom quiz setup;
+- localized quiz metadata and choices;
+- timer/progress accessibility semantics with semantics explicitly enabled;
+- settings sections and the required project credit;
+- a primary one-question play → finish → review journey, including score, correct answer, and explanation rendering.
 
 ## Required tests for future changes
 
@@ -60,18 +78,18 @@ Initial widget coverage verifies rendering of a playable question, metadata, cho
 - New settings should test defaults, persistence, and UI behavior.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
 
-## End-to-end targets
+## Remaining end-to-end expansion targets
 
-Primary journeys to automate before release-candidate status:
+The current widget journey covers quiz completion and review. Additional high-value journeys to automate when reliable host/platform fixtures are introduced are:
 
-1. first launch and starter data creation;
-2. start and finish a quiz;
-3. review explanations and bookmark a question;
-4. create and play a custom question;
-5. export and re-import a question bank;
-6. switch local profiles and verify independent bookmarks/progress;
-7. change accessibility/theme preferences and restart;
-8. recover gracefully from malformed imports.
+1. complete first launch and starter-data initialization through the real app bootstrap;
+2. create a custom question, persist it, and immediately play it;
+3. export and re-import a complete question bank through platform clipboard/file adapters;
+4. switch local profiles and verify independent bookmarks/progress through the full UI;
+5. change accessibility/theme preferences and verify persistence across an app restart boundary;
+6. recover gracefully from malformed imports through the complete navigation flow.
+
+These should use deterministic local fixtures and must not require production credentials or an external service.
 
 ## Determinism
 
@@ -79,19 +97,19 @@ Tests must not depend on the current clock when an explicit date/seed can be sup
 
 ## Parser fuzz/property testing
 
-The JSON/CSV boundary is a good candidate for property/fuzz testing. Desired invariants include:
+The repository includes deterministic fuzz-style malformed-input coverage without adding an unnecessary property-testing dependency. Important invariants remain:
 
 - encoding then decoding a valid question preserves its semantic fields;
 - arbitrary malformed input never causes an uncontrolled application crash;
 - duplicate partitioning never emits the same id/fingerprint twice in the accepted set;
 - CSV quote handling either parses deterministically or reports a format error.
 
-This remains a roadmap item until a lightweight maintained Dart testing dependency is selected and verified.
+A dedicated property-testing package should be added only if it provides materially stronger coverage and passes dependency/security review.
 
 ## Performance checks
 
-Performance tests should use generated fictional data at defined sizes. Do not add arbitrary benchmark numbers without measuring on documented hardware/toolchains. See `docs/performance.md`.
+Performance tests use generated fictional data. `tool/benchmark.dart` exercises deterministic quiz selection plus JSON/CSV encode/decode paths and is included in the formatting gate. Do not add arbitrary benchmark targets without measuring on documented hardware/toolchains. See `docs/performance.md` and `docs/benchmarking.md`.
 
 ## Manual accessibility review
 
-Before a release candidate, manually verify keyboard navigation, visible focus, scalable text, screen-reader semantics, high-contrast status comprehension, and reduced-motion behavior on representative platforms.
+Before a release candidate, manually verify keyboard navigation, visible focus, scalable text, screen-reader semantics, high-contrast status comprehension, and reduced-motion behavior on representative platforms. Automated semantics tests increase confidence but do not replace assistive-technology review.
