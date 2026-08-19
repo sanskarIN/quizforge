@@ -5,6 +5,7 @@ This document records evidence for the consolidated QuizForge **2.7.4** release 
 ## Candidate identity
 
 - Application/package version: `2.7.4+1`
+- In-app/About public version: `2.7.4`
 - Intended public tag after verification: `v2.7.4`
 - Database schema version: `1`
 - Local-backup format version: `1`
@@ -20,17 +21,20 @@ This document records evidence for the consolidated QuizForge **2.7.4** release 
 
 PR #12 deliberately consolidates the strongest implementation from the parallel branches instead of blindly merging overlapping store/controller refactors. The newer recent-attempt feature and Phase 6 persistence/import/security work remain the base; the full local-backup feature, ARB validation tooling, repository-validator tests, and useful documentation from the parallel audit line were ported into that stronger base and then audited further.
 
-The 2.7.4 continuation additionally aligns package/versioning/changelog metadata and introduces an early release-metadata consistency validator so version drift can fail in pull-request CI before a tag exists.
+The 2.7.4 continuation aligns package/in-app/versioning/changelog metadata and introduces an early release-metadata consistency validator so version drift can fail in pull-request CI before a tag exists.
 
 ## Source/configuration audit completed on the consolidated branch
 
 - [x] Package version set to `2.7.4+1`.
+- [x] `AppConstants.version` updated from stale `0.1.0` to public version `2.7.4` used by the About page.
+- [x] About-page widget regression now expects `Installed version: 2.7.4`.
 - [x] `CHANGELOG.md` contains the dated 2.7.4 release-candidate entry and a fresh Unreleased section.
 - [x] Stable-version compatibility documentation replaces the stale pre-1.0 policy.
-- [x] `docs/versioning.md` records `2.7.4+1` and intended tag `v2.7.4`.
+- [x] `docs/versioning.md` records `2.7.4+1`, in-app `2.7.4`, and intended tag `v2.7.4`.
 - [x] Dedicated 2.7.4 release notes added.
-- [x] Stdlib-only release-metadata validator added for package/changelog/versioning consistency.
-- [x] Release-metadata validator regression tests include invalid package versions, missing matching changelog releases, duplicate/out-of-order releases, stable-major/pre-1.0 mismatch, missing version/tag documentation, and historical zero-major release parsing.
+- [x] Stdlib-only release-metadata validator added for package/in-app/changelog/versioning consistency.
+- [x] Release metadata rejects leading-zero SemVer components and invalid calendar dates in recognized changelog release headings.
+- [x] Release-metadata validator regression tests include invalid package/build syntax, leading-zero components, mismatched/non-semantic in-app versions, invalid changelog dates, missing matching changelog releases, duplicate/out-of-order releases, stable-major/pre-1.0 mismatch, missing version/tag documentation, and historical zero-major release parsing.
 - [x] Local/CI/tag workflows are wired to run the release-metadata validator and its tests alongside Markdown/ARB gates.
 - [x] Phase 6 import, question-validation, localization, persistence-ordering, privacy/logging, workflow, and documentation hardening retained.
 - [x] Recent per-profile attempt history retained with bounded newest-first queries, profile isolation, cleanup behavior, UI rendering, and documentation/tests.
@@ -54,7 +58,7 @@ The 2.7.4 continuation additionally aligns package/versioning/changelog metadata
 - [x] CI runs repository-validator tests plus Markdown, ARB, and release-metadata validation before Flutter setup.
 - [x] Tagged release automation runs the same repository-validator tests and structural/metadata gates before Flutter setup/packaging.
 - [x] Local shell/PowerShell quality scripts run the maintained validator + Flutter sequence.
-- [x] README, architecture, privacy, data lifecycle, development, setup, testing, CI, release, roadmap, changelog, versioning, verification, release-notes, and local-backup documentation are synchronized with the maintained behavior.
+- [x] Contributor, issue, pull-request, repository-settings, README, architecture, privacy, data lifecycle, development, setup, testing, CI, release, roadmap, changelog, versioning, verification, release-notes, and local-backup documentation are synchronized with the maintained behavior.
 
 ## Required automated gates
 
@@ -62,15 +66,15 @@ These remain unchecked until the **final 2.7.4 pull-request head** completes suc
 
 - [ ] Markdown-validator regression tests succeed.
 - [ ] ARB-validator regression tests succeed.
-- [ ] Release-metadata-validator regression tests succeed.
+- [ ] Release-metadata-validator regression tests succeed, including in-app version/canonical syntax/date cases.
 - [ ] Repository-local Markdown validation succeeds.
 - [ ] ARB localization-catalog validation succeeds.
-- [ ] Release metadata validation succeeds.
+- [ ] Release metadata validation succeeds for `2.7.4+1` / in-app `2.7.4` / `v2.7.4` documentation.
 - [ ] Dependency installation succeeds and produces/reuses the expected lockfile.
 - [ ] Flutter localization generation succeeds.
 - [ ] Dart formatting check succeeds for `lib`, `test`, and `tool`.
 - [ ] Flutter analyzer succeeds with no errors.
-- [ ] Unit/widget/integration/application tests succeed.
+- [ ] Unit/widget/integration/application tests succeed, including the About 2.7.4 version regression.
 - [ ] Android build succeeds.
 - [ ] Web build succeeds.
 - [ ] Windows build succeeds on a Windows runner.
@@ -85,15 +89,15 @@ These remain unchecked until the **final 2.7.4 pull-request head** completes suc
 
 Earlier PR #12 heads produced applicable CI, Build Gate, Platform Build Matrix, Dependency Review, OSV, and Secret Scan runs that remained queued/pending. Those observations are historical evidence only because every source/documentation commit creates a newer candidate head.
 
-The 2.7.4 metadata/tooling commits intentionally supersede the previous head. Therefore **all final release decisions must use the newest PR #12 head and only runs associated with that exact SHA**. Do not transfer a green or queued status from an older head to the current candidate.
+The 2.7.4 metadata/tooling commits, including the in-app version fix and release-validator hardening, supersede those previous heads. Therefore **all final release decisions must use the newest PR #12 head and only runs associated with that exact SHA**. Do not transfer a green or queued status from an older head to the current candidate.
 
-As of this continuation, GitHub Actions runner availability remains a verification blocker rather than a passing result. Queued/pending runs are not converted into successes.
+GitHub Actions runner availability is a verification blocker rather than a passing result while runs remain queued/pending. Queued/pending runs are not converted into successes.
 
 ## Tooling limitation during this audit session
 
 The execution environment used for repository editing did not provide a local Flutter/Dart toolchain, and direct container cloning/network access to GitHub was unavailable. Therefore local `flutter pub get`, `flutter gen-l10n`, Dart formatting, Flutter analyzer, Flutter tests, or platform builds could not be truthfully recorded as executed in that environment.
 
-The stdlib release-metadata parsing logic was source-audited and its key regex behavior was independently sanity-checked for both current `2.7.4+1` metadata and historical `0.1.0` changelog recognition, but the authoritative repository validator/test result remains the final-head CI execution or a real checkout execution.
+The stdlib release-metadata parsing logic was source-audited and its key regular expressions were independently sanity-checked for current `2.7.4+1`, in-app `2.7.4`, historical `0.1.0`, and rejection of `2.07.4+1`. That is useful source-level validation, but the authoritative repository validator/test result remains final-head CI execution or a real checkout execution.
 
 This is an evidence limitation, not a reason to waive any gate.
 
@@ -130,6 +134,7 @@ The read-only CI workflow resolves dependencies and uploads the generated applic
 
 - [ ] Clean checkout setup follows `docs/setup.md` without undocumented steps.
 - [ ] Generated platform runners are reproducible from documented commands.
+- [ ] Installed/About screen displays public version `2.7.4` on the built release candidate.
 - [ ] Drift persistence is exercised on Android and Web release builds as applicable.
 - [ ] Web refresh/reload preserves expected local data in the built artifact.
 - [ ] Local backup restore is manually exercised with fictional custom question/profile/bookmark/history/settings data on applicable release targets.
@@ -159,10 +164,13 @@ The read-only CI workflow resolves dependencies and uploads the generated applic
 | 2026-08-19 | Attempt bounds and bookmark-pair identity hardened | PASS (source audit) | focused validation + regression tests |
 | 2026-08-19 | Markdown/ARB validator tests and CI/local gates aligned | PASS (source/config audit) | quality workflow/scripts/tool commits |
 | 2026-08-19 | 2.7.4 package/changelog/versioning identity established | PASS (source/config audit) | `pubspec.yaml`, `CHANGELOG.md`, `docs/versioning.md` |
-| 2026-08-19 | Release-metadata validator and tests added | PASS (source/config audit) | `tool/check_release_metadata.py` + regression suite |
-| 2026-08-19 | Release-metadata zero-major history bug fixed | PASS (source audit) | regex correction + historical `0.1.0` regression fixture |
+| 2026-08-19 | In-app/About version corrected to 2.7.4 | PASS (source audit) | `AppConstants.version` + About widget regression |
+| 2026-08-19 | Release-metadata validator binds in-app and package versions | PASS (source/config audit) | validator + mismatch/non-semantic regression tests |
+| 2026-08-19 | Release-metadata canonical syntax/date hardening added | PASS (source audit) | leading-zero and invalid-date validation + regression tests |
+| 2026-08-19 | Release-metadata zero-major history bug fixed | PASS (source audit) | historical `0.1.0` regression fixture |
 | 2026-08-19 | CI/local/tag release metadata gates aligned | PASS (source/config audit) | workflow/script commits |
 | 2026-08-19 | Dedicated 2.7.4 release notes added | PASS (documentation) | `docs/release-notes-2.7.4.md` |
+| 2026-08-19 | Contributor/issue/PR/repository policy synchronized | PASS (documentation/config audit) | current 2.7.4 templates and repository-setting guidance |
 | 2026-08-19 | Final-head automated verification | PENDING | newest PR #12 head must complete applicable checks successfully |
 | 2026-08-19 | Release-candidate lockfile | BLOCKED | `pubspec.lock` not yet generated/reviewed/committed from verified Flutter evidence |
 | 2026-08-19 | Manual platform/accessibility/screenshots/backup smoke verification | PENDING | requires verified built application on representative targets |
