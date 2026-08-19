@@ -10,8 +10,8 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Editor, attributes, ignore, and environment templates
 - [x] Community/security/privacy/support baseline
 - [x] CI quality workflow
-- [ ] Finish all issue/PR templates and dependency automation
-- [ ] Complete architecture decision records
+- [x] Issue/PR templates and dependency automation
+- [x] Architecture decision records
 
 ## Phase 1 — End-to-end MVP
 
@@ -33,56 +33,71 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] JSON/CSV import/export
 - [x] Duplicate handling
 - [x] Theme and accessibility preferences
-- [ ] In-app profile rename/delete with safe data handling
-- [ ] Dedicated data backup/restore and reset controls
-- [ ] Rich quiz setup screen for custom category/difficulty/tag/count combinations
+- [x] In-app profile rename/delete with safe data handling
+- [x] Local activity/data reset controls
+- [x] Rich quiz setup for category/difficulty/tag/count/timing combinations
+- [x] English localization resources and localized product navigation/workflows
 
 ## Phase 3 — Advanced quality and platform work
 
 - [x] Offline-first product boundary
 - [x] Private-room multiplayer transport abstraction, disabled by default
+- [x] Structured logging with sensitive-field/content redaction
+- [x] Reproducible generated platform-runner strategy and host build matrix
 - [ ] Implement and security-review an optional private-room transport
-- [ ] Complete platform-specific icon/splash generation
-- [ ] Add robust file-picker based import/export where supported
-- [ ] Validate web database worker/WASM packaging on a clean build
-- [ ] Profile large question banks and add pagination/virtualization thresholds where measured
+- [ ] Complete platform-specific production icon/splash generation and visual verification
+- [ ] Add file-picker based import/export where supported and justified
+- [ ] Validate web database worker/WASM packaging in a verified release build
+- [ ] Profile very large banks on representative hardware and add pagination/virtualization only when measured thresholds justify it
 
 ## Phase 4 — Verification depth
 
 - [x] Domain tests
 - [x] Codec regression tests
+- [x] Deterministic malformed-input/fuzz-style codec tests
 - [x] In-memory database integration tests
-- [x] Initial widget test
-- [ ] Add controller integration tests with injected preference fakes
-- [ ] Add creator/import widget journeys
-- [ ] Add end-to-end primary-journey automation
-- [ ] Add parser fuzz/property testing
-- [ ] Add accessibility-focused automated checks where tool support is stable
-- [ ] Establish measured performance benchmarks for large banks
+- [x] Creator/import/settings/quiz widget tests
+- [x] Accessibility semantics tests for quiz progress/timing
+- [x] Private-room disabled-transport/fail-closed tests
+- [x] Primary quiz completion → review journey automation
+- [x] Deterministic benchmark harness for quiz selection and codecs
+- [ ] Expand full-app restart/platform-adapter end-to-end journeys after stable test adapters are available
+- [ ] Record representative performance measurements and budgets from documented hardware/toolchains
 
 ## Phase 5 — Release engineering and documentation
 
 - [x] README and core policy documentation
-- [ ] Complete setup/development/testing/release/troubleshooting/accessibility/performance docs
-- [ ] Add release workflow and reproducible packaging scripts
-- [ ] Replace documentation screenshot placeholders with verified captures
-- [ ] Produce release notes and platform artifacts
+- [x] Setup/development/testing/release/troubleshooting/accessibility/performance documentation
+- [x] CI, dependency review, vulnerability scan, secret scan, and platform build workflows
+- [x] Tagged Android/Web release workflow with checksums and generated notes
+- [x] Verified-screenshot capture policy and gallery placeholders
+- [ ] Replace screenshot placeholders with real captures from the verified release candidate
+- [ ] Produce signed/store-specific artifacts where applicable without committing credentials
 
 ## Phase 6 — Final audit
 
+- [x] Create a dedicated Phase 6 audit branch and evidence ledger
+- [x] Remove obsolete self-mutating bootstrap workflows from maintained release-candidate changes
+- [x] Harden import resource limits and question content bounds
+- [x] Harden settings persistence ordering and user-facing error/log handling
+- [x] Refresh documentation and local check scripts to match maintained CI commands
+- [ ] Generate and review the application `pubspec.lock` in a verified Flutter environment
 - [ ] Build from a clean checkout
-- [ ] Pass formatting, analysis, tests, dependency/security checks
-- [ ] Validate database creation/migrations
+- [ ] Pass formatting, localization generation, analysis, and all automated tests on the final head
+- [ ] Pass dependency review, OSV scan, and secret scan on the final head
+- [ ] Validate database creation on release builds; add migration verification when schema version first changes
 - [ ] Verify Android release build
-- [ ] Verify web release build
+- [ ] Verify web release build and Drift persistence/reload behavior
 - [ ] Verify supported desktop builds on their host operating systems
-- [ ] Check documentation links
+- [ ] Verify iOS no-codesign compile and complete signing/device validation outside the public repository
+- [ ] Check documentation links in the release candidate
 - [ ] Manually review keyboard navigation, screen-reader semantics, scalable text, contrast, and reduced motion
-- [ ] Confirm no credentials or private data are committed
-- [ ] Tag a verified release candidate
+- [ ] Capture verified real screenshots using fictional data
+- [ ] Confirm the final release-candidate history contains no credentials or private user data
+- [ ] Tag a verified release candidate only after all applicable blockers above are cleared
 
 ## Future ideas after the baseline is verified
 
-Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer statistics, optional cloud-independent LAN rooms, localization packs, and educator-oriented batch authoring.
+Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer statistics, optional cloud-independent LAN rooms, additional localization packs, and educator-oriented batch authoring.
 
 **Made by the Sanskar**
