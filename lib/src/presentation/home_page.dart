@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
+import 'about_page.dart';
 import 'creator_page.dart';
 import 'dashboard_page.dart';
 import 'question_bank_page.dart';
@@ -99,7 +100,12 @@ final class _HomePageState extends State<HomePage> {
           title: Text(strings.appName),
           actions: <Widget>[
             _ProfileChip(controller: widget.controller),
-            const SizedBox(width: AppSpacing.md),
+            IconButton(
+              tooltip: strings.about,
+              onPressed: _openAbout,
+              icon: const Icon(Icons.info_outline),
+            ),
+            const SizedBox(width: AppSpacing.sm),
           ],
         ),
         body: Row(
@@ -124,7 +130,11 @@ final class _HomePageState extends State<HomePage> {
         title: Text(strings.appName),
         actions: <Widget>[
           _ProfileChip(controller: widget.controller),
-          const SizedBox(width: AppSpacing.sm),
+          IconButton(
+            tooltip: strings.about,
+            onPressed: _openAbout,
+            icon: const Icon(Icons.info_outline),
+          ),
         ],
       ),
       body: body,
@@ -141,6 +151,14 @@ final class _HomePageState extends State<HomePage> {
       return;
     }
     setState(() => _selectedIndex = value);
+  }
+
+  void _openAbout() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => const AboutPage(),
+      ),
+    );
   }
 }
 
