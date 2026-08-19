@@ -29,4 +29,46 @@ ORDER BY question_count DESC, q.category COLLATE NOCASE ASC
       );
     }).toList(growable: false);
   }
+
+  Future<List<AttemptSummary>> loadRecentAttempts(
+    String profileId, {
+    int limit = 10,
+  }) async {
+    if (limit < 1 || limit > 100) {
+      throw ArgumentError.value(limit, 'limit', 'Must be between 1 and 100.');
+    }
+    final List<QueryRow> rows = await customSelect(
+      '''
+SELECT
+  id,
+  started_at,
+  completed_at,
+  correct_count,
+  question_count,
+  best_streak,
+  earned_score
+FROM attempts
+WHERE profile_id = ?
+ORDER BY completed_at DESC, id DESC
+LIMIT ?
+''',
+      variables: <Variable<Object>>[
+        Variable<String>(profileId),
+        Variable<int>(limit),
+      ],
+    ).get();
+
+    return rows.map((QueryRow row) {
+      return AttemptSummary(
+        id: row.read<int>('id'),
+        startedAt: DateTime.fromMillisecondsSinceEpoch(row.read<int>('started_at')),
+        completedAt:
+            DateTime.fromMillisecondsSinceEpoch(row.read<int>('completed_at')),
+        correctCount: row.read<int>('correct_count'),
+        questionCount: row.read<int>('question_count'),
+        bestStreak: row.read<int>('best_streak'),
+        earnedScore: row.read<double>('earned_score'),
+      );
+    }).toList(growable: false);
+  }
 }
