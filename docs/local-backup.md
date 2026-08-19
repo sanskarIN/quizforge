@@ -18,6 +18,18 @@ Backup format version 1 can contain:
 
 Because profile names, authored questions, and submitted answers can be present, a backup archive should be treated as **private user data**.
 
+## Minimum restorable state
+
+Version 1 describes a complete initialized QuizForge state, not an arbitrary partial database dump. A valid whole-app archive therefore requires:
+
+- at least one valid question;
+- at least one valid local profile;
+- a non-null active-profile id that references one of the archived profiles.
+
+These requirements match normal initialized application invariants. QuizForge seeds starter questions when the question bank is empty, creates a default profile when no profile exists, and selects a local profile during initialization. Accepting a hand-crafted archive that omitted those required records would make restore silently create/select state that was not actually present in the archive.
+
+Failing closed is more predictable: an archive either describes a directly restorable whole-app state or is rejected before destructive replacement begins.
+
 ## What it does not contain
 
 The current logical backup does not include:
@@ -41,6 +53,12 @@ The top-level archive is JSON and identifies itself with:
 
 The archive is deliberately versioned so a future incompatible layout can fail closed rather than being silently misread.
 
+## Archive size boundary
+
+Version 1 imposes a maximum supported source length before parsing. The same boundary is applied after encoding: if the complete generated archive would exceed the supported restore limit, export fails instead of copying an archive that the same QuizForge version would immediately reject solely for size.
+
+This is a local in-process safety boundary, not a claim that every archive below the limit is equally inexpensive on every device. Representative large-bank performance should still be profiled before changing the limit.
+
 ## Validation before restore
 
 Restore treats the pasted archive as untrusted data. Before replacing current database state, QuizForge validates at least:
@@ -48,6 +66,7 @@ Restore treats the pasted archive as untrusted data. Before replacing current da
 - maximum archive text size;
 - JSON structure and required primitive types;
 - backup format and version;
+- required minimum question/profile/active-profile state;
 - question domain validity;
 - duplicate question ids and duplicate normalized question content;
 - local profile validity and duplicate profile ids;
@@ -121,6 +140,7 @@ Before a release candidate is described as backup-verified, the exact candidate 
 
 - codec round-trip tests;
 - invalid/dangling-reference rejection tests;
+- required minimum-state rejection tests;
 - order-independent attempt-summary validation regression coverage;
 - database export/reset/restore integration coverage;
 - controller rollback coverage for cross-store failures;
