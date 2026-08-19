@@ -6,10 +6,10 @@ import '../core/logging/app_logger.dart';
 import '../data/app_database.dart';
 import '../data/app_database_maintenance.dart';
 import '../data/app_database_progress.dart';
-import '../data/profile_preferences.dart';
+import '../data/profile_selection_store.dart';
 import '../data/question_bank_codec.dart';
-import '../data/question_repository.dart';
-import '../data/settings_repository.dart';
+import '../data/question_store.dart';
+import '../data/settings_store.dart';
 import '../domain/app_settings.dart';
 import '../domain/profile.dart';
 import '../domain/question.dart';
@@ -30,9 +30,9 @@ final class QuizForgeController extends ChangeNotifier {
   }) : logger = logger ?? AppLogger();
 
   final AppDatabase database;
-  final QuestionRepository questionRepository;
-  final SettingsRepository settingsRepository;
-  final ProfilePreferences profilePreferences;
+  final QuestionStore questionRepository;
+  final SettingsStore settingsRepository;
+  final ProfileSelectionStore profilePreferences;
   final AppLogger logger;
   final QuizEngine quizEngine;
   final QuestionBankCodec codec;
