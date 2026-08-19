@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../data/app_database.dart';
@@ -35,6 +37,7 @@ final class QuizForgeController extends ChangeNotifier {
   String? _errorMessage;
   List<Question> _questions = const <Question>[];
   List<PlayerProfile> _profiles = const <PlayerProfile>[];
+  List<LeaderboardEntry> _leaderboard = const <LeaderboardEntry>[];
   PlayerProfile? _activeProfile;
   Set<String> _bookmarkIds = const <String>{};
   ProgressSummary _progress = const ProgressSummary();
@@ -44,6 +47,8 @@ final class QuizForgeController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<Question> get questions => List<Question>.unmodifiable(_questions);
   List<PlayerProfile> get profiles => List<PlayerProfile>.unmodifiable(_profiles);
+  List<LeaderboardEntry> get leaderboard =>
+      List<LeaderboardEntry>.unmodifiable(_leaderboard);
   PlayerProfile? get activeProfile => _activeProfile;
   Set<String> get bookmarkIds => Set<String>.unmodifiable(_bookmarkIds);
   ProgressSummary get progress => _progress;
@@ -73,6 +78,7 @@ final class QuizForgeController extends ChangeNotifier {
       );
       await profilePreferences.saveActiveProfileId(_activeProfile!.id);
       await _refreshProfileData();
+      _leaderboard = await database.loadLeaderboard();
     } on Object catch (error) {
       _errorMessage = 'Unable to initialize QuizForge: $error';
     } finally {
@@ -162,6 +168,7 @@ final class QuizForgeController extends ChangeNotifier {
     }
     await database.upsertProfile(profile);
     _profiles = <PlayerProfile>[..._profiles, profile];
+    _leaderboard = await database.loadLeaderboard();
     await selectProfile(profile.id);
   }
 
@@ -204,6 +211,7 @@ final class QuizForgeController extends ChangeNotifier {
     }
     await database.saveAttempt(profile.id, result);
     _progress = await database.loadProgress(profile.id);
+    _leaderboard = await database.loadLeaderboard();
     notifyListeners();
   }
 
@@ -234,7 +242,7 @@ final class QuizForgeController extends ChangeNotifier {
 
   @override
   void dispose() {
-    database.close();
+    unawaited(database.close());
     super.dispose();
   }
 }
