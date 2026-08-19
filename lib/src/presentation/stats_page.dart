@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/profile.dart';
@@ -14,15 +15,19 @@ final class StatsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final ProgressSummary progress = controller.progress;
+    final String? profileName = controller.activeProfile?.displayName;
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: <Widget>[
-          Text('Progress', style: Theme.of(context).textTheme.headlineMedium),
+          Text(strings.progress, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Statistics for ${controller.activeProfile?.displayName ?? 'the active profile'}.',
+            profileName == null
+                ? strings.progressForProfile
+                : strings.progressForNamedProfile(profileName),
           ),
           const SizedBox(height: AppSpacing.xl),
           LayoutBuilder(
@@ -42,32 +47,32 @@ final class StatsPage extends StatelessWidget {
                 children: <Widget>[
                   _StatCard(
                     icon: Icons.quiz_outlined,
-                    label: 'Quizzes completed',
+                    label: strings.quizzesCompleted,
                     value: '${progress.quizCount}',
                   ),
                   _StatCard(
                     icon: Icons.fact_check_outlined,
-                    label: 'Questions answered',
+                    label: strings.questionsAnswered,
                     value: '${progress.questionCount}',
                   ),
                   _StatCard(
                     icon: Icons.track_changes,
-                    label: 'Accuracy',
+                    label: strings.accuracy,
                     value: '${progress.accuracy.toStringAsFixed(1)}%',
                   ),
                   _StatCard(
                     icon: Icons.local_fire_department_outlined,
-                    label: 'Best streak',
+                    label: strings.bestStreak,
                     value: '${progress.bestStreak}',
                   ),
                   _StatCard(
                     icon: Icons.schedule_outlined,
-                    label: 'Play time',
-                    value: _formatDuration(progress.playTime),
+                    label: strings.playTime,
+                    value: _formatDuration(strings, progress.playTime),
                   ),
                   _StatCard(
                     icon: Icons.bookmark_outline,
-                    label: 'Bookmarks',
+                    label: strings.bookmarks,
                     value: '${controller.bookmarkIds.length}',
                   ),
                 ],
@@ -75,17 +80,18 @@ final class StatsPage extends StatelessWidget {
             },
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Category performance', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'Accuracy is calculated from questions you have actually answered in each category.',
+          Text(
+            strings.categoryPerformance,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(strings.categoryPerformanceDescription),
           const SizedBox(height: AppSpacing.md),
           if (controller.categoryProgress.isEmpty)
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(AppSpacing.lg),
-                child: Text('Complete a quiz to see category-level statistics.'),
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Text(strings.completeQuizForCategoryStats),
               ),
             )
           else
@@ -101,7 +107,10 @@ final class StatsPage extends StatelessWidget {
                     leading: const Icon(Icons.category_outlined),
                     title: Text(item.category),
                     subtitle: Text(
-                      '${item.correctCount} correct of ${item.questionCount} answered',
+                      strings.correctOfAnswered(
+                        item.correctCount,
+                        item.questionCount,
+                      ),
                     ),
                     trailing: Text(
                       '${item.accuracy.toStringAsFixed(1)}%',
@@ -112,17 +121,18 @@ final class StatsPage extends StatelessWidget {
               ),
             ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Local leaderboard', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'Leaderboard points are stored only on this device and are calculated from correct answers plus best-streak bonuses.',
+          Text(
+            strings.localLeaderboard,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(strings.leaderboardDescription),
           const SizedBox(height: AppSpacing.md),
           if (controller.leaderboard.isEmpty)
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(AppSpacing.lg),
-                child: Text('Complete a quiz to populate the leaderboard.'),
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Text(strings.completeQuizForLeaderboard),
               ),
             )
           else
@@ -138,9 +148,11 @@ final class StatsPage extends StatelessWidget {
                   return ListTile(
                     leading: CircleAvatar(child: Text('${index + 1}')),
                     title: Text(entry.displayName),
-                    subtitle: Text('${entry.accuracy.toStringAsFixed(1)}% accuracy'),
+                    subtitle: Text(
+                      strings.accuracyValue(entry.accuracy.toStringAsFixed(1)),
+                    ),
                     trailing: Text(
-                      '${entry.points} pts',
+                      strings.pointsValue(entry.points),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     selected: active,
@@ -153,11 +165,17 @@ final class StatsPage extends StatelessWidget {
     );
   }
 
-  static String _formatDuration(Duration value) {
+  static String _formatDuration(AppLocalizations strings, Duration value) {
     if (value.inHours > 0) {
-      return '${value.inHours}h ${value.inMinutes.remainder(60)}m';
+      return strings.durationHoursMinutes(
+        value.inHours,
+        value.inMinutes.remainder(60),
+      );
     }
-    return '${value.inMinutes}m ${value.inSeconds.remainder(60)}s';
+    return strings.durationMinutesSeconds(
+      value.inMinutes,
+      value.inSeconds.remainder(60),
+    );
   }
 }
 
