@@ -251,6 +251,36 @@ WHERE profile_id = ?
     );
   }
 
+  Future<List<LeaderboardEntry>> loadLeaderboard() async {
+    final List<QueryRow> rows = await customSelect(
+      '''
+SELECT
+  p.id AS profile_id,
+  p.display_name AS display_name,
+  CAST(COALESCE(SUM(a.correct_count) * 100 + MAX(a.best_streak) * 10, 0) AS INTEGER) AS points,
+  CAST(
+    CASE
+      WHEN COALESCE(SUM(a.question_count), 0) = 0 THEN 0.0
+      ELSE 100.0 * SUM(a.correct_count) / SUM(a.question_count)
+    END
+    AS REAL
+  ) AS accuracy
+FROM profiles p
+LEFT JOIN attempts a ON a.profile_id = p.id
+GROUP BY p.id, p.display_name
+ORDER BY points DESC, accuracy DESC, p.display_name COLLATE NOCASE ASC
+''',
+    ).get();
+    return rows.map((QueryRow row) {
+      return LeaderboardEntry(
+        profileId: row.read<String>('profile_id'),
+        displayName: row.read<String>('display_name'),
+        points: row.read<int>('points'),
+        accuracy: row.read<double>('accuracy'),
+      );
+    }).toList(growable: false);
+  }
+
   Future<void> setBookmark({
     required String profileId,
     required String questionId,
