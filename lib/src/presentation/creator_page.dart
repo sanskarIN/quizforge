@@ -141,7 +141,7 @@ final class _CreatorPageState extends State<CreatorPage> {
                   .map(
                     (Difficulty value) => DropdownMenuEntry<Difficulty>(
                       value: value,
-                      label: _titleCase(value.name),
+                      label: _difficultyLabel(strings, value),
                     ),
                   )
                   .toList(growable: false),
@@ -315,11 +315,18 @@ final class _CreatorPageState extends State<CreatorPage> {
     }
   }
 
-  static String _titleCase(String value) {
-    if (value.isEmpty) {
-      return value;
+  static String _difficultyLabel(
+    AppLocalizations strings,
+    Difficulty difficulty,
+  ) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return strings.easy;
+      case Difficulty.medium:
+        return strings.medium;
+      case Difficulty.hard:
+        return strings.hard;
     }
-    return '${value[0].toUpperCase()}${value.substring(1)}';
   }
 }
 
