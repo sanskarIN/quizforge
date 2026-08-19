@@ -14,6 +14,7 @@ void main() {
   testWidgets('renders localized question metadata and answer choices', (
     WidgetTester tester,
   ) async {
+    addTearDown(tester.ensureSemantics().dispose);
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(
