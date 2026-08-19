@@ -1,0 +1,65 @@
+name: Feature request
+description: Propose a coherent improvement to QuizForge
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the user problem first. QuizForge prefers focused, maintainable features over feature-count growth.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or user need
+      description: What is difficult or impossible today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful product behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Main area
+      options:
+        - Quiz play and scoring
+        - Question authoring
+        - Import/export and backup
+        - Profiles and statistics
+        - Accessibility and UX
+        - Persistence
+        - Optional multiplayer architecture
+        - Build, CI, or release engineering
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Accessibility, privacy, security, and migration impact
+      description: Note any new data, permissions, network behavior, schema changes, or accessibility considerations.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and the roadmap for similar work.
+          required: true
+        - label: This request keeps core offline functionality usable without forced sign-in or donation.
+          required: true
