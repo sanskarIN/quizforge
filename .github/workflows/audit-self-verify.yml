@@ -1,0 +1,210 @@
+name: Final Audit Self Verify
+
+on:
+  push:
+    branches:
+      - audit/quizforge-0.1.0-final
+    paths:
+      - .github/workflows/audit-self-verify.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Final audit source verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Check out audit branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+
+      - name: Apply idempotent compatibility corrections
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          import re
+
+          pubspec = Path("pubspec.yaml")
+          pubspec_text = pubspec.read_text(encoding="utf-8")
+          pubspec_text = re.sub(r"^  intl:.*\n", "", pubspec_text, flags=re.MULTILINE)
+          pubspec.write_text(pubspec_text, encoding="utf-8")
+
+          arb = Path("lib/l10n/app_en.arb")
+          arb_text = arb.read_text(encoding="utf-8")
+          arb_text = arb_text.replace('"import": "Import"', '"importLabel": "Import"')
+          arb_text = arb_text.replace('"export": "Export"', '"exportLabel": "Export"')
+          arb.write_text(arb_text, encoding="utf-8")
+
+          import_page = Path("lib/src/presentation/import_export_page.dart")
+          source = import_page.read_text(encoding="utf-8")
+          source = re.sub(r"strings\.import\b", "strings.importLabel", source)
+          source = re.sub(r"strings\.export\b", "strings.exportLabel", source)
+          import_page.write_text(source, encoding="utf-8")
+
+          app = Path("lib/src/app.dart")
+          app_source = app.read_text(encoding="utf-8")
+          old_scaler = '''final TextScaler scaler = settings.largeText
+                ? const TextScaler.linear(1.15)
+                : media.textScaler;'''
+          new_scaler = '''final double systemScaleAtBody = media.textScaler.scale(14) / 14;
+            final TextScaler scaler =
+                settings.largeText && systemScaleAtBody < 1.15
+                    ? const TextScaler.linear(1.15)
+                    : media.textScaler;'''
+          if old_scaler in app_source:
+              app_source = app_source.replace(old_scaler, new_scaler)
+          app.write_text(app_source, encoding="utf-8")
+
+          benchmark = Path("tool/benchmark.dart")
+          if benchmark.exists():
+              benchmark_source = benchmark.read_text(encoding="utf-8")
+              if not benchmark_source.startswith("// ignore_for_file: avoid_print"):
+                  benchmark.write_text(
+                      "// ignore_for_file: avoid_print\n\n" + benchmark_source,
+                      encoding="utf-8",
+                  )
+
+          semantics_test = Path("test/widget/quiz_accessibility_test.dart")
+          if semantics_test.exists():
+              semantics_source = semantics_test.read_text(encoding="utf-8")
+              needle = '''  ) async {
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());'''
+              replacement = '''  ) async {
+    addTearDown(tester.ensureSemantics().dispose);
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());'''
+              if needle in semantics_source and "ensureSemantics" not in semantics_source:
+                  semantics_source = semantics_source.replace(needle, replacement)
+              semantics_test.write_text(semantics_source, encoding="utf-8")
+
+          data = json.loads(arb.read_text(encoding="utf-8"))
+          dart_reserved = {
+              "abstract", "as", "assert", "async", "await", "base", "break",
+              "case", "catch", "class", "const", "continue", "covariant",
+              "default", "deferred", "do", "dynamic", "else", "enum",
+              "export", "extends", "extension", "external", "factory", "false",
+              "final", "finally", "for", "Function", "get", "hide", "if",
+              "implements", "import", "in", "interface", "is", "late", "library",
+              "mixin", "new", "null", "on", "operator", "part", "required",
+              "rethrow", "return", "sealed", "set", "show", "static", "super",
+              "switch", "sync", "this", "throw", "true", "try", "typedef", "var",
+              "void", "when", "while", "with", "yield"
+          }
+          invalid = sorted(
+              key for key in data
+              if not key.startswith("@") and key in dart_reserved
+          )
+          if invalid:
+              raise SystemExit(f"Reserved Dart localization identifiers remain: {invalid}")
+
+      - name: Commit compatibility corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add pubspec.yaml lib/l10n/app_en.arb lib/src/app.dart lib/src/presentation/import_export_page.dart test/widget/quiz_accessibility_test.dart tool/benchmark.dart
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: harden final audit compatibility"
+          fi
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Commit verified application lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.lock
+          git add pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "build: lock final audit dependencies"
+          fi
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Format tracked Dart sources
+        run: dart format lib test tool
+
+      - name: Commit formatter output
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -u -- lib test tool
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format final audit sources"
+          fi
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Automated test suite
+        run: flutter test --coverage
+
+      - name: Deterministic benchmark smoke test
+        run: dart run tool/benchmark.dart 1000 | tee audit-benchmark.jsonl
+
+      - name: Materialize Android and Web runners
+        run: flutter create . --platforms=android,web
+
+      - name: Resolve and regenerate after runner generation
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build Android debug APK
+        run: flutter build apk --debug
+
+      - name: Build Web release bundle
+        run: flutter build web --release
+
+      - name: Record audit self-verification evidence
+        shell: bash
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          cat > docs/audit-self-verification.md <<EOF
+          # Final Audit Self-Verification
+
+          The audit branch completed its self-verification workflow before this evidence commit.
+
+          - Workflow: ${RUN_URL}
+          - Verified source commit: $(git rev-parse HEAD)
+          - Flutter: $(flutter --version | head -n 1)
+          - Dart: $(dart --version 2>&1)
+          - Dependency resolution: passed
+          - Localization generation: passed
+          - Formatting verification: passed
+          - Flutter static analysis: passed
+          - Automated tests with coverage: passed
+          - Deterministic benchmark smoke test: passed
+          - Android debug APK build: passed
+          - Web release build: passed
+
+          Linux/Windows/macOS/iOS compilation is covered by the repository's separate platform build matrix. Store signing, publication, screenshots, and manual assistive-technology review remain distinct release operations.
+
+          **Made by the Sanskar**
+          EOF
+          git add docs/audit-self-verification.md
+          git commit -m "docs: record final audit self-verification"
+
+      - name: Push verified audit commits
+        run: git push origin HEAD:audit/quizforge-0.1.0-final
