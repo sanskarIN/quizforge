@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../data/question_bank_codec.dart';
@@ -35,26 +36,28 @@ final class _ImportExportPageState extends State<ImportExportPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    final String formatLabel = _formatLabel(strings, _format);
     final String exportText = _format == _BankFormat.json
         ? widget.controller.exportJson()
         : widget.controller.exportCsv();
     return Scaffold(
-      appBar: AppBar(title: const Text('Import / export')),
+      appBar: AppBar(title: Text(strings.importExport)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: <Widget>[
             SegmentedButton<_BankFormat>(
-              segments: const <ButtonSegment<_BankFormat>>[
+              segments: <ButtonSegment<_BankFormat>>[
                 ButtonSegment<_BankFormat>(
                   value: _BankFormat.json,
-                  icon: Icon(Icons.data_object),
-                  label: Text('JSON'),
+                  icon: const Icon(Icons.data_object),
+                  label: Text(strings.json),
                 ),
                 ButtonSegment<_BankFormat>(
                   value: _BankFormat.csv,
-                  icon: Icon(Icons.table_chart_outlined),
-                  label: Text('CSV'),
+                  icon: const Icon(Icons.table_chart_outlined),
+                  label: Text(strings.csv),
                 ),
               ],
               selected: <_BankFormat>{_format},
@@ -63,14 +66,12 @@ final class _ImportExportPageState extends State<ImportExportPage> {
               },
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Export', style: Theme.of(context).textTheme.titleLarge),
+            Text(strings.export, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'The preview contains your complete local question bank. Copy it and save it with the matching file extension.',
-            ),
+            Text(strings.exportDescription),
             const SizedBox(height: AppSpacing.md),
             Semantics(
-              label: '${_format.name.toUpperCase()} export preview',
+              label: strings.exportPreviewSemantics(formatLabel),
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 280),
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -99,26 +100,24 @@ final class _ImportExportPageState extends State<ImportExportPage> {
                     return;
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Question bank copied to clipboard.')),
+                    SnackBar(content: Text(strings.exportCopied)),
                   );
                 },
                 icon: const Icon(Icons.copy_all_outlined),
-                label: const Text('Copy export'),
+                label: Text(strings.copyExport),
               ),
             ),
             const SizedBox(height: AppSpacing.xxl),
-            Text('Import', style: Theme.of(context).textTheme.titleLarge),
+            Text(strings.import, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Paste a QuizForge JSON or CSV question bank. Invalid rows are rejected and duplicate ids/content are skipped.',
-            ),
+            Text(strings.importDescription),
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _importController,
               minLines: 8,
               maxLines: 16,
               decoration: InputDecoration(
-                labelText: 'Paste ${_format.name.toUpperCase()} data',
+                labelText: strings.pasteFormatData(formatLabel),
                 alignLabelWithHint: true,
               ),
             ),
@@ -136,7 +135,7 @@ final class _ImportExportPageState extends State<ImportExportPage> {
                     }
                   },
                   icon: const Icon(Icons.content_paste),
-                  label: const Text('Paste'),
+                  label: Text(strings.paste),
                 ),
                 FilledButton.icon(
                   onPressed: _importing
@@ -145,7 +144,9 @@ final class _ImportExportPageState extends State<ImportExportPage> {
                           unawaited(_import());
                         },
                   icon: const Icon(Icons.file_download_outlined),
-                  label: Text(_importing ? 'Importing…' : 'Validate and import'),
+                  label: Text(
+                    _importing ? strings.importing : strings.validateAndImport,
+                  ),
                 ),
               ],
             ),
@@ -160,10 +161,11 @@ final class _ImportExportPageState extends State<ImportExportPage> {
   }
 
   Future<void> _import() async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final String source = _importController.text.trim();
     if (source.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Paste question-bank data first.')),
+        SnackBar(content: Text(strings.pasteQuestionBankFirst)),
       );
       return;
     }
@@ -182,15 +184,22 @@ final class _ImportExportPageState extends State<ImportExportPage> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('The validated import could not be saved locally.'),
-          ),
+          SnackBar(content: Text(strings.importSaveFailed)),
         );
       }
     } finally {
       if (mounted) {
         setState(() => _importing = false);
       }
+    }
+  }
+
+  static String _formatLabel(AppLocalizations strings, _BankFormat format) {
+    switch (format) {
+      case _BankFormat.json:
+        return strings.json;
+      case _BankFormat.csv:
+        return strings.csv;
     }
   }
 }
@@ -202,17 +211,18 @@ final class _ImportSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Import report', style: Theme.of(context).textTheme.titleMedium),
+            Text(strings.importReport, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppSpacing.sm),
-            Text('Imported: ${result.questions.length}'),
-            Text('Duplicates skipped: ${result.duplicates.length}'),
-            Text('Errors: ${result.errors.length}'),
+            Text(strings.importedCount(result.questions.length)),
+            Text(strings.duplicatesSkippedCount(result.duplicates.length)),
+            Text(strings.errorsCount(result.errors.length)),
             if (result.errors.isNotEmpty) ...<Widget>[
               const SizedBox(height: AppSpacing.md),
               for (final String error in result.errors.take(10))
@@ -221,7 +231,7 @@ final class _ImportSummary extends StatelessWidget {
                   child: Text('• $error'),
                 ),
               if (result.errors.length > 10)
-                Text('…and ${result.errors.length - 10} more errors.'),
+                Text(strings.moreErrorsCount(result.errors.length - 10)),
             ],
           ],
         ),
