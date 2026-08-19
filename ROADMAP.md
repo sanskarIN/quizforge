@@ -36,7 +36,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] In-app profile rename/delete with safe data handling
 - [x] Local activity reset and full local-data reset controls
 - [x] Rich quiz setup screen for custom category/difficulty/tag/count combinations
-- [ ] Dedicated full-app backup/restore archive beyond question-bank interchange
+- [x] Versioned local-data backup/restore archive beyond question-bank interchange
 
 ## Phase 3 — Advanced quality and platform work
 
@@ -90,6 +90,6 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 
 ## Future ideas after the baseline is verified
 
-Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer statistics, optional cloud-independent LAN rooms, localization packs, educator-oriented batch authoring, and a versioned full-app backup format.
+Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer statistics, optional cloud-independent LAN rooms, localization packs, educator-oriented batch authoring, and future backup-format migrations when the local-data schema evolves.
 
 **Made by the Sanskar**
