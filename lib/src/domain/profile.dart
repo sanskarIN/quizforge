@@ -43,6 +43,21 @@ final class ProgressSummary {
   Duration get playTime => Duration(seconds: totalSeconds);
 }
 
+final class CategoryProgress {
+  const CategoryProgress({
+    required this.category,
+    required this.questionCount,
+    required this.correctCount,
+  });
+
+  final String category;
+  final int questionCount;
+  final int correctCount;
+
+  double get accuracy =>
+      questionCount == 0 ? 0 : (correctCount / questionCount) * 100;
+}
+
 final class LeaderboardEntry {
   const LeaderboardEntry({
     required this.profileId,
