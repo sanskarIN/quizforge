@@ -125,18 +125,66 @@
   "readyToSave": "Ready to save",
   "json": "JSON",
   "csv": "CSV",
-  "export": "Export",
+  "exportLabel": "Export",
   "exportDescription": "The preview contains your complete local question bank. Copy it and save it with the matching file extension.",
+  "exportPreviewSemantics": "{format} export preview",
+  "@exportPreviewSemantics": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
   "copyExport": "Copy export",
   "exportCopied": "Question bank copied to clipboard.",
-  "import": "Import",
+  "importLabel": "Import",
   "importDescription": "Paste a QuizForge JSON or CSV question bank. Invalid rows are rejected and duplicate ids/content are skipped.",
   "paste": "Paste",
+  "pasteFormatData": "Paste {format} data",
+  "@pasteFormatData": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
   "validateAndImport": "Validate and import",
   "importing": "Importing…",
   "pasteQuestionBankFirst": "Paste question-bank data first.",
   "importSaveFailed": "The validated import could not be saved locally.",
   "importReport": "Import report",
+  "importedCount": "Imported: {count}",
+  "@importedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "duplicatesSkippedCount": "Duplicates skipped: {count}",
+  "@duplicatesSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorsCount": "Errors: {count}",
+  "@errorsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moreErrors": "…and {count} more errors.",
+  "@moreErrors": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "progressForProfile": "Statistics for the active local profile.",
   "quizzesCompleted": "Quizzes completed",
   "questionsAnswered": "Questions answered",
