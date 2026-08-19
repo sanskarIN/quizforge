@@ -19,7 +19,7 @@ QuizForge is a production-minded **Simple Quiz Game** that supports multiple-cho
 - Quiz creator with validation, preview-ready domain models, duplicate detection, and import/export codecs.
 - Offline-first local persistence architecture using SQLite through Drift.
 - Daily quiz and seeded random practice sets.
-- Streaks, bookmarks, attempt history, progress summaries, and a local leaderboard.
+- Streaks, bookmarks, recent attempt history, progress summaries, and a local leaderboard.
 - Light, dark, and system themes plus large-text and reduced-motion preferences.
 - Keyboard-friendly responsive UI foundations for mobile, desktop, and web.
 - Persistence-ordering safeguards for settings and local-profile changes, with rollback regression coverage.
@@ -87,7 +87,9 @@ flutter analyze
 flutter test --coverage
 ```
 
-The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, controller persistence/rollback ordering, validation, accessibility semantics, settings, and the primary quiz-completion journey. See [`docs/testing.md`](docs/testing.md).
+The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, recent-attempt ordering/rendering, controller persistence/rollback ordering, validation, accessibility semantics, settings, and the primary quiz-completion journey. See [`docs/testing.md`](docs/testing.md).
+
+Recent-attempt storage, refresh behavior, deletion semantics, and privacy boundaries are documented in [`docs/progress-history.md`](docs/progress-history.md).
 
 ## Build and release
 
