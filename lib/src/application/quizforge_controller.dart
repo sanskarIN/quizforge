@@ -176,7 +176,7 @@ final class QuizForgeController extends ChangeNotifier {
 
   Future<void> createProfile(String displayName) async {
     final PlayerProfile profile = PlayerProfile(
-      id: 'profile-${DateTime.now().microsecondsSinceEpoch}',
+      id: _nextProfileId(),
       displayName: displayName.trim(),
       createdAt: DateTime.now(),
     );
@@ -231,6 +231,7 @@ final class QuizForgeController extends ChangeNotifier {
     if (errors.isNotEmpty) {
       throw ArgumentError(errors.join(' '));
     }
+
     await database.renameProfile(
       profileId: current.id,
       displayName: updated.displayName,
@@ -239,7 +240,28 @@ final class QuizForgeController extends ChangeNotifier {
         .map((PlayerProfile profile) => profile.id == current.id ? updated : profile)
         .toList(growable: false);
     _activeProfile = updated;
-    _leaderboard = await database.loadLeaderboard();
+
+    try {
+      _leaderboard = await database.loadLeaderboard();
+    } on Object catch (error) {
+      logger.warning(
+        'leaderboard.refresh.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      _leaderboard = _leaderboard
+          .map(
+            (LeaderboardEntry entry) => entry.profileId == updated.id
+                ? LeaderboardEntry(
+                    profileId: entry.profileId,
+                    displayName: updated.displayName,
+                    points: entry.points,
+                    accuracy: entry.accuracy,
+                  )
+                : entry,
+          )
+          .toList(growable: false);
+    }
+
     logger.info('profile.rename.completed');
     notifyListeners();
   }
@@ -352,9 +374,14 @@ final class QuizForgeController extends ChangeNotifier {
     if (profile == null) {
       throw StateError('No active profile.');
     }
+
     await database.saveAttempt(profile.id, result);
-    await _refreshProfileData();
-    _leaderboard = await database.loadLeaderboard();
+    await _refreshProfileDataBestEffort(
+      profile.id,
+      failureEvent: 'quiz.progress_refresh.failed',
+    );
+    await _refreshLeaderboardBestEffort('quiz.leaderboard_refresh.failed');
+
     logger.info(
       'quiz.completed',
       fields: <String, Object?>{
@@ -371,9 +398,13 @@ final class QuizForgeController extends ChangeNotifier {
     if (profile == null) {
       throw StateError('No active profile.');
     }
+
     await database.clearProfileActivity(profile.id);
-    await _refreshProfileData();
-    _leaderboard = await database.loadLeaderboard();
+    _bookmarkIds = const <String>{};
+    _progress = const ProgressSummary();
+    _categoryProgress = const <CategoryProgress>[];
+    await _refreshLeaderboardBestEffort('profile.activity.leaderboard_refresh.failed');
+
     logger.info('profile.activity.cleared');
     notifyListeners();
   }
@@ -476,10 +507,46 @@ final class QuizForgeController extends ChangeNotifier {
     );
   }
 
+  Future<void> _refreshProfileDataBestEffort(
+    String profileId, {
+    required String failureEvent,
+  }) async {
+    try {
+      _applyProfileData(await _loadProfileData(profileId));
+    } on Object catch (error) {
+      logger.warning(
+        failureEvent,
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+    }
+  }
+
+  Future<void> _refreshLeaderboardBestEffort(String failureEvent) async {
+    try {
+      _leaderboard = await database.loadLeaderboard();
+    } on Object catch (error) {
+      logger.warning(
+        failureEvent,
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+    }
+  }
+
   void _applyProfileData(_ProfileData data) {
     _bookmarkIds = data.bookmarkIds;
     _progress = data.progress;
     _categoryProgress = data.categoryProgress;
+  }
+
+  String _nextProfileId() {
+    final String base = 'profile-${DateTime.now().microsecondsSinceEpoch}';
+    String candidate = base;
+    int suffix = 2;
+    while (_profiles.any((PlayerProfile profile) => profile.id == candidate)) {
+      candidate = '$base-$suffix';
+      suffix += 1;
+    }
+    return candidate;
   }
 
   void _clearInMemoryState() {
