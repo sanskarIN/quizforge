@@ -41,9 +41,10 @@ Controller-level tests use explicit persistence interfaces and an in-memory data
 - active-profile selection remains unchanged when the active-profile preference write fails;
 - failed new-profile activation removes the newly inserted profile instead of leaving a hidden local record;
 - failed replacement-profile preference persistence prevents active-profile deletion before any database row is removed;
-- settings remain unchanged in memory when settings persistence fails.
+- settings remain unchanged in memory when settings persistence fails;
+- a partial local-data reset failure still reloads controller state from the stores that actually remain, rather than leaving stale pre-reset state in memory.
 
-These tests protect the rule that user-visible controller state and durable local state must not claim a preference was saved before its persistence operation succeeds.
+These tests protect the rule that user-visible controller state and durable local state must not claim a preference was saved before its persistence operation succeeds. Post-write derived-data refreshes are isolated from the primary write so a successful persisted action is not incorrectly reported as failed only because a statistics/leaderboard refresh could not be read immediately afterward.
 
 ### Codec and fuzz tests
 
@@ -51,7 +52,9 @@ These tests protect the rule that user-visible controller state and durable loca
 - CSV round trips;
 - quoted commas/quotes;
 - malformed JSON;
-- malformed CSV quoting;
+- malformed/unclosed CSV quoting;
+- quotes embedded in unquoted CSV fields;
+- characters after a quoted CSV field closes;
 - duplicate handling against an existing bank;
 - deterministic malformed-input/fuzz cases that ensure parser failures are reported rather than escaping as uncontrolled crashes.
 
@@ -75,6 +78,9 @@ The current schema is version 1, so there is no historical schema migration path
 Widget coverage includes:
 
 - onboarding content;
+- real app-shell first-run routing with an injectable onboarding store;
+- onboarding skip/completion transition into the dashboard;
+- completed-onboarding startup into the dashboard;
 - question creator validation/preview behavior;
 - JSON question-bank import and report rendering;
 - custom quiz setup;
@@ -95,17 +101,17 @@ Widget coverage includes:
 - Scoring changes must add deterministic domain tests.
 - New settings should test defaults, persistence, and UI behavior.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
+- Platform clipboard/file-adapter changes should test success and failure paths with platform-channel fakes where practical.
 
 ## Remaining end-to-end expansion targets
 
-The current widget journey covers quiz completion and review. Additional high-value journeys to automate when reliable host/platform fixtures are introduced are:
+The app shell and primary quiz journey are covered with deterministic in-memory dependencies. Additional high-value journeys to automate when reliable host/platform fixtures are introduced are:
 
-1. complete first launch and starter-data initialization through the real app bootstrap;
-2. create a custom question, persist it, and immediately play it;
-3. export and re-import a complete question bank through platform clipboard/file adapters;
-4. switch local profiles and verify independent bookmarks/progress through the full UI;
-5. change accessibility/theme preferences and verify persistence across an app restart boundary;
-6. recover gracefully from malformed imports through the complete navigation flow.
+1. create a custom question, persist it, and immediately play it;
+2. export and re-import a complete question bank through platform clipboard/file adapters;
+3. switch local profiles and verify independent bookmarks/progress through the full UI;
+4. change accessibility/theme preferences and verify persistence across a real app restart/platform-preference boundary;
+5. recover gracefully from malformed imports through the complete navigation flow.
 
 These should use deterministic local fixtures and must not require production credentials or an external service.
 
