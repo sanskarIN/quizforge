@@ -18,6 +18,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Test Markdown link checker
+        run: python tool/test_check_markdown_links.py
+
+      - name: Check repository-local Markdown links
+        run: python tool/check_markdown_links.py .
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
         with:
