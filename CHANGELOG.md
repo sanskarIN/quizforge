@@ -40,7 +40,7 @@ The project follows Semantic Versioning where practical.
 
 - Local quality scripts now test the repository validators, validate Markdown/ARB inputs, resolve dependencies, generate localizations, check formatting across `lib`, `test`, and `tool`, analyze, and run tests with coverage.
 - CI now exercises stdlib-only repository validators before Flutter setup so malformed documentation/localization inputs fail early.
-- Tagged releases require a committed application lockfile, use enforced locked dependency resolution, verify the lockfile is not rewritten, validate documentation links, and rerun formatting/analysis/tests before Android/Web artifacts and checksums are published.
+- Tagged releases now run Markdown/ARB validator regression tests and repository input validation before Flutter setup, then require a committed application lockfile, use enforced locked dependency resolution, verify the lockfile is not rewritten, and rerun formatting/analysis/tests before Android/Web artifacts and checksums are published.
 - Platform build workflows cancel superseded runs to avoid wasting runner capacity.
 - Settings are applied to in-memory state only after persistence succeeds.
 - Local-profile selection loads target profile state and persists the selected profile id before mutating visible controller state.
@@ -50,6 +50,7 @@ The project follows Semantic Versioning where practical.
 - Review UI listens for controller changes so bookmark state refreshes after toggles.
 - Statistics now surfaces recent completed attempts without duplicating attempt storage or exposing submitted answer content.
 - Local backup restore preserves the stored attempt-level streak summary while validating only order-independent streak bounds because schema version 1 does not persist original per-answer sequence.
+- Local-backup version 1 now defines a minimum directly restorable initialized state: at least one question, at least one local profile, and a non-null active-profile reference.
 - User-facing startup, import, creator, settings, statistics, backup, and quiz messages were moved toward externalized localization resources.
 - Flutter localization dependency handling now lets the Flutter SDK select its compatible `intl` version.
 - Setup, development, testing, CI, release, question-bank-format, roadmap, progress-history, backup, privacy, screenshot, and verification documentation were synchronized with the maintained repository behavior.
@@ -67,7 +68,9 @@ The project follows Semantic Versioning where practical.
 - Prevented active-profile deletion from removing the database profile before replacement-profile preference persistence succeeds.
 - Preserved original stack traces when rollback-aware profile operations rethrow persistence failures.
 - Rejected unexpected quotes in unquoted CSV fields and trailing characters after a closing quoted field.
-- Rejected local-backup snapshots with dangling references, invalid/non-finite aggregate values, impossible streak bounds, inconsistent answer/count totals, duplicate content, or invalid active-profile references.
+- Rejected local-backup snapshots with dangling references, invalid/non-finite aggregate values, impossible streak bounds, inconsistent answer/count totals, duplicate content, invalid active-profile references, missing questions, or missing profiles.
+- Rejected version-1 local-backup archives with no active-profile selection instead of silently selecting a different profile during application reload.
+- Prevented local backup export from intentionally emitting an archive larger than the same version's restore limit.
 - Avoided incorrectly recomputing historical best streak from backup answer rows after database export reordered rows by question id; schema version 1 has no stored answer-position column.
 - Added the previously missing Markdown-validator regression-test helper before wiring it into CI/local check scripts.
 - Corrected privacy documentation that still described the already-implemented in-app reset flow as future work.
@@ -77,7 +80,8 @@ The project follows Semantic Versioning where practical.
 - Imported question-bank data is validated before persistence.
 - JSON/CSV imports reject payloads larger than the documented in-process limit and reject excessive question counts.
 - CSV imports reject malformed quote structure rather than attempting ambiguous reinterpretation.
-- Local backup restore rejects archives above the supported size limit and validates format version, object references, domain records, aggregates, bookmarks, and active-profile selection before replacement.
+- Local backup restore rejects archives above the supported size limit and validates format version, minimum restorable state, object references, domain records, aggregates, bookmarks, and active-profile selection before replacement.
+- Local backup export enforces the supported restore-size boundary so an intentionally generated archive is not knowingly unusable by the same application version.
 - Local backup restore snapshots current local state first and attempts rollback if a later cross-store restore/reload step fails.
 - Backup archives are documented as private user data because they can contain profile names, authored questions, bookmarks, quiz history, and submitted answers.
 - Question validation bounds ids, prompts, categories, choices, accepted answers, tags, explanations, and time limits.
@@ -92,7 +96,7 @@ The project follows Semantic Versioning where practical.
 
 ### Verification status
 
-- Phase 6 release-candidate verification remains open until final-head GitHub Actions checks, clean build evidence, the reviewed application lockfile, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
+- Phase 6/final release-candidate verification remains open until final-head GitHub Actions checks, clean build evidence, the reviewed application lockfile, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
 - Repository-local Markdown and ARB validation are automated gates, but neither is counted as passed until it completes on the final release-candidate head.
 - Local backup has source-level regression coverage, but release-host clipboard/persistence restore smoke checks remain required before it is described as release-verified.
 - A queued, cancelled because of a newer commit, or pending workflow is not treated as a successful verification result.
