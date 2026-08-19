@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Verify and package release
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Verify tag matches pubspec version
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_version="$(awk '/^version:/ {print $2; exit}' pubspec.yaml)"
+          package_version="${package_version%%+*}"
+          test "v${package_version}" = "${GITHUB_REF_NAME}"
+
+      - name: Generate release runners
+        run: flutter create . --platforms=android,web
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Build web bundle
+        run: flutter build web --release
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk "release-artifacts/quizforge-${GITHUB_REF_NAME}-android.apk"
+          tar -C build/web -czf "release-artifacts/quizforge-${GITHUB_REF_NAME}-web.tar.gz" .
+          (cd release-artifacts && sha256sum * > SHA256SUMS.txt)
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: quizforge-${{ github.ref_name }}
+          path: release-artifacts/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            release-artifacts/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "QuizForge ${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --verify-tag
