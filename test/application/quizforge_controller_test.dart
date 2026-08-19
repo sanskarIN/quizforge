@@ -4,6 +4,7 @@ import 'package:quizforge/src/application/quizforge_controller.dart';
 import 'package:quizforge/src/core/logging/app_logger.dart';
 import 'package:quizforge/src/data/app_database.dart';
 import 'package:quizforge/src/domain/app_settings.dart';
+import 'package:quizforge/src/domain/profile.dart';
 import 'package:quizforge/src/domain/question.dart';
 
 import 'controller_fakes.dart';
