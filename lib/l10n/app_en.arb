@@ -60,6 +60,9 @@
   "allCategories": "All categories",
   "difficulty": "Difficulty",
   "allDifficulties": "All difficulties",
+  "easy": "Easy",
+  "medium": "Medium",
+  "hard": "Hard",
   "tagsAllMustMatch": "Tags (all selected tags must match)",
   "questions": "Questions",
   "timedMode": "Timed mode",
@@ -69,6 +72,27 @@
   "noMatchingSetupQuestions": "No local questions match these filters. Remove a filter or add/import matching questions.",
   "customQuizTitle": "Custom Quiz",
   "noQuestionsMatchQuiz": "No questions match this quiz.",
+  "questionProgress": "Question {current} of {total}",
+  "@questionProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "secondsShort": "{seconds}s",
+  "@secondsShort": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "secondsRemaining": "{seconds} seconds remaining",
+  "@secondsRemaining": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "trueOption": "True",
+  "falseOption": "False",
   "yourAnswer": "Your answer",
   "typeYourAnswer": "Type your answer",
   "chooseOrSkip": "Choose or enter an answer, or use Skip.",
@@ -88,6 +112,7 @@
   "review": "Review",
   "score": "Score",
   "correct": "Correct",
+  "incorrect": "Incorrect",
   "time": "Time",
   "answerReview": "Answer review",
   "removeBookmark": "Remove bookmark",
@@ -99,6 +124,12 @@
   "searchQuestions": "Search questions, categories, or tags",
   "allDifficultiesFilter": "All difficulties",
   "bookmarksOnly": "Bookmarks only",
+  "questionCountLabel": "{count} questions",
+  "@questionCountLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "noQuestionsMatch": "No questions match",
   "adjustSearchFilters": "Adjust the search or filters and try again.",
   "createQuestion": "Create a question",
@@ -117,6 +148,7 @@
   "addToQuestionBank": "Add to question bank",
   "adding": "Adding…",
   "questionAdded": "Question added to the local bank.",
+  "duplicateQuestion": "A question with the same id or content already exists.",
   "preview": "Preview",
   "promptPreviewPlaceholder": "Your prompt will appear here.",
   "shortAnswerFieldPreview": "Short-answer text field",
@@ -130,9 +162,7 @@
   "exportPreviewSemantics": "{format} export preview",
   "@exportPreviewSemantics": {
     "placeholders": {
-      "format": {
-        "type": "String"
-      }
+      "format": {"type": "String"}
     }
   },
   "copyExport": "Copy export",
@@ -143,9 +173,7 @@
   "pasteFormatData": "Paste {format} data",
   "@pasteFormatData": {
     "placeholders": {
-      "format": {
-        "type": "String"
-      }
+      "format": {"type": "String"}
     }
   },
   "validateAndImport": "Validate and import",
@@ -156,33 +184,25 @@
   "importedCount": "Imported: {count}",
   "@importedCount": {
     "placeholders": {
-      "count": {
-        "type": "int"
-      }
+      "count": {"type": "int"}
     }
   },
   "duplicatesSkippedCount": "Duplicates skipped: {count}",
   "@duplicatesSkippedCount": {
     "placeholders": {
-      "count": {
-        "type": "int"
-      }
+      "count": {"type": "int"}
     }
   },
   "errorsCount": "Errors: {count}",
   "@errorsCount": {
     "placeholders": {
-      "count": {
-        "type": "int"
-      }
+      "count": {"type": "int"}
     }
   },
   "moreErrors": "…and {count} more errors.",
   "@moreErrors": {
     "placeholders": {
-      "count": {
-        "type": "int"
-      }
+      "count": {"type": "int"}
     }
   },
   "progressForProfile": "Statistics for the active local profile.",
@@ -192,9 +212,28 @@
   "categoryPerformance": "Category performance",
   "categoryPerformanceDescription": "Accuracy is calculated from questions you have actually answered in each category.",
   "completeQuizForCategoryStats": "Complete a quiz to see category-level statistics.",
+  "categoryAnswerSummary": "{correct} correct of {answered} answered",
+  "@categoryAnswerSummary": {
+    "placeholders": {
+      "correct": {"type": "int"},
+      "answered": {"type": "int"}
+    }
+  },
   "localLeaderboard": "Local leaderboard",
   "leaderboardDescription": "Leaderboard points are stored only on this device and are calculated from correct answers plus best-streak bonuses.",
   "completeQuizForLeaderboard": "Complete a quiz to populate the leaderboard.",
+  "accuracyValue": "{value}% accuracy",
+  "@accuracyValue": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "pointsValue": "{points} pts",
+  "@pointsValue": {
+    "placeholders": {
+      "points": {"type": "int"}
+    }
+  },
   "profiles": "Profiles",
   "localProfile": "Local profile",
   "activeLocalProfile": "Active local profile",
@@ -251,6 +290,12 @@
   "resetAllConfirmDescription": "This permanently deletes profiles, history, bookmarks, custom/imported questions, and settings from this app. Starter questions and a default local profile will be recreated.",
   "resetEverything": "Reset everything",
   "resetCompleted": "QuizForge local data was reset.",
+  "linkOpenFailed": "Could not open {value}",
+  "@linkOpenFailed": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
   "actionFailed": "The requested local action could not be completed.",
   "madeBySanskar": "Made by the Sanskar"
 }
