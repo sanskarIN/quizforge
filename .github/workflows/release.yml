@@ -33,17 +33,30 @@ jobs:
           package_version="${package_version%%+*}"
           test "v${package_version}" = "${GITHUB_REF_NAME}"
 
+      - name: Require committed application lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s pubspec.lock
+          git diff --exit-code -- pubspec.lock
+
       - name: Generate release runners
         run: flutter create . --platforms=android,web
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Verify dependency resolution did not rewrite lockfile
+        run: git diff --exit-code -- pubspec.lock
 
       - name: Generate localizations
         run: flutter gen-l10n
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Validate repository-local Markdown links
+        run: python3 tool/check_markdown_links.py
 
       - name: Analyze
         run: flutter analyze
