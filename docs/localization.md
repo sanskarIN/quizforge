@@ -6,10 +6,20 @@ QuizForge ships English first, but user-interface copy is externalized through F
 
 - `l10n.yaml` configures generation.
 - `lib/l10n/app_en.arb` is the English template catalog.
-- `flutter gen-l10n` generates `lib/l10n/app_localizations.dart` and locale-specific implementation files in the working tree.
+- `tool/check_arb_catalogs.py` validates catalog structure and locale-key parity without requiring a Flutter SDK.
+- `flutter gen-l10n` generates localization Dart sources in the configured generated output location.
 - `QuizForgeApp` registers the generated delegates and supported locales.
 
 Generated Dart localization files are build outputs. Contributors should edit ARB files rather than hand-editing generated Dart.
+
+## Validate catalogs without Flutter
+
+```bash
+python tool/test_check_arb_catalogs.py
+python tool/check_arb_catalogs.py .
+```
+
+The checker rejects malformed/duplicate JSON keys, missing locale metadata, empty/non-string messages, orphan metadata, and translation catalogs whose message-key set differs from the English template.
 
 ## Generate localizations
 
@@ -18,7 +28,7 @@ flutter pub get
 flutter gen-l10n
 ```
 
-The repository quality scripts and CI run localization generation before analysis/tests.
+The repository quality workflow validates ARB catalogs before installing Flutter and then exercises Flutter's generated localization path before analysis/tests.
 
 ## Adding a language
 
@@ -26,10 +36,11 @@ The repository quality scripts and CI run localization generation before analysi
 2. Change `@@locale` to the target locale.
 3. Translate values without renaming message keys.
 4. Preserve placeholders and ICU plural/select syntax exactly when present.
-5. Run `flutter gen-l10n`.
-6. Run `tool/check.sh` or `tool/check.ps1`.
-7. Manually test compact/wide layouts and large text because translated strings can be substantially longer than English.
-8. Test screen-reader pronunciation and reading order with the target locale where platform tooling is available.
+5. Run `python tool/check_arb_catalogs.py .`.
+6. Run `flutter gen-l10n`.
+7. Run `tool/check.sh` or `tool/check.ps1`.
+8. Manually test compact/wide layouts and large text because translated strings can be substantially longer than English.
+9. Test screen-reader pronunciation and reading order with the target locale where platform tooling is available.
 
 ## Product data versus interface strings
 
