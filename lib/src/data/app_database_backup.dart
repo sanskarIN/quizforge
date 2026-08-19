@@ -64,9 +64,10 @@ final class DatabaseBackupSnapshot {
       if (attempt.completedAt.isBefore(attempt.startedAt)) {
         errors.add('Quiz attempt completion time is invalid.');
       }
-      if (attempt.questionCount < 0 ||
-          attempt.correctCount < 0 ||
-          attempt.bestStreak < 0) {
+      if (attempt.questionCount < 1 || attempt.questionCount > 100) {
+        errors.add('Quiz attempt question count must be between 1 and 100.');
+      }
+      if (attempt.correctCount < 0 || attempt.bestStreak < 0) {
         errors.add('Quiz attempt aggregate counts must not be negative.');
       }
       if (attempt.questionCount != attempt.evaluations.length) {
