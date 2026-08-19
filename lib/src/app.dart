@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'application/quizforge_controller.dart';
 import 'core/app_constants.dart';
 import 'core/theme/app_theme.dart';
+import 'data/onboarding_repository.dart';
 import 'domain/app_settings.dart';
 import 'presentation/home_page.dart';
+import 'presentation/onboarding_page.dart';
 
-final class QuizForgeApp extends StatelessWidget {
+final class QuizForgeApp extends StatefulWidget {
   const QuizForgeApp({
     required this.controller,
     super.key,
@@ -15,11 +17,25 @@ final class QuizForgeApp extends StatelessWidget {
   final QuizForgeController controller;
 
   @override
+  State<QuizForgeApp> createState() => _QuizForgeAppState();
+}
+
+final class _QuizForgeAppState extends State<QuizForgeApp> {
+  final OnboardingRepository _onboardingRepository = OnboardingRepository();
+  bool? _onboardingComplete;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOnboarding();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (BuildContext context, Widget? child) {
-        final AppSettings settings = controller.settings;
+        final AppSettings settings = widget.controller.settings;
         return MaterialApp(
           title: AppConstants.appName,
           debugShowCheckedModeBanner: false,
@@ -48,16 +64,51 @@ final class QuizForgeApp extends StatelessWidget {
   }
 
   Widget _home() {
-    if (controller.loading) {
+    if (widget.controller.loading || _onboardingComplete == null) {
       return const _LoadingPage();
     }
-    if (controller.errorMessage != null) {
+    if (widget.controller.errorMessage != null) {
       return _ErrorPage(
-        message: controller.errorMessage!,
-        onRetry: controller.initialize,
+        message: widget.controller.errorMessage!,
+        onRetry: widget.controller.initialize,
       );
     }
-    return HomePage(controller: controller);
+    if (!_onboardingComplete!) {
+      return OnboardingPage(onComplete: _completeOnboarding);
+    }
+    return HomePage(controller: widget.controller);
+  }
+
+  Future<void> _loadOnboarding() async {
+    try {
+      final bool completed = await _onboardingRepository.isCompleted();
+      if (mounted) {
+        setState(() => _onboardingComplete = completed);
+      }
+    } on Object catch (error) {
+      widget.controller.logger.warning(
+        'onboarding.load.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        // Fail open so a preference-store issue cannot block core offline use.
+        setState(() => _onboardingComplete = true);
+      }
+    }
+  }
+
+  Future<void> _completeOnboarding() async {
+    try {
+      await _onboardingRepository.markCompleted();
+    } on Object catch (error) {
+      widget.controller.logger.warning(
+        'onboarding.persist.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+    }
+    if (mounted) {
+      setState(() => _onboardingComplete = true);
+    }
   }
 
   static ThemeMode _themeMode(AppThemeMode mode) {
