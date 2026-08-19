@@ -14,6 +14,14 @@ final class SettingsRepository {
   static const String _screenReaderHintsKey = 'settings.screenReaderHints';
   static const String _confirmExitKey = 'settings.confirmBeforeExitQuiz';
 
+  static const List<String> _keys = <String>[
+    _themeKey,
+    _largeTextKey,
+    _reducedMotionKey,
+    _screenReaderHintsKey,
+    _confirmExitKey,
+  ];
+
   Future<AppSettings> load() async {
     final String? themeName = await _preferences.getString(_themeKey);
     final AppThemeMode themeMode = AppThemeMode.values.firstWhere(
@@ -43,5 +51,11 @@ final class SettingsRepository {
       _confirmExitKey,
       settings.confirmBeforeExitQuiz,
     );
+  }
+
+  Future<void> reset() async {
+    for (final String key in _keys) {
+      await _preferences.remove(key);
+    }
   }
 }
