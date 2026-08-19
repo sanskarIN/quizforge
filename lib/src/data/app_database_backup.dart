@@ -22,6 +22,9 @@ final class DatabaseBackupSnapshot {
 
   List<String> validate() {
     final List<String> errors = <String>[];
+    if (questions.isEmpty) {
+      errors.add('Local backup must contain at least one question.');
+    }
     final Set<String> questionIds = <String>{};
     final Set<String> fingerprints = <String>{};
     for (final Question question in questions) {
