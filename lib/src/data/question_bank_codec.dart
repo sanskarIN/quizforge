@@ -249,42 +249,88 @@ final class QuestionBankCodec {
     List<String> row = <String>[];
     final StringBuffer cell = StringBuffer();
     bool quoted = false;
+    bool atFieldStart = true;
+    bool afterClosingQuote = false;
+
+    void finishCell() {
+      row.add(cell.toString());
+      cell.clear();
+      atFieldStart = true;
+      afterClosingQuote = false;
+    }
+
+    void finishRow() {
+      finishCell();
+      rows.add(row);
+      if (rows.length > maxQuestions + 1) {
+        throw const FormatException('Question count limit exceeded.');
+      }
+      row = <String>[];
+    }
 
     for (int index = 0; index < source.length; index += 1) {
       final String character = source[index];
-      if (character == '"') {
-        if (quoted && index + 1 < source.length && source[index + 1] == '"') {
-          cell.write('"');
-          index += 1;
+
+      if (quoted) {
+        if (character == '"') {
+          if (index + 1 < source.length && source[index + 1] == '"') {
+            cell.write('"');
+            index += 1;
+          } else {
+            quoted = false;
+            afterClosingQuote = true;
+          }
         } else {
-          quoted = !quoted;
+          cell.write(character);
         }
-      } else if (character == ',' && !quoted) {
-        row.add(cell.toString());
-        cell.clear();
-      } else if ((character == '\n' || character == '\r') && !quoted) {
+        continue;
+      }
+
+      if (afterClosingQuote) {
+        if (character == ',') {
+          finishCell();
+          continue;
+        }
+        if (character == '\n' || character == '\r') {
+          if (character == '\r' &&
+              index + 1 < source.length &&
+              source[index + 1] == '\n') {
+            index += 1;
+          }
+          finishRow();
+          continue;
+        }
+        throw const FormatException(
+          'Unexpected character after closing quoted field.',
+        );
+      }
+
+      if (character == '"') {
+        if (!atFieldStart) {
+          throw const FormatException('Unexpected quote in unquoted field.');
+        }
+        quoted = true;
+        atFieldStart = false;
+      } else if (character == ',') {
+        finishCell();
+      } else if (character == '\n' || character == '\r') {
         if (character == '\r' &&
             index + 1 < source.length &&
             source[index + 1] == '\n') {
           index += 1;
         }
-        row.add(cell.toString());
-        cell.clear();
-        rows.add(row);
-        if (rows.length > maxQuestions + 1) {
-          throw const FormatException('Question count limit exceeded.');
-        }
-        row = <String>[];
+        finishRow();
       } else {
         cell.write(character);
+        atFieldStart = false;
       }
     }
 
     if (quoted) {
       throw const FormatException('Unclosed quoted field.');
     }
-    if (cell.isNotEmpty || row.isNotEmpty) {
-      row.add(cell.toString());
+    if (afterClosingQuote || cell.isNotEmpty || row.isNotEmpty) {
+      finishCell();
       rows.add(row);
     }
     return rows;
