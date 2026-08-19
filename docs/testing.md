@@ -34,7 +34,8 @@ CI runs the same core checks on pushes and pull requests targeting `main`.
 - quoted commas/quotes;
 - malformed JSON;
 - malformed CSV quoting;
-- duplicate handling against an existing bank.
+- duplicate handling against an existing bank;
+- deterministic fuzz-style malformed-input coverage.
 
 ### Database integration tests
 
@@ -45,11 +46,45 @@ An in-memory SQLite database exercises:
 - bookmarks;
 - transactional attempt persistence;
 - progress aggregation;
-- leaderboard aggregation.
+- category aggregation;
+- leaderboard aggregation;
+- profile activity cleanup;
+- profile rename/delete cleanup;
+- full local-data reset.
+
+### Controller integration tests
+
+The application controller is exercised against an in-memory database plus injected question/settings/profile-selection fakes. Coverage includes:
+
+- initialization and default-profile creation;
+- restoring active-profile selection;
+- safe startup failure state;
+- search/filter behavior;
+- question creation and duplicate rejection;
+- settings persistence and failure consistency;
+- profile create/rename/select/delete behavior;
+- preference-save failure consistency;
+- bookmark persistence;
+- result/progress/category/leaderboard refresh;
+- profile activity clearing;
+- full local-data reset.
 
 ### Widget tests
 
-Initial widget coverage verifies rendering of a playable question, metadata, choices, and progress indicator.
+Widget coverage includes:
+
+- onboarding progression;
+- creator flow;
+- import/export flow;
+- quiz setup and quiz play;
+- quiz accessibility semantics;
+- localized review presentation.
+
+### App-level primary journey
+
+`test/integration/primary_journey_test.dart` exercises the application shell with injected onboarding persistence and an in-memory database. It covers startup → dashboard → random practice → answer submission → review → persisted progress.
+
+This is a deterministic app-level widget journey, not a claim that physical-device release builds have been validated.
 
 ## Required tests for future changes
 
@@ -60,18 +95,18 @@ Initial widget coverage verifies rendering of a playable question, metadata, cho
 - New settings should test defaults, persistence, and UI behavior.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
 
-## End-to-end targets
+## Remaining end-to-end targets
 
-Primary journeys to automate before release-candidate status:
+The primary startup/play/result/persistence journey is automated. Additional release-depth journeys remain useful:
 
-1. first launch and starter data creation;
-2. start and finish a quiz;
-3. review explanations and bookmark a question;
-4. create and play a custom question;
-5. export and re-import a question bank;
-6. switch local profiles and verify independent bookmarks/progress;
-7. change accessibility/theme preferences and restart;
-8. recover gracefully from malformed imports.
+1. first-launch onboarding plus starter-data creation;
+2. review explanations and bookmark a question from the review screen;
+3. create and play a custom question;
+4. export and re-import a question bank;
+5. switch local profiles and verify independent bookmarks/progress;
+6. change accessibility/theme preferences and restart;
+7. recover gracefully from malformed imports;
+8. run representative journeys on real release builds/platform hosts.
 
 ## Determinism
 
@@ -79,14 +114,14 @@ Tests must not depend on the current clock when an explicit date/seed can be sup
 
 ## Parser fuzz/property testing
 
-The JSON/CSV boundary is a good candidate for property/fuzz testing. Desired invariants include:
+QuizForge currently includes deterministic fuzz-style codec coverage without adding a large property-testing dependency. Important invariants remain:
 
 - encoding then decoding a valid question preserves its semantic fields;
 - arbitrary malformed input never causes an uncontrolled application crash;
 - duplicate partitioning never emits the same id/fingerprint twice in the accepted set;
 - CSV quote handling either parses deterministically or reports a format error.
 
-This remains a roadmap item until a lightweight maintained Dart testing dependency is selected and verified.
+A maintained property-testing package may be introduced later only if it materially improves coverage and passes dependency/security review.
 
 ## Performance checks
 
