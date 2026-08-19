@@ -9,6 +9,35 @@ import 'package:quizforge/src/domain/app_settings.dart';
 import 'package:quizforge/src/domain/profile.dart';
 
 void main() {
+  group('QuizForgeController startup resilience', () {
+    test('noncritical preference failures do not block core startup', () async {
+      final AppDatabase database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final _FakeSettingsStore settingsStore = _FakeSettingsStore()
+        ..failLoads = true;
+      final _FakeProfilePreferences profilePreferences =
+          _FakeProfilePreferences()
+            ..failLoads = true
+            ..failSaves = true;
+      final QuizForgeController controller = QuizForgeController(
+        database: database,
+        questionRepository: QuestionRepository(database),
+        settingsRepository: settingsStore,
+        profilePreferences: profilePreferences,
+      );
+
+      await controller.initialize();
+
+      expect(controller.loading, isFalse);
+      expect(controller.errorMessage, isNull);
+      expect(controller.settings, isNotNull);
+      expect(controller.settings.themeMode, AppThemeMode.system);
+      expect(controller.questions, isNotEmpty);
+      expect(controller.profiles, hasLength(1));
+      expect(controller.activeProfile?.id, 'local-default');
+    });
+  });
+
   group('QuizForgeController persistence ordering', () {
     test('failed active-profile persistence keeps current profile selected', () async {
       final AppDatabase database = AppDatabase(NativeDatabase.memory());
@@ -189,6 +218,7 @@ final class _FakeProfilePreferences implements ActiveProfilePreferences {
       : activeProfileId = activeProfileId;
 
   String? activeProfileId;
+  bool failLoads = false;
   bool failSaves = false;
 
   @override
@@ -197,7 +227,12 @@ final class _FakeProfilePreferences implements ActiveProfilePreferences {
   }
 
   @override
-  Future<String?> loadActiveProfileId() async => activeProfileId;
+  Future<String?> loadActiveProfileId() async {
+    if (failLoads) {
+      throw StateError('simulated profile preference load failure');
+    }
+    return activeProfileId;
+  }
 
   @override
   Future<void> saveActiveProfileId(String profileId) async {
@@ -210,11 +245,17 @@ final class _FakeProfilePreferences implements ActiveProfilePreferences {
 
 final class _FakeSettingsStore implements AppSettingsStore {
   AppSettings value = const AppSettings();
+  bool failLoads = false;
   bool failSaves = false;
   bool failResets = false;
 
   @override
-  Future<AppSettings> load() async => value;
+  Future<AppSettings> load() async {
+    if (failLoads) {
+      throw StateError('simulated settings load failure');
+    }
+    return value;
+  }
 
   @override
   Future<void> reset() async {
