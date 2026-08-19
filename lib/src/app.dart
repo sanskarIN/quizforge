@@ -19,19 +19,25 @@ final class QuizForgeApp extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (BuildContext context, Widget? child) {
+        final AppSettings settings = controller.settings;
         return MaterialApp(
           title: AppConstants.appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
-          themeMode: _themeMode(controller.settings.themeMode),
+          themeMode: _themeMode(settings.themeMode),
+          themeAnimationDuration:
+              settings.reducedMotion ? Duration.zero : const Duration(milliseconds: 200),
           builder: (BuildContext context, Widget? child) {
             final MediaQueryData media = MediaQuery.of(context);
-            final TextScaler scaler = controller.settings.largeText
+            final TextScaler scaler = settings.largeText
                 ? const TextScaler.linear(1.15)
                 : media.textScaler;
             return MediaQuery(
-              data: media.copyWith(textScaler: scaler),
+              data: media.copyWith(
+                textScaler: scaler,
+                disableAnimations: media.disableAnimations || settings.reducedMotion,
+              ),
               child: child ?? const SizedBox.shrink(),
             );
           },
