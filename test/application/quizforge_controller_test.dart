@@ -6,6 +6,7 @@ import 'package:quizforge/src/data/app_database.dart';
 import 'package:quizforge/src/domain/app_settings.dart';
 import 'package:quizforge/src/domain/profile.dart';
 import 'package:quizforge/src/domain/question.dart';
+import 'package:quizforge/src/domain/quiz_result.dart';
 
 import 'controller_fakes.dart';
 
@@ -189,5 +190,104 @@ void main() {
       throwsStateError,
     );
     expect(controller.profiles, hasLength(1));
+  });
+
+  test('bookmark changes are persisted and reflected in search filters', () async {
+    await database.upsertQuestions(<Question>[seedQuestion]);
+    await controller.initialize();
+
+    await controller.toggleBookmark(seedQuestion.id);
+
+    expect(controller.bookmarkIds, <String>{seedQuestion.id});
+    expect(
+      await database.loadBookmarkIds(controller.activeProfile!.id),
+      <String>{seedQuestion.id},
+    );
+    expect(
+      controller.searchQuestions('', bookmarkedOnly: true),
+      <Question>[seedQuestion],
+    );
+
+    await controller.toggleBookmark(seedQuestion.id);
+    expect(controller.bookmarkIds, isEmpty);
+    expect(controller.searchQuestions('', bookmarkedOnly: true), isEmpty);
+  });
+
+  test('recordResult refreshes progress category stats and leaderboard', () async {
+    await database.upsertQuestions(<Question>[seedQuestion]);
+    await controller.initialize();
+    final DateTime startedAt = DateTime(2026, 8, 19, 12);
+    final QuizResult result = QuizResult(
+      startedAt: startedAt,
+      completedAt: startedAt.add(const Duration(seconds: 9)),
+      evaluations: const <QuestionEvaluation>[
+        QuestionEvaluation(
+          questionId: 'controller-q1',
+          submittedAnswers: <String>{'pass'},
+          correct: true,
+          score: 1,
+        ),
+      ],
+    );
+
+    await controller.recordResult(result);
+
+    expect(controller.progress.quizCount, 1);
+    expect(controller.progress.correctCount, 1);
+    expect(controller.progress.totalSeconds, 9);
+    expect(controller.categoryProgress, hasLength(1));
+    expect(controller.categoryProgress.single.category, 'Testing');
+    expect(controller.categoryProgress.single.accuracy, 100);
+    expect(controller.leaderboard.single.points, 110);
+  });
+
+  test('clear activity removes profile progress and bookmarks only', () async {
+    await database.upsertQuestions(<Question>[seedQuestion]);
+    await controller.initialize();
+    await controller.toggleBookmark(seedQuestion.id);
+    final DateTime startedAt = DateTime(2026, 8, 19, 13);
+    await controller.recordResult(
+      QuizResult(
+        startedAt: startedAt,
+        completedAt: startedAt.add(const Duration(seconds: 4)),
+        evaluations: const <QuestionEvaluation>[
+          QuestionEvaluation(
+            questionId: 'controller-q1',
+            submittedAnswers: <String>{'pass'},
+            correct: true,
+            score: 1,
+          ),
+        ],
+      ),
+    );
+
+    await controller.clearActiveProfileActivity();
+
+    expect(controller.progress.quizCount, 0);
+    expect(controller.categoryProgress, isEmpty);
+    expect(controller.bookmarkIds, isEmpty);
+    expect(controller.questions, <Question>[seedQuestion]);
+    expect(controller.profiles, hasLength(1));
+  });
+
+  test('resetAllLocalData resets injected preferences and recreates defaults', () async {
+    await controller.initialize();
+    await controller.createProfile('Temporary Player');
+    await controller.updateSettings(
+      const AppSettings(
+        themeMode: AppThemeMode.light,
+        reducedMotion: true,
+      ),
+    );
+
+    await controller.resetAllLocalData();
+
+    expect(settingsStore.resetCount, 1);
+    expect(profileSelectionStore.clearCount, 1);
+    expect(controller.settings.themeMode, AppThemeMode.system);
+    expect(controller.settings.reducedMotion, isFalse);
+    expect(controller.profiles, hasLength(1));
+    expect(controller.activeProfile?.id, 'local-default');
+    expect(profileSelectionStore.activeProfileId, 'local-default');
   });
 }
