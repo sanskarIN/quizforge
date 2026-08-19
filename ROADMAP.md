@@ -44,6 +44,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Private-room multiplayer transport abstraction, disabled by default
 - [x] Structured logging with sensitive-field/content redaction
 - [x] Reproducible generated platform-runner strategy and host build matrix
+- [x] SDK-independent deterministic seeded quiz ordering
 - [ ] Implement and security-review an optional private-room transport
 - [ ] Complete platform-specific production icon/splash generation and visual verification
 - [ ] Add file-picker based import/export where supported and justified
@@ -56,13 +57,17 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Codec regression tests
 - [x] Deterministic malformed-input/fuzz-style codec tests
 - [x] In-memory database integration tests
+- [x] Database transaction rollback tests
+- [x] Starter-bank integrity tests
 - [x] Controller persistence/rollback-ordering regression tests
+- [x] Controller restart-boundary preference tests with injectable local stores
+- [x] Root app-shell onboarding routing/failure tests
 - [x] Creator/import/settings/quiz widget tests
 - [x] Accessibility semantics tests for quiz progress/timing
 - [x] Private-room disabled-transport/fail-closed tests
 - [x] Primary quiz completion → review journey automation
 - [x] Deterministic benchmark harness for quiz selection and codecs
-- [ ] Expand full-app restart/platform-adapter end-to-end journeys after stable test adapters are available
+- [ ] Expand platform-plugin restart/clipboard/file-adapter end-to-end journeys after stable host fixtures are available
 - [ ] Record representative performance measurements and budgets from documented hardware/toolchains
 
 ## Phase 5 — Release engineering and documentation
@@ -73,6 +78,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Tagged Android/Web release workflow with checksums and generated notes
 - [x] Release workflow lockfile enforcement and deterministic local-link validation
 - [x] Verified-screenshot capture policy and gallery placeholders
+- [x] Repository-settings guidance for branch rules/security/topics/About metadata
 - [ ] Replace screenshot placeholders with real captures from the verified release candidate
 - [ ] Produce signed/store-specific artifacts where applicable without committing credentials
 
@@ -82,7 +88,11 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Remove obsolete self-mutating bootstrap workflows from maintained release-candidate changes
 - [x] Harden import resource limits and question content bounds
 - [x] Harden CSV structural parsing for malformed quoted fields
-- [x] Harden settings and profile persistence ordering plus rollback/error handling
+- [x] Reject duplicate accepted answers before JSON/CSV list-to-set conversion
+- [x] Harden creator live validation and invalid numeric input handling
+- [x] Harden settings/profile persistence ordering, rollback, reset recovery, and startup fallbacks
+- [x] Harden clipboard and onboarding preference failure handling
+- [x] Preserve stronger/nonlinear operating-system text scaling in large-text mode
 - [x] Refresh documentation and local check scripts to match maintained CI commands
 - [x] Add deterministic repository-local Markdown link checking to CI/local tooling
 - [x] Preserve CI-generated `pubspec.lock` as a reviewable workflow artifact when CI executes
@@ -95,7 +105,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [ ] Verify web release build and Drift persistence/reload behavior
 - [ ] Verify supported desktop builds on their host operating systems
 - [ ] Verify iOS no-codesign compile and complete signing/device validation outside the public repository
-- [ ] Manually review keyboard navigation, screen-reader semantics, scalable text, contrast, and reduced motion
+- [ ] Manually review keyboard navigation, screen-reader semantics, scalable/nonlinear text behavior, contrast, and reduced motion
 - [ ] Capture verified real screenshots using fictional data
 - [ ] Confirm the final release-candidate history contains no credentials or private user data
 - [ ] Tag a verified release candidate only after all applicable blockers above are cleared
