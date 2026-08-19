@@ -59,7 +59,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Deterministic parser fuzz-style testing
 - [x] Accessibility-focused quiz semantics checks
 - [x] Controller integration tests with injected storage/preference fakes
-- [ ] Add end-to-end primary-journey automation across app startup → play → result → persistence
+- [x] App-level primary-journey automation across startup → play → result → persistence
 - [ ] Establish measured performance benchmark evidence for large banks on a verified Flutter host
 
 ## Phase 5 — Release engineering and documentation
