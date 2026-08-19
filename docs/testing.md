@@ -118,6 +118,7 @@ Widget coverage includes:
 - custom quiz setup;
 - localized quiz metadata and choices;
 - timer/progress accessibility semantics with semantics explicitly enabled;
+- About-page project identity, contact/funding/credit, and exact public application version (`2.7.4` for this candidate);
 - settings sections and the required project credit;
 - recent-attempt statistics rendering using in-memory SQLite and memory-only preference adapters;
 - a primary one-question play → finish → review journey, including score, correct answer, and explanation rendering.
@@ -130,9 +131,11 @@ The recent-attempt widget regression specifically avoids depending on platform S
 
 `tool/check_arb_catalogs.py` validates localization catalogs before `flutter gen-l10n`. It rejects duplicate JSON keys, missing/non-empty locale metadata, non-string/empty message values, orphaned metadata entries, and translated catalogs whose message-key sets diverge from the English template.
 
-`tool/check_release_metadata.py` validates release identity before Flutter setup. It requires one valid `MAJOR.MINOR.PATCH+BUILD` package version with a positive build number, a matching dated changelog release entry, unique/descending release headings (including historical zero-major releases), a stable-major versioning policy, and matching maintained package/tag identities in `docs/versioning.md`.
+`tool/check_release_metadata.py` validates release identity before Flutter setup. It requires one valid `MAJOR.MINOR.PATCH+BUILD` package version with a positive build number; exactly one semantic `AppConstants.version` that matches the public package version; a matching dated changelog release entry; unique/descending release headings (including historical zero-major releases); a stable-major versioning policy; and matching maintained package/tag identities in `docs/versioning.md`.
 
-All three validators have stdlib-only regression tests and run in CI before Flutter setup. The release-metadata validator also runs in the tag packaging workflow so a 2.7.4 tag cannot bypass the same package/changelog/versioning consistency check exercised on pull requests.
+Its regression suite includes both mismatched and non-semantic in-app version constants, so a future package bump cannot leave the About-page version on an older release without failing the repository gate.
+
+All three validators have stdlib-only regression tests and run in CI before Flutter setup. The release-metadata validator also runs in the tag packaging workflow so a 2.7.4 tag cannot bypass the same package/in-app/changelog/versioning consistency check exercised on pull requests.
 
 ## Required tests for future changes
 
@@ -143,7 +146,7 @@ All three validators have stdlib-only regression tests and run in CI before Flut
 - New settings should test defaults, persistence, and UI behavior.
 - New progress/history queries should test profile isolation, ordering, bounds, deletion semantics, and empty state.
 - Backup-format changes must test old-version compatibility or explicit rejection, complete reference validation, answer-scoring integrity, session-size bounds, collision-safe composite identities, rollback behavior, and privacy-safe logging.
-- Version changes must update `pubspec.yaml`, `CHANGELOG.md`, and the maintained package/tag identity in `docs/versioning.md`, then pass `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py`.
+- Version changes must update `pubspec.yaml`, `AppConstants.version`, `CHANGELOG.md`, and the maintained package/tag identity in `docs/versioning.md`, then pass `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py`.
 - New localization catalogs/messages must pass the ARB validator and localization generation.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
 - Platform clipboard/file-adapter changes should test success and failure paths with platform-channel fakes where practical.
