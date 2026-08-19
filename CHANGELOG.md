@@ -6,6 +6,10 @@ The project follows Semantic Versioning where practical.
 
 ## [Unreleased]
 
+No changes have been recorded after the 2.7.4 release-candidate cut yet.
+
+## [2.7.4] - 2026-08-19
+
 ### Added
 
 - Flutter/Dart application foundation and adaptive Material 3 navigation.
@@ -34,10 +38,12 @@ The project follows Semantic Versioning where practical.
 - CI artifact capture for the Flutter-resolved `pubspec.lock` so lockfile review can use generated evidence instead of hand-authored dependency state.
 - GitHub Actions quality, Android/Web build, platform build-matrix, dependency-review, OSV vulnerability, secret-scan, and tag-release workflows.
 - Repository documentation, ADRs, community policies, support, privacy, security, CI, accessibility, performance, progress-history, local-backup, screenshot-capture, and release foundations.
-- Phase 6 verification evidence ledger and consolidated final-audit branch.
+- Release-candidate verification evidence ledger and consolidated final-audit branch.
 
 ### Changed
 
+- Package/application version advanced to `2.7.4+1`, with Git release tag `v2.7.4` reserved for the verified release head.
+- Versioning policy now treats QuizForge 2.x as a stable compatibility line rather than a pre-1.0 experimental line.
 - Local quality scripts now test the repository validators, validate Markdown/ARB inputs, resolve dependencies, generate localizations, check formatting across `lib`, `test`, and `tool`, analyze, and run tests with coverage.
 - CI now exercises stdlib-only repository validators before Flutter setup so malformed documentation/localization inputs fail early.
 - Tagged releases now run Markdown/ARB validator regression tests and repository input validation before Flutter setup, then require a committed application lockfile, use enforced locked dependency resolution, verify the lockfile is not rewritten, and rerun formatting/analysis/tests before Android/Web artifacts and checksums are published.
@@ -56,7 +62,7 @@ The project follows Semantic Versioning where practical.
 - Bookmark duplicate validation now uses exact `(profileId, questionId)` pair identity instead of delimiter-concatenated strings.
 - User-facing startup, import, creator, settings, statistics, backup, and quiz messages were moved toward externalized localization resources.
 - Flutter localization dependency handling now lets the Flutter SDK select its compatible `intl` version.
-- Setup, development, testing, CI, release, question-bank-format, roadmap, progress-history, backup, privacy, screenshot, and verification documentation were synchronized with the maintained repository behavior.
+- Setup, development, testing, CI, release, versioning, question-bank-format, roadmap, progress-history, backup, privacy, screenshot, and verification documentation were synchronized with the maintained repository behavior.
 
 ### Fixed
 
@@ -102,11 +108,12 @@ The project follows Semantic Versioning where practical.
 
 ### Verification status
 
-- Phase 6/final release-candidate verification remains open until final-head GitHub Actions checks, clean build evidence, the reviewed application lockfile, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
-- Repository-local Markdown and ARB validation are automated gates, but neither is counted as passed until it completes on the final release-candidate head.
-- Local backup has source-level regression coverage, but release-host clipboard/persistence restore smoke checks remain required before it is described as release-verified.
+- Version 2.7.4 is the declared release candidate, but release verification remains open until exact-head GitHub Actions checks, clean build evidence, the reviewed application lockfile, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
+- Repository-local Markdown and ARB validation are automated gates, but neither is counted as passed until it completes on the final 2.7.4 release-candidate head.
+- Local backup has source-level regression coverage, but release-host clipboard/persistence restore smoke checks remain required before 2.7.4 is described as release-verified.
 - A queued, cancelled because of a newer commit, or pending workflow is not treated as a successful verification result.
+- Tag `v2.7.4` must not be created as a verified release until the documented blockers in `docs/verification.md` are cleared.
 
 ## [0.1.0] - 2026-08-19
 
-Initial development milestone. This version is a development baseline rather than a production-store release. Release-candidate status requires clean CI/build verification and completion of the remaining release audit documented in `what_changed.md` and `docs/verification.md`.
+Initial development milestone. This version was a development baseline rather than a production-store release.
