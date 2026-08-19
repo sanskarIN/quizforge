@@ -10,9 +10,10 @@ Push-triggered verification remains scoped to `main` where configured. Path-filt
 
 `.github/workflows/ci.yml` verifies, in order:
 
-- regression tests for the repository-local Markdown and ARB validators;
+- regression tests for the repository-local Markdown, ARB, and release-metadata validators;
 - repository-local Markdown links and image targets with `tool/check_markdown_links.py`;
 - ARB localization-catalog structure/key consistency with `tool/check_arb_catalogs.py`;
+- package/changelog/versioning consistency with `tool/check_release_metadata.py`;
 - Flutter toolchain setup and dependency resolution;
 - capture of the resolved `pubspec.lock` as short-lived review evidence;
 - Flutter localization generation;
@@ -23,6 +24,8 @@ Push-triggered verification remains scoped to `main` where configured. Path-filt
 The Markdown checker is intentionally deterministic and network-independent. It validates relative/local links and reference definitions while ignoring fenced code examples and network URLs. External HTTP availability is still a manual release review concern because third-party availability is inherently nondeterministic.
 
 The ARB checker is also stdlib-only. It rejects duplicate JSON keys, missing/non-empty locale metadata, empty/non-string messages, orphan metadata records, and translated catalogs whose message key sets diverge from the English template. `flutter gen-l10n` remains the authoritative Flutter generator check after this early structural gate.
+
+The release-metadata checker is stdlib-only as well. For the maintained 2.7.4 line it checks that `pubspec.yaml` has one `MAJOR.MINOR.PATCH+BUILD` value with a positive build number, `CHANGELOG.md` contains the matching dated release entry with unique descending release headings, stable-major documentation is not still marked pre-1.0, and `docs/versioning.md` records the matching package/tag identity. This catches a version drift on a pull request before a tag-triggered workflow exists to reject it.
 
 The same maintained sequence is available locally through `tool/check.sh` and `tool/check.ps1`.
 
@@ -66,7 +69,9 @@ When multiple parallel audit branches contain overlapping work, prefer a deliber
 
 ## Tagged release workflow
 
-`.github/workflows/release.yml` handles the repository's tagged Android/Web release path. It validates the tag/version relationship, resolves dependencies, generates localizations, verifies formatting across application/tests/tooling, runs analysis/tests, builds release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and creates a GitHub release.
+`.github/workflows/release.yml` handles the repository's tagged Android/Web release path. It first validates the tag/public package-version relationship and requires a committed application lockfile. It then runs all three repository validator regression suites and all three structural/metadata validators before Flutter setup. After that it resolves dependencies with the lockfile enforced, verifies the lockfile is not rewritten, generates localizations, verifies formatting across application/tests/tooling, runs analysis/tests, builds release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and creates a GitHub release.
+
+For the current candidate, the intended public tag is `v2.7.4`, derived from package version `2.7.4+1`. The build suffix is intentionally omitted from the public Git tag.
 
 Release automation does not make signing secrets public. Any distribution-channel signing/provisioning must use secret storage outside the repository.
 
@@ -81,8 +86,10 @@ Normal development uses pull requests and the focused quality/build/security wor
 ```bash
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
+python3 tool/test_check_release_metadata.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
+python3 tool/check_release_metadata.py
 flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
@@ -114,8 +121,8 @@ Do not merge around a failing check merely to make a status indicator green. Det
 
 Product/test/configuration failures require a source fix and regression coverage where appropriate. Transient infrastructure failures may be rerun only after the failure evidence supports that classification.
 
-A check that is still `queued` or `pending` is not a pass. Phase 6 verification records this distinction explicitly rather than inferring success from the existence of the workflow.
+A check that is still `queued` or `pending` is not a pass. Version 2.7.4 verification records this distinction explicitly rather than inferring success from the existence of the workflow.
 
 ## Evidence
 
-`docs/verification.md` records the current Phase 6 evidence and exact limitations. `what_changed.md` remains the primary cross-chat continuation ledger and distinguishes implemented work from checks that are still pending or require manual/platform verification.
+`docs/verification.md` records the current 2.7.4 release-candidate evidence and exact limitations. `what_changed.md` remains the primary cross-chat continuation ledger and distinguishes implemented work from checks that are still pending or require manual/platform verification.
