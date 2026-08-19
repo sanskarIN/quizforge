@@ -1,0 +1,80 @@
+name: Fix Localization Dependency
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-intl-dependency.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    name: Pin SDK-compatible direct intl dependency
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+
+      - name: Ensure intl remains a direct flexible dependency
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path("pubspec.yaml")
+          text = path.read_text(encoding="utf-8")
+          if re.search(r"^  intl:\s*.*$", text, flags=re.MULTILINE):
+              text = re.sub(
+                  r"^  intl:\s*.*$",
+                  "  intl: any",
+                  text,
+                  flags=re.MULTILINE,
+              )
+          else:
+              needle = "  flutter_localizations:\n    sdk: flutter\n"
+              if needle not in text:
+                  raise SystemExit("flutter_localizations dependency block was not found")
+              text = text.replace(needle, needle + "  intl: any\n", 1)
+          path.write_text(text, encoding="utf-8")
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Format and analyze
+        run: |
+          dart format pubspec.yaml lib test tool || true
+          dart format --output=none --set-exit-if-changed lib test tool
+          flutter analyze
+
+      - name: Run tests
+        run: flutter test --coverage
+
+      - name: Commit verified dependency state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add pubspec.yaml pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "build: keep intl SDK-compatible for generated localizations"
+            git push origin HEAD:main
+          fi
