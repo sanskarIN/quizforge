@@ -56,6 +56,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Codec regression tests
 - [x] Deterministic malformed-input/fuzz-style codec tests
 - [x] In-memory database integration tests
+- [x] Controller persistence/rollback-ordering regression tests
 - [x] Creator/import/settings/quiz widget tests
 - [x] Accessibility semantics tests for quiz progress/timing
 - [x] Private-room disabled-transport/fail-closed tests
@@ -70,6 +71,7 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Setup/development/testing/release/troubleshooting/accessibility/performance documentation
 - [x] CI, dependency review, vulnerability scan, secret scan, and platform build workflows
 - [x] Tagged Android/Web release workflow with checksums and generated notes
+- [x] Release workflow lockfile enforcement and deterministic local-link validation
 - [x] Verified-screenshot capture policy and gallery placeholders
 - [ ] Replace screenshot placeholders with real captures from the verified release candidate
 - [ ] Produce signed/store-specific artifacts where applicable without committing credentials
@@ -79,18 +81,20 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 - [x] Create a dedicated Phase 6 audit branch and evidence ledger
 - [x] Remove obsolete self-mutating bootstrap workflows from maintained release-candidate changes
 - [x] Harden import resource limits and question content bounds
-- [x] Harden settings persistence ordering and user-facing error/log handling
+- [x] Harden CSV structural parsing for malformed quoted fields
+- [x] Harden settings and profile persistence ordering plus rollback/error handling
 - [x] Refresh documentation and local check scripts to match maintained CI commands
-- [ ] Generate and review the application `pubspec.lock` in a verified Flutter environment
+- [x] Add deterministic repository-local Markdown link checking to CI/local tooling
+- [x] Preserve CI-generated `pubspec.lock` as a reviewable workflow artifact when CI executes
+- [ ] Generate, review, and commit the application `pubspec.lock` from verified Flutter-generated evidence
 - [ ] Build from a clean checkout
-- [ ] Pass formatting, localization generation, analysis, and all automated tests on the final head
+- [ ] Pass formatting, localization generation, documentation-link validation, analysis, and all automated tests on the final head
 - [ ] Pass dependency review, OSV scan, and secret scan on the final head
 - [ ] Validate database creation on release builds; add migration verification when schema version first changes
 - [ ] Verify Android release build
 - [ ] Verify web release build and Drift persistence/reload behavior
 - [ ] Verify supported desktop builds on their host operating systems
 - [ ] Verify iOS no-codesign compile and complete signing/device validation outside the public repository
-- [ ] Check documentation links in the release candidate
 - [ ] Manually review keyboard navigation, screen-reader semantics, scalable text, contrast, and reduced motion
 - [ ] Capture verified real screenshots using fictional data
 - [ ] Confirm the final release-candidate history contains no credentials or private user data
