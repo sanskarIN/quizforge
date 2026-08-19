@@ -72,15 +72,18 @@ Restore treats the pasted archive as untrusted data. Before replacing current da
 - local profile validity and duplicate profile ids;
 - attempt profile/question references;
 - attempt completion timestamps;
-- question/correct-count consistency;
+- attempt question counts within the same 1–100 range supported by normal QuizForge sessions;
+- question-count/evaluation-count and correct-count/evaluation-correctness consistency;
 - each submitted answer's correctness and score by re-evaluating it against the archived question with the same `QuizEngine` rules used by normal quiz play;
 - order-independent best-streak bounds against question/correct counts;
 - finite/non-negative score values and total-score consistency;
 - duplicate question answers inside one attempt;
-- bookmark profile/question references and duplicate bookmarks;
+- bookmark profile/question references and duplicate bookmark pairs;
 - active-profile reference validity.
 
 This answer-level validation prevents a hand-crafted archive from marking a wrong submitted answer as correct or assigning a score that disagrees with QuizForge's scoring rules while still satisfying only aggregate counts.
+
+Bookmark duplicate detection is based on the exact `(profileId, questionId)` pair rather than concatenating identifiers with a delimiter. That avoids composite-key collisions when otherwise valid identifier strings happen to contain the same delimiter character.
 
 If validation fails, the archive is rejected before the destructive database replacement begins.
 
@@ -144,7 +147,9 @@ Before a release candidate is described as backup-verified, the exact candidate 
 - codec round-trip tests;
 - invalid/dangling-reference rejection tests;
 - required minimum-state rejection tests;
+- 1–100 attempt-size bound tests;
 - submitted-answer correctness/score tamper-rejection tests;
+- collision-safe bookmark composite-key tests;
 - order-independent attempt-summary validation regression coverage;
 - database export/reset/restore integration coverage;
 - controller rollback coverage for cross-store failures;
