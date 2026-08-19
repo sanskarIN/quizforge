@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate QuizForge package/changelog release metadata without Flutter."""
+"""Validate QuizForge package/changelog/application release metadata without Flutter."""
 
 from __future__ import annotations
 
@@ -20,6 +20,12 @@ CHANGELOG_RELEASE_RE = re.compile(
     r"(?P<date>\d{4}-\d{2}-\d{2})\s*$",
     re.MULTILINE,
 )
+APP_VERSION_RE = re.compile(
+    r"^\s*static const String version\s*=\s*"
+    r"(?P<quote>['\"])(?P<version>(?:0|[1-9]\d*)\.\d+\.\d+)"
+    r"(?P=quote);\s*$",
+    re.MULTILINE,
+)
 
 
 @dataclass(frozen=True, order=True)
@@ -37,7 +43,7 @@ def _read(path: Path, errors: list[str]) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except OSError as error:
-        errors.append(f"Cannot read {path.name}: {error.__class__.__name__}.")
+        errors.append(f"Cannot read {path.as_posix()}: {error.__class__.__name__}.")
         return ""
 
 
@@ -48,6 +54,7 @@ def validate_release_metadata(root: Path) -> list[str]:
     pubspec = _read(root / "pubspec.yaml", errors)
     changelog = _read(root / "CHANGELOG.md", errors)
     versioning = _read(root / "docs" / "versioning.md", errors)
+    app_constants = _read(root / "lib" / "src" / "core" / "app_constants.dart", errors)
     if errors:
         return errors
 
@@ -66,6 +73,18 @@ def validate_release_metadata(root: Path) -> list[str]:
         int(match.group("patch")),
     )
     build = int(match.group("build"))
+
+    app_version_matches = list(APP_VERSION_RE.finditer(app_constants))
+    if len(app_version_matches) != 1:
+        errors.append(
+            "lib/src/core/app_constants.dart must contain exactly one semantic "
+            "AppConstants.version constant."
+        )
+    elif app_version_matches[0].group("version") != current.public:
+        errors.append(
+            "AppConstants.version must match the public pubspec.yaml version "
+            f"{current.public}."
+        )
 
     if "## [Unreleased]" not in changelog:
         errors.append("CHANGELOG.md must contain an Unreleased section.")
@@ -113,7 +132,9 @@ def validate_release_metadata(root: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate QuizForge package, changelog, and versioning metadata."
+        description=(
+            "Validate QuizForge package, in-app version, changelog, and versioning metadata."
+        )
     )
     parser.add_argument(
         "--root",
