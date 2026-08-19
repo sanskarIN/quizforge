@@ -34,7 +34,8 @@ No changes have been recorded after the 2.7.4 release-candidate cut yet.
 - Deterministic quiz-selection and codec benchmark harness.
 - Deterministic repository-local Markdown link validation integrated into CI and local quality scripts.
 - Deterministic ARB localization-catalog validation with regression tests, integrated before Flutter setup/localization generation.
-- Regression tests for the repository-local Markdown validation tool itself.
+- Deterministic release-metadata validation covering package, in-app, changelog, and stable-version documentation identity.
+- Regression tests for the repository-local Markdown, ARB, and release-metadata validators.
 - CI artifact capture for the Flutter-resolved `pubspec.lock` so lockfile review can use generated evidence instead of hand-authored dependency state.
 - GitHub Actions quality, Android/Web build, platform build-matrix, dependency-review, OSV vulnerability, secret-scan, and tag-release workflows.
 - Repository documentation, ADRs, community policies, support, privacy, security, CI, accessibility, performance, progress-history, local-backup, screenshot-capture, and release foundations.
@@ -43,10 +44,12 @@ No changes have been recorded after the 2.7.4 release-candidate cut yet.
 ### Changed
 
 - Package/application version advanced to `2.7.4+1`, with Git release tag `v2.7.4` reserved for the verified release head.
+- The in-app About version now uses the maintained public version `2.7.4`.
 - Versioning policy now treats QuizForge 2.x as a stable compatibility line rather than a pre-1.0 experimental line.
-- Local quality scripts now test the repository validators, validate Markdown/ARB inputs, resolve dependencies, generate localizations, check formatting across `lib`, `test`, and `tool`, analyze, and run tests with coverage.
-- CI now exercises stdlib-only repository validators before Flutter setup so malformed documentation/localization inputs fail early.
-- Tagged releases now run Markdown/ARB validator regression tests and repository input validation before Flutter setup, then require a committed application lockfile, use enforced locked dependency resolution, verify the lockfile is not rewritten, and rerun formatting/analysis/tests before Android/Web artifacts and checksums are published.
+- Release-metadata validation now requires `AppConstants.version` to match the public `pubspec.yaml` version in addition to changelog/versioning documentation.
+- Local quality scripts now test the repository validators, validate Markdown/ARB/release metadata inputs, resolve dependencies, generate localizations, check formatting across `lib`, `test`, and `tool`, analyze, and run tests with coverage.
+- CI now exercises stdlib-only repository validators before Flutter setup so malformed documentation/localization/release metadata inputs fail early.
+- Tagged releases now run all repository-validator regression tests and repository input/release-metadata validation before Flutter setup, then require a committed application lockfile, use enforced locked dependency resolution, verify the lockfile is not rewritten, and rerun formatting/analysis/tests before Android/Web artifacts and checksums are published.
 - Platform build workflows cancel superseded runs to avoid wasting runner capacity.
 - Settings are applied to in-memory state only after persistence succeeds.
 - Local-profile selection loads target profile state and persists the selected profile id before mutating visible controller state.
@@ -66,6 +69,7 @@ No changes have been recorded after the 2.7.4 release-candidate cut yet.
 
 ### Fixed
 
+- Corrected stale `0.1.0` application metadata and About-page widget expectations after advancing the package to 2.7.4.
 - Replaced localization message identifiers that conflicted with Dart language keywords.
 - Corrected widget tests to use localization delegates and explicitly enabled semantics for accessibility assertions.
 - Updated settings widget coverage to remain stable across viewport heights.
@@ -109,7 +113,7 @@ No changes have been recorded after the 2.7.4 release-candidate cut yet.
 ### Verification status
 
 - Version 2.7.4 is the declared release candidate, but release verification remains open until exact-head GitHub Actions checks, clean build evidence, the reviewed application lockfile, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
-- Repository-local Markdown and ARB validation are automated gates, but neither is counted as passed until it completes on the final 2.7.4 release-candidate head.
+- Repository-local Markdown, ARB, and release-metadata validation are automated gates, but none is counted as passed until it completes on the final 2.7.4 release-candidate head.
 - Local backup has source-level regression coverage, but release-host clipboard/persistence restore smoke checks remain required before 2.7.4 is described as release-verified.
 - A queued, cancelled because of a newer commit, or pending workflow is not treated as a successful verification result.
 - Tag `v2.7.4` must not be created as a verified release until the documented blockers in `docs/verification.md` are cleared.
