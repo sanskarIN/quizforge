@@ -150,6 +150,37 @@ void main() {
       expect(controller.settings.themeMode, AppThemeMode.system);
       expect(settingsStore.value.themeMode, AppThemeMode.system);
     });
+
+    test('partial reset failure reloads a consistent controller state', () async {
+      final AppDatabase database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final _FakeSettingsStore settingsStore = _FakeSettingsStore();
+      final _FakeProfilePreferences profilePreferences =
+          _FakeProfilePreferences();
+      final QuizForgeController controller = QuizForgeController(
+        database: database,
+        questionRepository: QuestionRepository(database),
+        settingsRepository: settingsStore,
+        profilePreferences: profilePreferences,
+      );
+      await controller.initialize();
+      await controller.createProfile('Player B');
+      expect(controller.profiles, hasLength(2));
+
+      settingsStore.failResets = true;
+      await expectLater(
+        controller.resetAllLocalData(),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(controller.loading, isFalse);
+      expect(controller.errorMessage, isNull);
+      expect(controller.profiles, hasLength(1));
+      expect(controller.activeProfile?.id, 'local-default');
+      expect(controller.questions, isNotEmpty);
+      expect(await database.loadProfiles(), hasLength(1));
+      expect(profilePreferences.activeProfileId, 'local-default');
+    });
   });
 }
 
@@ -180,12 +211,16 @@ final class _FakeProfilePreferences implements ActiveProfilePreferences {
 final class _FakeSettingsStore implements AppSettingsStore {
   AppSettings value = const AppSettings();
   bool failSaves = false;
+  bool failResets = false;
 
   @override
   Future<AppSettings> load() async => value;
 
   @override
   Future<void> reset() async {
+    if (failResets) {
+      throw StateError('simulated settings reset failure');
+    }
     value = const AppSettings();
   }
 
