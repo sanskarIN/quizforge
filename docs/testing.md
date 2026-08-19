@@ -10,9 +10,12 @@ Run:
 flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
+python3 tool/check_markdown_links.py
 flutter analyze
 flutter test --coverage
 ```
+
+On Windows, use `python tool/check_markdown_links.py` when `python` is the configured launcher. The repository-local Markdown checker is deterministic and does not depend on third-party network availability.
 
 CI runs the same source-quality checks on pushes and pull requests targeting `main`; dedicated workflows add Android/Web and desktop/Apple platform build gates plus dependency and secret scanning.
 
@@ -30,6 +33,15 @@ CI runs the same source-quality checks on pushes and pull requests targeting `ma
 - category/difficulty/tag filtering;
 - result percentage, duration, and streak calculations;
 - private-room protocol validation and fail-closed disabled transport behavior.
+
+### Application/controller regression tests
+
+Controller-level tests use explicit persistence interfaces and an in-memory database to verify failure ordering that is difficult to exercise through real platform preference plugins. Coverage includes:
+
+- active-profile selection remains unchanged when the active-profile preference write fails;
+- settings remain unchanged in memory when settings persistence fails.
+
+These tests protect the rule that user-visible controller state must not claim a preference was saved before its persistence operation succeeds.
 
 ### Codec and fuzz tests
 
@@ -68,6 +80,10 @@ Widget coverage includes:
 - timer/progress accessibility semantics with semantics explicitly enabled;
 - settings sections and the required project credit;
 - a primary one-question play → finish → review journey, including score, correct answer, and explanation rendering.
+
+### Documentation integrity
+
+`tool/check_markdown_links.py` scans tracked Markdown content for repository-local inline links, image targets, and reference definitions. It ignores fenced code examples, pure anchors, and external URL schemes so results remain deterministic. The CI quality gate runs it on every relevant pull request/push.
 
 ## Required tests for future changes
 
