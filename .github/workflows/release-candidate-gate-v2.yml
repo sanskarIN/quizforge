@@ -1,0 +1,428 @@
+name: Release Candidate Gate v2
+
+on:
+  push:
+    branches:
+      - audit/quizforge-0.1.0-final-v2
+    paths:
+      - .github/workflows/release-candidate-gate-v2.yml
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    name: Source quality, tests, Android and Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out audit branch
+        uses: actions/checkout@v6
+        with:
+          ref: audit/quizforge-0.1.0-final-v2
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+
+      - name: Normalize localization dependencies and source compatibility
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          import re
+
+          pubspec = Path("pubspec.yaml")
+          pubspec_text = pubspec.read_text(encoding="utf-8")
+          if re.search(r"^  intl:\s*.*$", pubspec_text, flags=re.MULTILINE):
+              pubspec_text = re.sub(
+                  r"^  intl:\s*.*$",
+                  "  intl: any",
+                  pubspec_text,
+                  flags=re.MULTILINE,
+              )
+          else:
+              needle = "  flutter_localizations:\n    sdk: flutter\n"
+              if needle not in pubspec_text:
+                  raise SystemExit("flutter_localizations dependency block was not found")
+              pubspec_text = pubspec_text.replace(needle, needle + "  intl: any\n", 1)
+          pubspec.write_text(pubspec_text, encoding="utf-8")
+
+          arb = Path("lib/l10n/app_en.arb")
+          arb_text = arb.read_text(encoding="utf-8")
+          arb_text = arb_text.replace('"import": "Import"', '"importLabel": "Import"')
+          arb_text = arb_text.replace('"export": "Export"', '"exportLabel": "Export"')
+          arb.write_text(arb_text, encoding="utf-8")
+
+          import_page = Path("lib/src/presentation/import_export_page.dart")
+          import_source = import_page.read_text(encoding="utf-8")
+          import_source = re.sub(r"strings\.import\b", "strings.importLabel", import_source)
+          import_source = re.sub(r"strings\.export\b", "strings.exportLabel", import_source)
+          import_page.write_text(import_source, encoding="utf-8")
+
+          app = Path("lib/src/app.dart")
+          app_source = app.read_text(encoding="utf-8")
+          old_scaler = '''final TextScaler scaler = settings.largeText
+                ? const TextScaler.linear(1.15)
+                : media.textScaler;'''
+          new_scaler = '''final double systemScaleAtBody = media.textScaler.scale(14) / 14;
+            final TextScaler scaler =
+                settings.largeText && systemScaleAtBody < 1.15
+                    ? const TextScaler.linear(1.15)
+                    : media.textScaler;'''
+          if old_scaler in app_source:
+              app_source = app_source.replace(old_scaler, new_scaler)
+          app.write_text(app_source, encoding="utf-8")
+
+          benchmark = Path("tool/benchmark.dart")
+          if benchmark.exists():
+              benchmark_source = benchmark.read_text(encoding="utf-8")
+              if not benchmark_source.startswith("// ignore_for_file: avoid_print"):
+                  benchmark.write_text(
+                      "// ignore_for_file: avoid_print\n\n" + benchmark_source,
+                      encoding="utf-8",
+                  )
+
+          semantics_test = Path("test/widget/quiz_accessibility_test.dart")
+          if semantics_test.exists():
+              semantics_source = semantics_test.read_text(encoding="utf-8")
+              needle = '''  ) async {
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());'''
+              replacement = '''  ) async {
+    addTearDown(tester.ensureSemantics().dispose);
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());'''
+              if needle in semantics_source and "ensureSemantics" not in semantics_source:
+                  semantics_source = semantics_source.replace(needle, replacement)
+              semantics_test.write_text(semantics_source, encoding="utf-8")
+
+          messages = json.loads(arb.read_text(encoding="utf-8"))
+          reserved = {
+              "abstract", "as", "assert", "async", "await", "base", "break",
+              "case", "catch", "class", "const", "continue", "covariant",
+              "default", "deferred", "do", "dynamic", "else", "enum",
+              "export", "extends", "extension", "external", "factory", "false",
+              "final", "finally", "for", "Function", "get", "hide", "if",
+              "implements", "import", "in", "interface", "is", "late", "library",
+              "mixin", "new", "null", "on", "operator", "part", "required",
+              "rethrow", "return", "sealed", "set", "show", "static", "super",
+              "switch", "sync", "this", "throw", "true", "try", "typedef", "var",
+              "void", "when", "while", "with", "yield"
+          }
+          invalid = sorted(
+              key for key in messages
+              if not key.startswith("@") and key in reserved
+          )
+          if invalid:
+              raise SystemExit(f"Reserved Dart localization identifiers remain: {invalid}")
+
+      - name: Ensure review page rebuilds bookmark state
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("lib/src/presentation/review_page.dart")
+          source = path.read_text(encoding="utf-8")
+          if "body: AnimatedBuilder(" not in source:
+              source = source.replace(
+                  '''      body: SafeArea(
+        child: ListView(''',
+                  '''      body: AnimatedBuilder(
+        animation: controller,
+        builder: (BuildContext context, Widget? child) {
+          return SafeArea(
+            child: ListView(''',
+                  1,
+              )
+              source = source.replace(
+                  '''          ],
+        ),
+      ),
+    );
+  }
+}''',
+                  '''              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}''',
+                  1,
+              )
+          path.write_text(source, encoding="utf-8")
+
+      - name: Commit source compatibility corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add pubspec.yaml lib/l10n/app_en.arb lib/src/app.dart lib/src/presentation/import_export_page.dart lib/src/presentation/review_page.dart test/widget/quiz_accessibility_test.dart tool/benchmark.dart
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: finalize v2 release candidate compatibility"
+          fi
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show toolchain
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Commit application dependency lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.lock
+          git add pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "build: lock v2 release candidate dependencies"
+          fi
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Format project Dart sources
+        run: dart format lib test tool
+
+      - name: Commit formatter corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -u -- lib test tool
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format v2 release candidate sources"
+          fi
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Run static analysis
+        run: flutter analyze
+
+      - name: Run complete automated test suite
+        run: flutter test --coverage
+
+      - name: Run deterministic benchmark smoke test
+        run: dart run tool/benchmark.dart 1000
+
+      - name: Materialize Android and Web runners
+        run: flutter create . --platforms=android,web
+
+      - name: Resolve and regenerate after runner creation
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build Android debug APK
+        run: flutter build apk --debug
+
+      - name: Build Web release bundle
+        run: flutter build web --release
+
+      - name: Push verified source commits
+        run: git push origin HEAD:audit/quizforge-0.1.0-final-v2
+
+  dependency_review:
+    name: Dependency review
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check out latest audit branch
+        uses: actions/checkout@v6
+        with:
+          ref: audit/quizforge-0.1.0-final-v2
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve compare SHAs
+        id: refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          echo "base=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
+          echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v5
+        with:
+          base-ref: ${{ steps.refs.outputs.base }}
+          head-ref: ${{ steps.refs.outputs.head }}
+          fail-on-severity: moderate
+          comment-summary-in-pr: never
+
+  linux:
+    name: Linux release build
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: audit/quizforge-0.1.0-final-v2
+          persist-credentials: false
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+      - run: flutter config --enable-linux-desktop
+      - run: flutter create . --platforms=linux
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build linux --release
+
+  windows:
+    name: Windows release build
+    needs: prepare
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: audit/quizforge-0.1.0-final-v2
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+      - name: Materialize Windows runner
+        shell: pwsh
+        run: |
+          flutter config --enable-windows-desktop
+          flutter create . --platforms=windows
+      - name: Resolve and localize
+        shell: pwsh
+        run: |
+          flutter pub get
+          flutter gen-l10n
+      - name: Build Windows release bundle
+        shell: pwsh
+        run: flutter build windows --release
+
+  macos:
+    name: macOS release build
+    needs: prepare
+    runs-on: macos-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: audit/quizforge-0.1.0-final-v2
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+      - run: flutter config --enable-macos-desktop
+      - run: flutter create . --platforms=macos
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build macos --release
+
+  ios:
+    name: iOS no-codesign release compile
+    needs: prepare
+    runs-on: macos-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: audit/quizforge-0.1.0-final-v2
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+      - run: flutter create . --platforms=ios
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build ios --release --no-codesign
+
+  finalize:
+    name: Record evidence and merge v2 audit
+    needs: [prepare, dependency_review, linux, windows, macos, ios]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out verified audit branch
+        uses: actions/checkout@v6
+        with:
+          ref: audit/quizforge-0.1.0-final-v2
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+
+      - name: Record v2 cross-platform verification evidence
+        shell: bash
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          cat > docs/release-candidate-verification-v2.md <<EOF
+          # QuizForge 0.1.0 Release Candidate Verification v2
+
+          The final v2 release-candidate gate completed successfully before this documentation-only evidence commit.
+
+          - Workflow: ${RUN_URL}
+          - Verified product-source commit: $(git rev-parse HEAD)
+          - Direct generated-localization dependency (`intl: any`): verified
+          - Flutter dependency resolution: passed
+          - Localization generation: passed
+          - Dart formatting verification: passed
+          - Flutter static analysis: passed
+          - Complete automated test suite: passed
+          - Deterministic benchmark smoke test: passed
+          - Dependency review (moderate-or-higher threshold): passed
+          - Android debug APK build: passed
+          - Web release bundle build: passed
+          - Linux release build: passed
+          - Windows release build: passed
+          - macOS release build: passed
+          - iOS release compilation without signing: passed
+
+          This verifies source quality and cross-platform compilation. It does not claim store signing/publication, a signed production Android artifact, real release screenshots, or completed manual assistive-technology review.
+
+          **Made by the Sanskar**
+          EOF
+
+          if ! grep -q "Cross-platform release candidate verification v2" what_changed.md; then
+            cat >> what_changed.md <<EOF
+
+          ## Cross-platform release candidate verification v2 — 2026-08-19
+
+          Workflow: ${RUN_URL}
+
+          The final v2 gate used Git identity \`Sanskar <sanskarin@outlook.in>\`, preserved an SDK-compatible direct \`intl: any\` dependency for generated localization code, passed dependency resolution, localization generation, formatting, static analysis, the complete automated test suite, deterministic benchmark smoke testing, dependency review at moderate-or-higher severity, Android debug and Web release builds, Linux/Windows/macOS release builds, and iOS release compilation without signing.
+
+          Remaining non-source release operations are signed distribution/store publication, real release-build screenshot capture, and manual assistive-technology review. Those are intentionally not represented as automated CI successes.
+          EOF
+          fi
+
+          git add docs/release-candidate-verification-v2.md what_changed.md
+          git commit -m "docs: record final v2 release candidate verification"
+          git push origin HEAD:audit/quizforge-0.1.0-final-v2
+
+      - name: Merge verified pull request with commit history preserved
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr merge 6 --repo "${{ github.repository }}" --merge --delete-branch
