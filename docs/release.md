@@ -2,7 +2,7 @@
 
 QuizForge releases must be reproducible, tested, and based on a clean repository state.
 
-The maintained release candidate is **2.7.4+1** and its public Git tag, after verification, is **`v2.7.4`**.
+The maintained release candidate is **2.7.4+1** and its public Git tag, after verification, is **`v2.7.4`**. The in-app public version displayed by `AppConstants.version` is **2.7.4**.
 
 ## Release prerequisites
 
@@ -10,7 +10,8 @@ Before creating or promoting a release candidate:
 
 - `main` is up to date and clean;
 - the version in `pubspec.yaml` is intentional;
-- `tool/check_release_metadata.py` confirms that package, changelog, and versioning metadata agree;
+- `AppConstants.version` matches the public package version shown to users;
+- `tool/check_release_metadata.py` confirms that package, in-app, changelog, and versioning metadata agree;
 - the reviewed application `pubspec.lock` is tracked and matches `pubspec.yaml` after locked dependency resolution;
 - `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md` are current;
 - repository-validator regression tests pass;
@@ -49,13 +50,15 @@ The release workflow intentionally fails when `pubspec.lock` is missing, empty, 
 
 `tool/check_release_metadata.py` is the early, Flutter-independent release identity gate. For 2.7.4 it verifies:
 
-- exactly one package version with the `MAJOR.MINOR.PATCH+BUILD` form and a positive build number;
+- exactly one canonical package version with the `MAJOR.MINOR.PATCH+BUILD` form, no leading-zero SemVer components, and a positive build number;
+- exactly one semantic `AppConstants.version` that matches public version `2.7.4`;
 - a dated `CHANGELOG.md` entry matching public version `2.7.4`;
+- valid ISO calendar dates in recognized changelog release headings;
 - unique release headings in descending version order, including historical zero-major entries;
 - no stale pre-1.0 compatibility policy while the package is on a stable major version;
 - maintained package identity `2.7.4+1` and tag identity `v2.7.4` in `docs/versioning.md`.
 
-Its regression suite is `tool/test_check_release_metadata.py`. Both the validator and its tests run in pull-request CI and the tag release workflow.
+Its regression suite is `tool/test_check_release_metadata.py`. The tests cover package syntax, in-app version drift/non-semantic values, impossible release dates, historical `0.1.0` recognition, duplicate/out-of-order releases, stable-major policy, and maintained package/tag documentation. Both the validator and its tests run in pull-request CI and the tag release workflow.
 
 ## Local backup/restore verification
 
@@ -141,7 +144,7 @@ Use Semantic Versioning:
 
 The local-backup `format`/`version` contract is independent from the app package version. QuizForge 2.7.4 continues to use local-backup format version 1. A breaking backup-format change must use a new backup version and document migration/compatibility behavior rather than silently reinterpreting version 1.
 
-Flutter's build number follows the `+N` suffix in `pubspec.yaml` and should increase for store submissions as required by the target store. A build-number-only store rebuild of 2.7.4 still uses the public tag/version `v2.7.4` when no SemVer-visible behavior changes.
+Flutter's build number follows the `+N` suffix in `pubspec.yaml` and should increase for store submissions as required by the target store. A build-number-only store rebuild of 2.7.4 still uses the public tag/version `v2.7.4` when no SemVer-visible behavior changes. `AppConstants.version` remains the public SemVer without the build suffix.
 
 ## Tagging 2.7.4
 
@@ -182,6 +185,7 @@ After publication:
 
 1. verify downloadable artifacts/checksums where provided;
 2. ensure `CHANGELOG.md` reflects the published release version/date and has a fresh Unreleased section;
-3. update `what_changed.md` and `docs/verification.md` with the exact tag and release commit;
-4. record actual verified platform scope and any remaining limitations in the release notes;
-5. record any store/distribution-specific follow-up separately from open-source source control.
+3. confirm the installed/About version still matches the published public version;
+4. update `what_changed.md` and `docs/verification.md` with the exact tag and release commit;
+5. record actual verified platform scope and any remaining limitations in the release notes;
+6. record any store/distribution-specific follow-up separately from open-source source control.
