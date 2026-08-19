@@ -51,7 +51,9 @@ The project follows Semantic Versioning where practical.
 - Statistics now surfaces recent completed attempts without duplicating attempt storage or exposing submitted answer content.
 - Local backup restore preserves the stored attempt-level streak summary while validating only order-independent streak bounds because schema version 1 does not persist original per-answer sequence.
 - Local-backup version 1 now defines a minimum directly restorable initialized state: at least one question, at least one local profile, and a non-null active-profile reference.
-- Local-backup validation now re-evaluates each submitted answer against its archived question using the same quiz-engine rules as normal play before accepting stored correctness/score metadata.
+- Local-backup validation re-evaluates each submitted answer against its archived question using the same quiz-engine rules as normal play before accepting stored correctness/score metadata.
+- Restored attempt summaries must represent normal QuizForge-sized sessions with question counts from 1 through 100.
+- Bookmark duplicate validation now uses exact `(profileId, questionId)` pair identity instead of delimiter-concatenated strings.
 - User-facing startup, import, creator, settings, statistics, backup, and quiz messages were moved toward externalized localization resources.
 - Flutter localization dependency handling now lets the Flutter SDK select its compatible `intl` version.
 - Setup, development, testing, CI, release, question-bank-format, roadmap, progress-history, backup, privacy, screenshot, and verification documentation were synchronized with the maintained repository behavior.
@@ -72,6 +74,8 @@ The project follows Semantic Versioning where practical.
 - Rejected local-backup snapshots with dangling references, invalid/non-finite aggregate values, impossible streak bounds, inconsistent answer/count totals, duplicate content, invalid active-profile references, missing questions, or missing profiles.
 - Rejected version-1 local-backup archives with no active-profile selection instead of silently selecting a different profile during application reload.
 - Rejected tampered local-backup answer rows whose submitted answers, correctness flag, and score do not agree with the archived question's QuizForge scoring result.
+- Rejected zero-question and above-100-question restored attempts that normal QuizForge session configuration cannot create.
+- Eliminated delimiter-collision ambiguity when validating duplicate bookmark pairs inside a backup.
 - Prevented local backup export from intentionally emitting an archive larger than the same version's restore limit.
 - Avoided incorrectly recomputing historical best streak from backup answer rows after database export reordered rows by question id; schema version 1 has no stored answer-position column.
 - Added the previously missing Markdown-validator regression-test helper before wiring it into CI/local check scripts.
@@ -82,7 +86,7 @@ The project follows Semantic Versioning where practical.
 - Imported question-bank data is validated before persistence.
 - JSON/CSV imports reject payloads larger than the documented in-process limit and reject excessive question counts.
 - CSV imports reject malformed quote structure rather than attempting ambiguous reinterpretation.
-- Local backup restore rejects archives above the supported size limit and validates format version, minimum restorable state, object references, domain records, submitted-answer scoring integrity, aggregates, bookmarks, and active-profile selection before replacement.
+- Local backup restore rejects archives above the supported size limit and validates format version, minimum restorable state, object references, domain records, submitted-answer scoring integrity, bounded attempt sizes, aggregates, exact bookmark pairs, and active-profile selection before replacement.
 - Local backup export enforces the supported restore-size boundary so an intentionally generated archive is not knowingly unusable by the same application version.
 - Local backup restore snapshots current local state first and attempts rollback if a later cross-store restore/reload step fails.
 - Backup archives are documented as private user data because they can contain profile names, authored questions, bookmarks, quiz history, and submitted answers.
