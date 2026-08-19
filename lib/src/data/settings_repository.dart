@@ -1,8 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/app_settings.dart';
+import 'settings_store.dart';
 
-final class SettingsRepository {
+final class SettingsRepository implements SettingsStore {
   SettingsRepository({SharedPreferencesAsync? preferences})
       : _preferences = preferences ?? SharedPreferencesAsync();
 
@@ -22,6 +23,7 @@ final class SettingsRepository {
     _confirmExitKey,
   ];
 
+  @override
   Future<AppSettings> load() async {
     final String? themeName = await _preferences.getString(_themeKey);
     final AppThemeMode themeMode = AppThemeMode.values.firstWhere(
@@ -39,6 +41,7 @@ final class SettingsRepository {
     );
   }
 
+  @override
   Future<void> save(AppSettings settings) async {
     await _preferences.setString(_themeKey, settings.themeMode.name);
     await _preferences.setBool(_largeTextKey, settings.largeText);
@@ -53,6 +56,7 @@ final class SettingsRepository {
     );
   }
 
+  @override
   Future<void> reset() async {
     for (final String key in _keys) {
       await _preferences.remove(key);
