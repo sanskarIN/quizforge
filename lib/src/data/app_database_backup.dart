@@ -126,7 +126,7 @@ final class DatabaseBackupSnapshot {
       }
     }
 
-    final Set<String> bookmarkKeys = <String>{};
+    final Set<(String, String)> bookmarkKeys = <(String, String)>{};
     for (final BackupBookmark bookmark in bookmarks) {
       if (!profileIds.contains(bookmark.profileId)) {
         errors.add('Bookmark references an unknown profile.');
@@ -134,7 +134,7 @@ final class DatabaseBackupSnapshot {
       if (!questionIds.contains(bookmark.questionId)) {
         errors.add('Bookmark references an unknown question.');
       }
-      if (!bookmarkKeys.add('${bookmark.profileId}\u0000${bookmark.questionId}')) {
+      if (!bookmarkKeys.add((bookmark.profileId, bookmark.questionId))) {
         errors.add('Duplicate bookmark detected.');
       }
     }
