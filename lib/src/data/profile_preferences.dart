@@ -13,4 +13,6 @@ final class ProfilePreferences {
 
   Future<void> saveActiveProfileId(String profileId) =>
       _preferences.setString(_activeProfileKey, profileId);
+
+  Future<void> clearActiveProfileId() => _preferences.remove(_activeProfileKey);
 }
