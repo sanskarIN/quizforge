@@ -101,6 +101,20 @@ void main() {
     );
   });
 
+  test('snapshot validation rejects a profileless whole-app backup', () {
+    const DatabaseBackupSnapshot snapshot = DatabaseBackupSnapshot(
+      questions: <Question>[],
+      profiles: <PlayerProfile>[],
+      attempts: <BackupAttempt>[],
+      bookmarks: <BackupBookmark>[],
+    );
+
+    expect(
+      snapshot.validate(),
+      contains('Local backup must contain at least one profile.'),
+    );
+  });
+
   test('snapshot validation rejects inconsistent streak metadata', () {
     final Question question = Question(
       id: 'streak-q1',
