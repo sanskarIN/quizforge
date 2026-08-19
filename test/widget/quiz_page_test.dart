@@ -1,5 +1,4 @@
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizforge/src/application/quizforge_controller.dart';
 import 'package:quizforge/src/data/app_database.dart';
@@ -9,9 +8,14 @@ import 'package:quizforge/src/data/settings_repository.dart';
 import 'package:quizforge/src/domain/question.dart';
 import 'package:quizforge/src/presentation/quiz_page.dart';
 
+import '../test_app.dart';
+
 void main() {
-  testWidgets('renders question metadata and answer choices', (WidgetTester tester) async {
+  testWidgets('renders localized question metadata and answer choices', (
+    WidgetTester tester,
+  ) async {
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(
       database: database,
       questionRepository: QuestionRepository(database),
@@ -29,8 +33,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: QuizPage(
+      buildTestApp(
+        QuizPage(
           controller: controller,
           questions: <Question>[question],
           title: 'Widget Quiz',
@@ -42,8 +46,9 @@ void main() {
     expect(find.text('Which option is correct?'), findsOneWidget);
     expect(find.text('Alpha'), findsOneWidget);
     expect(find.text('Beta'), findsOneWidget);
+    expect(find.text('Easy'), findsOneWidget);
+    expect(find.text('Multiple choice'), findsOneWidget);
     expect(find.text('1/1'), findsOneWidget);
-
-    await database.close();
+    expect(find.bySemanticsLabel('Question 1 of 1'), findsOneWidget);
   });
 }
