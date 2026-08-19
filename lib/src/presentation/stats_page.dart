@@ -21,7 +21,10 @@ final class StatsPage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: <Widget>[
-          Text(strings.progress, style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            strings.progress,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: AppSpacing.sm),
           Text(strings.progressForProfile),
           const SizedBox(height: AppSpacing.xl),
@@ -32,45 +35,52 @@ final class StatsPage extends StatelessWidget {
                   : constraints.maxWidth >= 560
                       ? 2
                       : 1;
-              return GridView.count(
-                crossAxisCount: columns,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: AppSpacing.md,
-                mainAxisSpacing: AppSpacing.md,
-                childAspectRatio: columns == 1 ? 3.0 : 1.8,
-                children: <Widget>[
-                  _StatCard(
-                    icon: Icons.quiz_outlined,
-                    label: strings.quizzesCompleted,
-                    value: '${progress.quizCount}',
-                  ),
-                  _StatCard(
-                    icon: Icons.fact_check_outlined,
-                    label: strings.questionsAnswered,
-                    value: '${progress.questionCount}',
-                  ),
-                  _StatCard(
-                    icon: Icons.track_changes,
-                    label: strings.accuracy,
-                    value: '${progress.accuracy.toStringAsFixed(1)}%',
-                  ),
-                  _StatCard(
-                    icon: Icons.local_fire_department_outlined,
-                    label: strings.bestStreak,
-                    value: '${progress.bestStreak}',
-                  ),
-                  _StatCard(
-                    icon: Icons.schedule_outlined,
-                    label: strings.playTime,
-                    value: _formatDuration(progress.playTime),
-                  ),
-                  _StatCard(
-                    icon: Icons.bookmark_outline,
-                    label: strings.bookmarks,
-                    value: '${controller.bookmarkIds.length}',
-                  ),
-                ],
+              final double totalSpacing = AppSpacing.md * (columns - 1);
+              final double cardWidth =
+                  (constraints.maxWidth - totalSpacing) / columns;
+              final List<_StatCard> cards = <_StatCard>[
+                _StatCard(
+                  icon: Icons.quiz_outlined,
+                  label: strings.quizzesCompleted,
+                  value: '${progress.quizCount}',
+                ),
+                _StatCard(
+                  icon: Icons.fact_check_outlined,
+                  label: strings.questionsAnswered,
+                  value: '${progress.questionCount}',
+                ),
+                _StatCard(
+                  icon: Icons.track_changes,
+                  label: strings.accuracy,
+                  value: '${progress.accuracy.toStringAsFixed(1)}%',
+                ),
+                _StatCard(
+                  icon: Icons.local_fire_department_outlined,
+                  label: strings.bestStreak,
+                  value: '${progress.bestStreak}',
+                ),
+                _StatCard(
+                  icon: Icons.schedule_outlined,
+                  label: strings.playTime,
+                  value: _formatDuration(progress.playTime),
+                ),
+                _StatCard(
+                  icon: Icons.bookmark_outline,
+                  label: strings.bookmarks,
+                  value: '${controller.bookmarkIds.length}',
+                ),
+              ];
+              return Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.md,
+                children: cards
+                    .map(
+                      (_StatCard card) => SizedBox(
+                        width: cardWidth,
+                        child: card,
+                      ),
+                    )
+                    .toList(growable: false),
               );
             },
           ),
@@ -139,7 +149,8 @@ final class StatsPage extends StatelessWidget {
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (BuildContext context, int index) {
                   final LeaderboardEntry entry = controller.leaderboard[index];
-                  final bool active = entry.profileId == controller.activeProfile?.id;
+                  final bool active =
+                      entry.profileId == controller.activeProfile?.id;
                   return ListTile(
                     leading: CircleAvatar(child: Text('${index + 1}')),
                     title: Text(entry.displayName),
@@ -186,7 +197,7 @@ final class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Icon(icon),
             const SizedBox(height: AppSpacing.sm),
