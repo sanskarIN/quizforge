@@ -25,6 +25,18 @@ final class Question {
     this.timeLimitSeconds,
   });
 
+  static const int maxIdLength = 120;
+  static const int maxPromptLength = 2000;
+  static const int maxCategoryLength = 120;
+  static const int maxChoices = 20;
+  static const int maxChoiceLength = 500;
+  static const int maxCorrectAnswers = 20;
+  static const int maxAnswerLength = 500;
+  static const int maxTags = 20;
+  static const int maxTagLength = 80;
+  static const int maxExplanationLength = 5000;
+  static const int maxTimeLimitSeconds = 3600;
+
   final String id;
   final QuestionType type;
   final String prompt;
@@ -38,20 +50,50 @@ final class Question {
 
   List<String> validate() {
     final List<String> errors = <String>[];
-    if (id.trim().isEmpty) {
+    final String trimmedId = id.trim();
+    final String trimmedPrompt = prompt.trim();
+    final String trimmedCategory = category.trim();
+
+    if (trimmedId.isEmpty) {
       errors.add('Question id is required.');
+    } else if (trimmedId.length > maxIdLength) {
+      errors.add('Question id must be at most $maxIdLength characters.');
     }
-    if (prompt.trim().length < 3) {
+
+    if (trimmedPrompt.length < 3) {
       errors.add('Prompt must contain at least 3 characters.');
+    } else if (trimmedPrompt.length > maxPromptLength) {
+      errors.add('Prompt must be at most $maxPromptLength characters.');
     }
-    if (category.trim().isEmpty) {
+
+    if (trimmedCategory.isEmpty) {
       errors.add('Category is required.');
+    } else if (trimmedCategory.length > maxCategoryLength) {
+      errors.add('Category must be at most $maxCategoryLength characters.');
     }
+
     if (correctAnswers.isEmpty) {
       errors.add('At least one correct answer is required.');
     }
+    if (correctAnswers.length > maxCorrectAnswers) {
+      errors.add('A question supports at most $maxCorrectAnswers correct answers.');
+    }
+    if (choices.length > maxChoices) {
+      errors.add('A question supports at most $maxChoices choices.');
+    }
+    if (tags.length > maxTags) {
+      errors.add('A question supports at most $maxTags tags.');
+    }
+    if (explanation.length > maxExplanationLength) {
+      errors.add(
+        'Explanation must be at most $maxExplanationLength characters.',
+      );
+    }
     if (timeLimitSeconds != null && timeLimitSeconds! <= 0) {
       errors.add('Time limit must be greater than zero.');
+    } else if (timeLimitSeconds != null &&
+        timeLimitSeconds! > maxTimeLimitSeconds) {
+      errors.add('Time limit must not exceed $maxTimeLimitSeconds seconds.');
     }
 
     final Set<String> normalizedChoices = choices
@@ -60,6 +102,31 @@ final class Question {
         .toSet();
     if (normalizedChoices.length != choices.length) {
       errors.add('Choices must be non-empty and unique.');
+    }
+    if (choices.any((String choice) => choice.length > maxChoiceLength)) {
+      errors.add('Each choice must be at most $maxChoiceLength characters.');
+    }
+
+    final Set<String> normalizedAnswers = correctAnswers
+        .map(normalizeAnswer)
+        .where((String value) => value.isNotEmpty)
+        .toSet();
+    if (normalizedAnswers.length != correctAnswers.length) {
+      errors.add('Correct answers must be non-empty and unique.');
+    }
+    if (correctAnswers.any((String answer) => answer.length > maxAnswerLength)) {
+      errors.add('Each correct answer must be at most $maxAnswerLength characters.');
+    }
+
+    final Set<String> normalizedTags = tags
+        .map(normalizeAnswer)
+        .where((String value) => value.isNotEmpty)
+        .toSet();
+    if (normalizedTags.length != tags.length) {
+      errors.add('Tags must be non-empty and unique.');
+    }
+    if (tags.any((String tag) => tag.length > maxTagLength)) {
+      errors.add('Each tag must be at most $maxTagLength characters.');
     }
 
     switch (type) {
@@ -72,6 +139,9 @@ final class Question {
         }
         break;
       case QuestionType.trueFalse:
+        if (choices.isNotEmpty) {
+          errors.add('True/false questions must not define custom choices.');
+        }
         if (correctAnswers.length != 1) {
           errors.add('True/false questions need exactly one correct answer.');
         }
