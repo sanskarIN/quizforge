@@ -134,9 +134,60 @@ void main() {
       category: ' testing ',
       difficulty: Difficulty.hard,
     );
-    expect(
-      () => controller.addQuestion(duplicateContent),
+    await expectLater(
+      controller.addQuestion(duplicateContent),
       throwsArgumentError,
     );
+  });
+
+  test('updateSettings writes through the injected settings store', () async {
+    await controller.initialize();
+    const AppSettings updated = AppSettings(
+      themeMode: AppThemeMode.light,
+      reducedMotion: true,
+      screenReaderHints: false,
+      confirmBeforeExitQuiz: false,
+    );
+
+    await controller.updateSettings(updated);
+
+    expect(controller.settings, same(updated));
+    expect(settingsStore.value, same(updated));
+  });
+
+  test('profile create rename select and delete stay synchronized', () async {
+    await controller.initialize();
+
+    await controller.createProfile('Second Player');
+    final PlayerProfile second = controller.activeProfile!;
+    expect(second.displayName, 'Second Player');
+    expect(controller.profiles, hasLength(2));
+    expect(profileSelectionStore.activeProfileId, second.id);
+
+    await controller.renameActiveProfile('Renamed Player');
+    expect(controller.activeProfile?.displayName, 'Renamed Player');
+    expect(
+      (await database.loadProfiles())
+          .firstWhere((PlayerProfile profile) => profile.id == second.id)
+          .displayName,
+      'Renamed Player',
+    );
+
+    await controller.selectProfile('local-default');
+    expect(controller.activeProfile?.id, 'local-default');
+
+    await controller.deleteProfile(second.id);
+    expect(controller.profiles, hasLength(1));
+    expect(controller.profiles.single.id, 'local-default');
+  });
+
+  test('deleteProfile refuses to remove the final local profile', () async {
+    await controller.initialize();
+
+    await expectLater(
+      controller.deleteProfile('local-default'),
+      throwsStateError,
+    );
+    expect(controller.profiles, hasLength(1));
   });
 }
