@@ -99,14 +99,8 @@ final class _ImportExportPageState extends State<ImportExportPage> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: exportText));
-                  if (!context.mounted) {
-                    return;
-                  }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(strings.exportCopied)),
-                  );
+                onPressed: () {
+                  unawaited(_copyExport(exportText));
                 },
                 icon: const Icon(Icons.copy_all_outlined),
                 label: Text(strings.copyExport),
@@ -135,12 +129,8 @@ final class _ImportExportPageState extends State<ImportExportPage> {
               runSpacing: AppSpacing.sm,
               children: <Widget>[
                 OutlinedButton.icon(
-                  onPressed: () async {
-                    final ClipboardData? data =
-                        await Clipboard.getData(Clipboard.kTextPlain);
-                    if (data?.text != null) {
-                      _importController.text = data!.text!;
-                    }
+                  onPressed: () {
+                    unawaited(_pasteImport());
                   },
                   icon: const Icon(Icons.content_paste),
                   label: Text(strings.paste),
@@ -166,6 +156,50 @@ final class _ImportExportPageState extends State<ImportExportPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _copyExport(String exportText) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    try {
+      await Clipboard.setData(ClipboardData(text: exportText));
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.exportCopied)),
+      );
+    } on Object catch (error) {
+      widget.controller.logger.warning(
+        'question.export.clipboard_write.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.actionFailed)),
+        );
+      }
+    }
+  }
+
+  Future<void> _pasteImport() async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    try {
+      final ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+      if (!mounted || data?.text == null) {
+        return;
+      }
+      _importController.text = data!.text!;
+    } on Object catch (error) {
+      widget.controller.logger.warning(
+        'question.import.clipboard_read.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.actionFailed)),
+        );
+      }
+    }
   }
 
   Future<void> _import() async {
