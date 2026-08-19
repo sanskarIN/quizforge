@@ -183,14 +183,20 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                             initialSelection: _secondsPerQuestion,
                             label: Text(strings.defaultSecondsPerQuestion),
                             expandedInsets: EdgeInsets.zero,
-                            dropdownMenuEntries: const <DropdownMenuEntry<int>>[
-                              DropdownMenuEntry<int>(value: 10, label: '10 s'),
-                              DropdownMenuEntry<int>(value: 20, label: '20 s'),
-                              DropdownMenuEntry<int>(value: 30, label: '30 s'),
-                              DropdownMenuEntry<int>(value: 45, label: '45 s'),
-                              DropdownMenuEntry<int>(value: 60, label: '60 s'),
-                              DropdownMenuEntry<int>(value: 90, label: '90 s'),
-                              DropdownMenuEntry<int>(value: 120, label: '120 s'),
+                            dropdownMenuEntries: <DropdownMenuEntry<int>>[
+                              for (final int seconds in const <int>[
+                                10,
+                                20,
+                                30,
+                                45,
+                                60,
+                                90,
+                                120,
+                              ])
+                                DropdownMenuEntry<int>(
+                                  value: seconds,
+                                  label: strings.secondsShort(seconds),
+                                ),
                             ],
                             onSelected: (int? value) {
                               if (value != null) {
