@@ -4,7 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/app_settings.dart';
 
-final class SettingsRepository {
+abstract interface class AppSettingsStore {
+  Future<AppSettings> load();
+
+  Future<void> save(AppSettings settings);
+
+  Future<void> reset();
+}
+
+final class SettingsRepository implements AppSettingsStore {
   SettingsRepository({SharedPreferencesAsync? preferences})
       : _preferences = preferences ?? SharedPreferencesAsync();
 
@@ -25,6 +33,7 @@ final class SettingsRepository {
     _confirmExitKey,
   ];
 
+  @override
   Future<AppSettings> load() async {
     final String? payload = await _preferences.getString(_settingsKey);
     if (payload != null) {
@@ -47,11 +56,13 @@ final class SettingsRepository {
     return _loadLegacy();
   }
 
+  @override
   Future<void> save(AppSettings settings) async {
     final String payload = jsonEncode(settings.toJson());
     await _preferences.setString(_settingsKey, payload);
   }
 
+  @override
   Future<void> reset() async {
     await _preferences.remove(_settingsKey);
     for (final String key in _legacyKeys) {
