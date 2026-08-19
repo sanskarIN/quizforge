@@ -15,7 +15,6 @@ on:
       - 'ios/**'
       - '.github/workflows/platform-builds.yml'
   pull_request:
-    branches: [main]
     paths:
       - 'lib/**'
       - 'assets/**'
