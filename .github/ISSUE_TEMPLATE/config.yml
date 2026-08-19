@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/sanskarIN/quizforge/security/policy
+    about: Please follow the private reporting guidance in SECURITY.md instead of opening a public vulnerability issue.
+  - name: Support guide
+    url: https://github.com/sanskarIN/quizforge/blob/main/SUPPORT.md
+    about: Read support and troubleshooting guidance before opening an issue.
