@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
-import '../core/app_constants.dart';
 import '../core/theme/app_theme.dart';
 import 'creator_page.dart';
 import 'dashboard_page.dart';
@@ -26,12 +26,68 @@ final class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final List<Widget> pages = <Widget>[
       DashboardPage(controller: widget.controller),
       QuestionBankPage(controller: widget.controller),
       CreatorPage(controller: widget.controller),
       StatsPage(controller: widget.controller),
       SettingsPage(controller: widget.controller),
+    ];
+    final List<NavigationRailDestination> railDestinations =
+        <NavigationRailDestination>[
+      NavigationRailDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: Text(strings.home),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.library_books_outlined),
+        selectedIcon: const Icon(Icons.library_books),
+        label: Text(strings.bank),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.add_circle_outline),
+        selectedIcon: const Icon(Icons.add_circle),
+        label: Text(strings.create),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.insights_outlined),
+        selectedIcon: const Icon(Icons.insights),
+        label: Text(strings.stats),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: Text(strings.settings),
+      ),
+    ];
+    final List<NavigationDestination> barDestinations = <NavigationDestination>[
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: strings.home,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.library_books_outlined),
+        selectedIcon: const Icon(Icons.library_books),
+        label: strings.bank,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.add_circle_outline),
+        selectedIcon: const Icon(Icons.add_circle),
+        label: strings.create,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.insights_outlined),
+        selectedIcon: const Icon(Icons.insights),
+        label: strings.stats,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: strings.settings,
+      ),
     ];
 
     final bool wide = MediaQuery.sizeOf(context).width >= AppBreakpoints.medium;
@@ -40,7 +96,7 @@ final class _HomePageState extends State<HomePage> {
     if (wide) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text(AppConstants.appName),
+          title: Text(strings.appName),
           actions: <Widget>[
             _ProfileChip(controller: widget.controller),
             const SizedBox(width: AppSpacing.md),
@@ -53,7 +109,7 @@ final class _HomePageState extends State<HomePage> {
                 selectedIndex: _selectedIndex,
                 onDestinationSelected: _select,
                 labelType: NavigationRailLabelType.all,
-                destinations: _railDestinations,
+                destinations: railDestinations,
               ),
             ),
             const VerticalDivider(width: 1),
@@ -65,7 +121,7 @@ final class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppConstants.appName),
+        title: Text(strings.appName),
         actions: <Widget>[
           _ProfileChip(controller: widget.controller),
           const SizedBox(width: AppSpacing.sm),
@@ -75,7 +131,7 @@ final class _HomePageState extends State<HomePage> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _select,
-        destinations: _barDestinations,
+        destinations: barDestinations,
       ),
     );
   }
@@ -86,64 +142,6 @@ final class _HomePageState extends State<HomePage> {
     }
     setState(() => _selectedIndex = value);
   }
-
-  static const List<NavigationRailDestination> _railDestinations =
-      <NavigationRailDestination>[
-    NavigationRailDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home),
-      label: Text('Home'),
-    ),
-    NavigationRailDestination(
-      icon: Icon(Icons.library_books_outlined),
-      selectedIcon: Icon(Icons.library_books),
-      label: Text('Bank'),
-    ),
-    NavigationRailDestination(
-      icon: Icon(Icons.add_circle_outline),
-      selectedIcon: Icon(Icons.add_circle),
-      label: Text('Create'),
-    ),
-    NavigationRailDestination(
-      icon: Icon(Icons.insights_outlined),
-      selectedIcon: Icon(Icons.insights),
-      label: Text('Stats'),
-    ),
-    NavigationRailDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: Text('Settings'),
-    ),
-  ];
-
-  static const List<NavigationDestination> _barDestinations =
-      <NavigationDestination>[
-    NavigationDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home),
-      label: 'Home',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.library_books_outlined),
-      selectedIcon: Icon(Icons.library_books),
-      label: 'Bank',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.add_circle_outline),
-      selectedIcon: Icon(Icons.add_circle),
-      label: 'Create',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.insights_outlined),
-      selectedIcon: Icon(Icons.insights),
-      label: 'Stats',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: 'Settings',
-    ),
-  ];
 }
 
 final class _ProfileChip extends StatelessWidget {
@@ -153,9 +151,10 @@ final class _ProfileChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String label = controller.activeProfile?.displayName ?? 'No profile';
+    final AppLocalizations strings = AppLocalizations.of(context);
+    final String label = controller.activeProfile?.displayName ?? strings.noProfile;
     return Semantics(
-      label: 'Active profile: $label',
+      label: '${strings.activeProfile}: $label',
       child: Chip(
         avatar: const Icon(Icons.person_outline, size: 18),
         label: Text(label),
