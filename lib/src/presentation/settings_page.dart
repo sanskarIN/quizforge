@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/app_constants.dart';
 import '../core/theme/app_theme.dart';
@@ -19,15 +20,16 @@ final class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final AppSettings settings = controller.settings;
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: <Widget>[
-          Text('Settings', style: Theme.of(context).textTheme.headlineMedium),
+          Text(strings.settings, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: AppSpacing.xl),
           _Section(
-            title: 'Profiles',
+            title: strings.profiles,
             icon: Icons.people_outline,
             child: Column(
               children: <Widget>[
@@ -38,8 +40,8 @@ final class SettingsPage extends StatelessWidget {
                     title: Text(profile.displayName),
                     subtitle: Text(
                       profile.id == controller.activeProfile?.id
-                          ? 'Active local profile'
-                          : 'Local profile',
+                          ? strings.activeLocalProfile
+                          : strings.localProfile,
                     ),
                     trailing: profile.id == controller.activeProfile?.id
                         ? const Icon(Icons.check_circle)
@@ -60,7 +62,7 @@ final class SettingsPage extends StatelessWidget {
                         unawaited(_showCreateProfileDialog(context));
                       },
                       icon: const Icon(Icons.person_add_alt_1),
-                      label: const Text('Add profile'),
+                      label: Text(strings.addProfile),
                     ),
                     OutlinedButton.icon(
                       onPressed: controller.activeProfile == null
@@ -69,7 +71,7 @@ final class SettingsPage extends StatelessWidget {
                               unawaited(_showRenameProfileDialog(context));
                             },
                       icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Rename active'),
+                      label: Text(strings.renameActive),
                     ),
                     OutlinedButton.icon(
                       onPressed: controller.profiles.length <= 1 ||
@@ -79,7 +81,7 @@ final class SettingsPage extends StatelessWidget {
                               unawaited(_confirmDeleteActiveProfile(context));
                             },
                       icon: const Icon(Icons.person_remove_outlined),
-                      label: const Text('Delete active'),
+                      label: Text(strings.deleteActive),
                     ),
                   ],
                 ),
@@ -88,29 +90,29 @@ final class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           _Section(
-            title: 'Appearance',
+            title: strings.appearance,
             icon: Icons.palette_outlined,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('Theme'),
+                Text(strings.theme),
                 const SizedBox(height: AppSpacing.sm),
                 SegmentedButton<AppThemeMode>(
-                  segments: const <ButtonSegment<AppThemeMode>>[
+                  segments: <ButtonSegment<AppThemeMode>>[
                     ButtonSegment<AppThemeMode>(
                       value: AppThemeMode.system,
-                      icon: Icon(Icons.brightness_auto_outlined),
-                      label: Text('System'),
+                      icon: const Icon(Icons.brightness_auto_outlined),
+                      label: Text(strings.system),
                     ),
                     ButtonSegment<AppThemeMode>(
                       value: AppThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined),
-                      label: Text('Light'),
+                      icon: const Icon(Icons.light_mode_outlined),
+                      label: Text(strings.light),
                     ),
                     ButtonSegment<AppThemeMode>(
                       value: AppThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined),
-                      label: Text('Dark'),
+                      icon: const Icon(Icons.dark_mode_outlined),
+                      label: Text(strings.dark),
                     ),
                   ],
                   selected: <AppThemeMode>{settings.themeMode},
@@ -127,14 +129,14 @@ final class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           _Section(
-            title: 'Accessibility',
+            title: strings.accessibility,
             icon: Icons.accessibility_new,
             child: Column(
               children: <Widget>[
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Large text'),
-                  subtitle: const Text('Increase QuizForge text size across the app.'),
+                  title: Text(strings.largeText),
+                  subtitle: Text(strings.largeTextDescription),
                   value: settings.largeText,
                   onChanged: (bool value) {
                     unawaited(
@@ -144,8 +146,8 @@ final class SettingsPage extends StatelessWidget {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Reduced motion'),
-                  subtitle: const Text('Reduce non-essential interface animation.'),
+                  title: Text(strings.reducedMotion),
+                  subtitle: Text(strings.reducedMotionDescription),
                   value: settings.reducedMotion,
                   onChanged: (bool value) {
                     unawaited(
@@ -157,8 +159,8 @@ final class SettingsPage extends StatelessWidget {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Screen-reader hints'),
-                  subtitle: const Text('Keep additional semantic guidance enabled.'),
+                  title: Text(strings.screenReaderHints),
+                  subtitle: Text(strings.screenReaderHintsDescription),
                   value: settings.screenReaderHints,
                   onChanged: (bool value) {
                     unawaited(
@@ -170,8 +172,8 @@ final class SettingsPage extends StatelessWidget {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Confirm before leaving a quiz'),
-                  subtitle: const Text('Protect an in-progress attempt from accidental exit.'),
+                  title: Text(strings.confirmBeforeLeavingQuiz),
+                  subtitle: Text(strings.confirmBeforeLeavingQuizDescription),
                   value: settings.confirmBeforeExitQuiz,
                   onChanged: (bool value) {
                     unawaited(
@@ -186,18 +188,16 @@ final class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           _Section(
-            title: 'Privacy and data',
+            title: strings.privacyAndData,
             icon: Icons.shield_outlined,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text(
-                  'QuizForge is offline-first. Profiles, questions, bookmarks, and quiz history stay in local application storage unless you explicitly export question-bank data.',
-                ),
+                Text(strings.privacyOfflineDescription),
                 const SizedBox(height: AppSpacing.md),
                 _LinkTile(
                   icon: Icons.privacy_tip_outlined,
-                  label: 'Read privacy details',
+                  label: strings.readPrivacyDetails,
                   value: 'PRIVACY.md',
                   uri: Uri.parse(AppConstants.privacyUrl),
                 ),
@@ -205,10 +205,8 @@ final class SettingsPage extends StatelessWidget {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.history_toggle_off),
-                  title: const Text('Clear active profile activity'),
-                  subtitle: const Text(
-                    'Deletes quiz history and bookmarks for the active profile. Questions and other profiles remain.',
-                  ),
+                  title: Text(strings.clearActiveProfileActivity),
+                  subtitle: Text(strings.clearActivityDescription),
                   onTap: () {
                     unawaited(_confirmClearActivity(context));
                   },
@@ -220,12 +218,10 @@ final class SettingsPage extends StatelessWidget {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   title: Text(
-                    'Reset all local data',
+                    strings.resetAllLocalData,
                     style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
-                  subtitle: const Text(
-                    'Deletes local profiles, attempts, bookmarks, custom/imported questions, and settings, then restores starter data.',
-                  ),
+                  subtitle: Text(strings.resetAllDataDescription),
                   onTap: () {
                     unawaited(_confirmResetAll(context));
                   },
@@ -235,20 +231,18 @@ final class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           _Section(
-            title: 'Updates',
+            title: strings.updates,
             icon: Icons.system_update_alt,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('Installed version: ${AppConstants.version}'),
+                Text('${strings.installedVersion}: ${AppConstants.version}'),
                 const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  'QuizForge does not silently update itself. Review signed/tagged project releases and install through the distribution channel you trust.',
-                ),
+                Text(strings.updateDescription),
                 const SizedBox(height: AppSpacing.md),
                 _LinkTile(
                   icon: Icons.new_releases_outlined,
-                  label: 'View GitHub releases',
+                  label: strings.viewGitHubReleases,
                   value: AppConstants.releasesUrl,
                   uri: Uri.parse(AppConstants.releasesUrl),
                 ),
@@ -257,7 +251,7 @@ final class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           _Section(
-            title: 'About',
+            title: strings.about,
             icon: Icons.info_outline,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,29 +261,29 @@ final class SettingsPage extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                const Text('Open-source quiz game and authoring toolkit. Licensed under MIT.'),
+                Text(strings.aboutDescription),
                 const SizedBox(height: AppSpacing.md),
                 _LinkTile(
                   icon: Icons.code,
-                  label: 'GitHub repository',
+                  label: strings.githubRepository,
                   value: AppConstants.githubUrl,
                   uri: Uri.parse(AppConstants.githubUrl),
                 ),
                 _LinkTile(
                   icon: Icons.security_outlined,
-                  label: 'Security policy',
+                  label: strings.securityPolicy,
                   value: 'SECURITY.md',
                   uri: Uri.parse(AppConstants.securityUrl),
                 ),
                 _LinkTile(
                   icon: Icons.volunteer_activism_outlined,
-                  label: 'Buy Me a Coffee',
+                  label: strings.buyMeACoffee,
                   value: AppConstants.buyMeACoffeeUrl,
                   uri: Uri.parse(AppConstants.buyMeACoffeeUrl),
                 ),
                 _LinkTile(
                   icon: Icons.business_center_outlined,
-                  label: 'Business email',
+                  label: strings.businessEmail,
                   value: AppConstants.businessEmail,
                   uri: Uri(
                     scheme: 'mailto',
@@ -299,7 +293,7 @@ final class SettingsPage extends StatelessWidget {
                 ),
                 _LinkTile(
                   icon: Icons.email_outlined,
-                  label: 'Business email 2',
+                  label: strings.businessEmailTwo,
                   value: AppConstants.secondaryBusinessEmail,
                   uri: Uri(
                     scheme: 'mailto',
@@ -309,7 +303,7 @@ final class SettingsPage extends StatelessWidget {
                 ),
                 _LinkTile(
                   icon: Icons.support_agent_outlined,
-                  label: 'Support email',
+                  label: strings.supportEmail,
                   value: AppConstants.supportEmail,
                   uri: Uri(
                     scheme: 'mailto',
@@ -319,7 +313,7 @@ final class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  AppConstants.credit,
+                  strings.madeBySanskar,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -331,10 +325,11 @@ final class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _showCreateProfileDialog(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final String? name = await _askForProfileName(
       context,
-      title: 'Add local profile',
-      actionLabel: 'Add',
+      title: strings.addLocalProfile,
+      actionLabel: strings.add,
     );
     if (name == null || !context.mounted) {
       return;
@@ -342,19 +337,20 @@ final class SettingsPage extends StatelessWidget {
     await _runAction(
       context,
       action: () => controller.createProfile(name),
-      successMessage: 'Local profile created.',
+      successMessage: strings.profileCreated,
     );
   }
 
   Future<void> _showRenameProfileDialog(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final PlayerProfile? current = controller.activeProfile;
     if (current == null) {
       return;
     }
     final String? name = await _askForProfileName(
       context,
-      title: 'Rename active profile',
-      actionLabel: 'Rename',
+      title: strings.renameActiveProfile,
+      actionLabel: strings.rename,
       initialValue: current.displayName,
     );
     if (name == null || !context.mounted) {
@@ -363,7 +359,7 @@ final class SettingsPage extends StatelessWidget {
     await _runAction(
       context,
       action: () => controller.renameActiveProfile(name),
-      successMessage: 'Profile renamed.',
+      successMessage: strings.profileRenamed,
     );
   }
 
@@ -373,6 +369,7 @@ final class SettingsPage extends StatelessWidget {
     required String actionLabel,
     String initialValue = '',
   }) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final TextEditingController nameController =
         TextEditingController(text: initialValue);
     try {
@@ -386,7 +383,7 @@ final class SettingsPage extends StatelessWidget {
               autofocus: true,
               maxLength: 32,
               textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(labelText: 'Display name'),
+              decoration: InputDecoration(labelText: strings.displayName),
               onSubmitted: (String value) {
                 if (value.trim().length >= 2) {
                   Navigator.of(dialogContext).pop(value.trim());
@@ -396,7 +393,7 @@ final class SettingsPage extends StatelessWidget {
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: () =>
@@ -413,16 +410,16 @@ final class SettingsPage extends StatelessWidget {
   }
 
   Future<void> _confirmDeleteActiveProfile(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final PlayerProfile? profile = controller.activeProfile;
     if (profile == null || controller.profiles.length <= 1) {
       return;
     }
     final bool confirmed = await _confirm(
       context,
-      title: 'Delete active profile?',
-      message:
-          'This permanently removes this profile, its quiz history, and its bookmarks from this device. Questions remain.',
-      confirmLabel: 'Delete profile',
+      title: strings.deleteActiveProfileTitle,
+      message: strings.deleteActiveProfileDescription,
+      confirmLabel: strings.deleteProfile,
     );
     if (!confirmed || !context.mounted) {
       return;
@@ -430,17 +427,17 @@ final class SettingsPage extends StatelessWidget {
     await _runAction(
       context,
       action: () => controller.deleteProfile(profile.id),
-      successMessage: 'Profile deleted.',
+      successMessage: strings.profileDeleted,
     );
   }
 
   Future<void> _confirmClearActivity(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final bool confirmed = await _confirm(
       context,
-      title: 'Clear active profile activity?',
-      message:
-          'Quiz history, statistics, and bookmarks for the active profile will be permanently deleted. Questions and profiles remain.',
-      confirmLabel: 'Clear activity',
+      title: strings.clearActivityTitle,
+      message: strings.clearActivityConfirmDescription,
+      confirmLabel: strings.clearActivity,
     );
     if (!confirmed || !context.mounted) {
       return;
@@ -448,17 +445,17 @@ final class SettingsPage extends StatelessWidget {
     await _runAction(
       context,
       action: controller.clearActiveProfileActivity,
-      successMessage: 'Active profile activity cleared.',
+      successMessage: strings.activityCleared,
     );
   }
 
   Future<void> _confirmResetAll(BuildContext context) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final bool confirmed = await _confirm(
       context,
-      title: 'Reset all local QuizForge data?',
-      message:
-          'This permanently deletes profiles, history, bookmarks, custom/imported questions, and settings from this app. Starter questions and a default local profile will be recreated.',
-      confirmLabel: 'Reset everything',
+      title: strings.resetAllTitle,
+      message: strings.resetAllConfirmDescription,
+      confirmLabel: strings.resetEverything,
     );
     if (!confirmed || !context.mounted) {
       return;
@@ -466,7 +463,7 @@ final class SettingsPage extends StatelessWidget {
     await _runAction(
       context,
       action: controller.resetAllLocalData,
-      successMessage: 'QuizForge local data was reset.',
+      successMessage: strings.resetCompleted,
     );
   }
 
@@ -476,6 +473,7 @@ final class SettingsPage extends StatelessWidget {
     required String message,
     required String confirmLabel,
   }) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext dialogContext) {
@@ -485,7 +483,7 @@ final class SettingsPage extends StatelessWidget {
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text(strings.cancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -503,6 +501,7 @@ final class SettingsPage extends StatelessWidget {
     required Future<void> Function() action,
     required String successMessage,
   }) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     try {
       await action();
       if (context.mounted) {
@@ -511,9 +510,13 @@ final class SettingsPage extends StatelessWidget {
         );
       }
     } on Object catch (error) {
+      controller.logger.error(
+        'settings.action.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$error')),
+          SnackBar(content: Text(strings.actionFailed)),
         );
       }
     }
@@ -583,10 +586,15 @@ final class _LinkTile extends StatelessWidget {
   }
 
   Future<void> _launch(BuildContext context) async {
-    final bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    bool launched = false;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } on Object {
+      launched = false;
+    }
     if (!launched && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open $value')),
+        SnackBar(content: Text(AppLocalizations.of(context).linkOpenFailed(value))),
       );
     }
   }
