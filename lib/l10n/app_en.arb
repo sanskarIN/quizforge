@@ -117,6 +117,7 @@
   "addToQuestionBank": "Add to question bank",
   "adding": "Adding…",
   "questionAdded": "Question added to the local bank.",
+  "duplicateQuestion": "A question with the same id or content already exists.",
   "preview": "Preview",
   "promptPreviewPlaceholder": "Your prompt will appear here.",
   "shortAnswerFieldPreview": "Short-answer text field",
