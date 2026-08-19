@@ -184,14 +184,37 @@ final class QuizForgeController extends ChangeNotifier {
     if (errors.isNotEmpty) {
       throw ArgumentError(errors.join(' '));
     }
+
     await database.upsertProfile(profile);
-    _profiles = <PlayerProfile>[..._profiles, profile];
-    _leaderboard = await database.loadLeaderboard();
-    await selectProfile(profile.id);
+    try {
+      final _ProfileData profileData = await _loadProfileData(profile.id);
+      final List<LeaderboardEntry> leaderboard =
+          await database.loadLeaderboard();
+      await profilePreferences.saveActiveProfileId(profile.id);
+
+      _profiles = <PlayerProfile>[..._profiles, profile];
+      _activeProfile = profile;
+      _applyProfileData(profileData);
+      _leaderboard = leaderboard;
+    } on Object catch (error) {
+      try {
+        await database.deleteProfile(profile.id);
+      } on Object catch (rollbackError) {
+        logger.error(
+          'profile.create.rollback.failed',
+          fields: <String, Object?>{
+            'errorType': rollbackError.runtimeType.toString(),
+          },
+        );
+      }
+      Error.throwWithStackTrace(error, StackTrace.current);
+    }
+
     logger.info(
       'profile.create.completed',
       fields: <String, Object?>{'profileCount': _profiles.length},
     );
+    notifyListeners();
   }
 
   Future<void> renameActiveProfile(String displayName) async {
@@ -225,20 +248,60 @@ final class QuizForgeController extends ChangeNotifier {
     if (_profiles.length <= 1) {
       throw StateError('At least one local profile must remain.');
     }
-    final bool deletingActive = _activeProfile?.id == profileId;
     if (!_profiles.any((PlayerProfile profile) => profile.id == profileId)) {
       throw ArgumentError('Unknown profile id.');
     }
-    await database.deleteProfile(profileId);
-    _profiles = _profiles
+
+    final bool deletingActive = _activeProfile?.id == profileId;
+    final List<PlayerProfile> remainingProfiles = _profiles
         .where((PlayerProfile profile) => profile.id != profileId)
         .toList(growable: false);
-    if (deletingActive) {
-      _activeProfile = _profiles.first;
-      await profilePreferences.saveActiveProfileId(_activeProfile!.id);
-      await _refreshProfileData();
+    final PlayerProfile? replacement =
+        deletingActive ? remainingProfiles.first : null;
+    final _ProfileData? replacementData = replacement == null
+        ? null
+        : await _loadProfileData(replacement.id);
+
+    if (replacement != null) {
+      await profilePreferences.saveActiveProfileId(replacement.id);
     }
-    _leaderboard = await database.loadLeaderboard();
+
+    try {
+      await database.deleteProfile(profileId);
+    } on Object catch (error) {
+      if (replacement != null) {
+        try {
+          await profilePreferences.saveActiveProfileId(profileId);
+        } on Object catch (rollbackError) {
+          logger.error(
+            'profile.delete.preference.rollback.failed',
+            fields: <String, Object?>{
+              'errorType': rollbackError.runtimeType.toString(),
+            },
+          );
+        }
+      }
+      Error.throwWithStackTrace(error, StackTrace.current);
+    }
+
+    _profiles = remainingProfiles;
+    if (replacement != null) {
+      _activeProfile = replacement;
+      _applyProfileData(replacementData!);
+    }
+
+    try {
+      _leaderboard = await database.loadLeaderboard();
+    } on Object catch (error) {
+      logger.warning(
+        'leaderboard.refresh.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      _leaderboard = _leaderboard
+          .where((LeaderboardEntry entry) => entry.profileId != profileId)
+          .toList(growable: false);
+    }
+
     logger.info(
       'profile.delete.completed',
       fields: <String, Object?>{'profileCount': _profiles.length},
