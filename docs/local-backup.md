@@ -73,11 +73,14 @@ Restore treats the pasted archive as untrusted data. Before replacing current da
 - attempt profile/question references;
 - attempt completion timestamps;
 - question/correct-count consistency;
+- each submitted answer's correctness and score by re-evaluating it against the archived question with the same `QuizEngine` rules used by normal quiz play;
 - order-independent best-streak bounds against question/correct counts;
 - finite/non-negative score values and total-score consistency;
 - duplicate question answers inside one attempt;
 - bookmark profile/question references and duplicate bookmarks;
 - active-profile reference validity.
+
+This answer-level validation prevents a hand-crafted archive from marking a wrong submitted answer as correct or assigning a score that disagrees with QuizForge's scoring rules while still satisfying only aggregate counts.
 
 If validation fails, the archive is rejected before the destructive database replacement begins.
 
@@ -141,6 +144,7 @@ Before a release candidate is described as backup-verified, the exact candidate 
 - codec round-trip tests;
 - invalid/dangling-reference rejection tests;
 - required minimum-state rejection tests;
+- submitted-answer correctness/score tamper-rejection tests;
 - order-independent attempt-summary validation regression coverage;
 - database export/reset/restore integration coverage;
 - controller rollback coverage for cross-store failures;
