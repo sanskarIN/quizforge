@@ -60,13 +60,14 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
+                Wrap(
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.sm,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        strings.questionBank,
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
+                    Text(
+                      strings.questionBank,
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     OutlinedButton.icon(
                       onPressed: () {
@@ -114,7 +115,8 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                           ),
                         ),
                       ],
-                      onSelected: (String? value) => setState(() => _category = value),
+                      onSelected: (String? value) =>
+                          setState(() => _category = value),
                     ),
                     DropdownMenu<Difficulty?>(
                       initialSelection: _difficulty,
@@ -167,7 +169,7 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                         bookmarked:
                             widget.controller.bookmarkIds.contains(question.id),
                         onBookmark: () {
-                          unawaited(widget.controller.toggleBookmark(question.id));
+                          unawaited(_toggleBookmark(question.id));
                         },
                       );
                     },
@@ -176,6 +178,23 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggleBookmark(String questionId) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    try {
+      await widget.controller.toggleBookmark(questionId);
+    } on Object catch (error) {
+      widget.controller.logger.error(
+        'bookmark.persist.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.actionFailed)),
+        );
+      }
+    }
   }
 
   static String _difficultyLabel(
@@ -227,7 +246,9 @@ final class _QuestionCard extends StatelessWidget {
                       ? strings.removeBookmark
                       : strings.bookmarkQuestion,
                   onPressed: onBookmark,
-                  icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
+                  icon: Icon(
+                    bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  ),
                 ),
               ],
             ),
