@@ -6,21 +6,33 @@ QuizForge favors small, testable modules and incremental changes. Keep business 
 
 ## Daily workflow
 
-From the repository root:
+From the repository root, prefer the maintained quality scripts:
 
 ```bash
+./tool/check.sh
+```
+
+or on PowerShell:
+
+```powershell
+./tool/check.ps1
+```
+
+The equivalent sequence is:
+
+```bash
+python3 tool/test_check_markdown_links.py
+python3 tool/test_check_arb_catalogs.py
+python3 tool/check_markdown_links.py
+python3 tool/check_arb_catalogs.py
 flutter pub get
 flutter gen-l10n
-dart format lib test tool
-flutter analyze
-flutter test
-```
-
-Before committing, use the non-mutating formatting gate:
-
-```bash
 dart format --output=none --set-exit-if-changed lib test tool
+flutter analyze
+flutter test --coverage
 ```
+
+Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization inputs and broken validator tests fail early.
 
 ## Adding a question rule
 
@@ -37,19 +49,27 @@ Do not let widgets execute SQL. Add database/repository methods and expose the c
 
 Multi-step mutations must use transactions. Released schema changes must increment `schemaVersion`, include migration code, and include tests that exercise the old-to-new path.
 
-## Import/export changes
+Schema version 1 does not store the original per-answer position inside completed attempts. Code working with historical attempts must not infer play order from database row order. See `docs/local-backup.md` and `docs/architecture.md` for the backup/streak consequence of this boundary.
 
-Treat all file/pasted content as untrusted. Parsers should:
+## Import/export and backup changes
+
+Treat all file/pasted content as untrusted. Parsers/codecs should:
 
 - impose clear structure;
 - reject invalid types;
 - validate domain rules;
-- skip or report duplicates predictably;
-- return useful errors without crashing the entire import;
+- skip or report duplicates predictably where the format permits it;
+- return useful errors without crashing the entire operation;
 - avoid executing imported content;
-- preserve Unicode correctly.
+- preserve Unicode correctly;
+- bound input/archive resources;
+- never log raw user payloads.
 
-Add regression cases for malformed quoting, unexpected JSON types, duplicate ids/content, large fields, and relevant edge cases. Keep deterministic malformed-input/fuzz coverage in `test/data/`.
+Add regression cases for malformed quoting, unexpected JSON types, duplicate ids/content, large fields, invalid references, non-finite numeric values, and relevant edge cases. Keep deterministic malformed-input/fuzz coverage in `test/data/`.
+
+Question-bank JSON/CSV and complete local backup JSON are different contracts. Changes to the local backup format must preserve or explicitly reject older versions, validate the complete object graph before destructive replacement, preserve rollback behavior, and update `docs/local-backup.md`, `PRIVACY.md`, `docs/data-lifecycle.md`, tests, and the changelog.
+
+Do not increase the backup encoder's supported output beyond what the decoder can accept. The current codec refuses to emit an archive above its supported restore limit so it cannot intentionally create an archive that the same version will reject solely for size.
 
 ## UI development
 
@@ -57,11 +77,11 @@ Use the design tokens in `lib/src/core/theme/app_theme.dart`. Prefer responsive 
 
 Visible changes should be reviewed at compact and wide sizes, in light and dark mode, with larger text. Interactive controls must remain keyboard reachable on desktop/web and have semantic labels where their visual meaning is not self-evident.
 
-All user-facing framework strings should come from the ARB localization resources unless they are user-authored/domain content or unavoidable platform text. Run `flutter gen-l10n` after localization changes and keep resource identifiers valid Dart identifiers rather than language keywords.
+All user-facing framework strings should come from the ARB localization resources unless they are user-authored/domain content or unavoidable platform text. Run `python3 tool/check_arb_catalogs.py` and `flutter gen-l10n` after localization changes. Resource identifiers must be valid Dart identifiers rather than language keywords.
 
 ## Asynchronous work
 
-Do not block the UI isolate with expensive parsing or processing. Current question banks are intentionally small enough for synchronous codecs; if profiling shows large imports cause frame stalls, move parsing to an isolate and record the performance threshold in `docs/performance.md`.
+Do not block the UI isolate with expensive parsing or processing. Current question banks are intentionally small enough for synchronous codecs; if profiling shows large imports or backups cause frame stalls, move processing to an isolate only after measuring the threshold and recording the result in `docs/performance.md`.
 
 Use `unawaited` only when intentionally discarding a future. User-visible mutations should normally be awaited so errors can be surfaced.
 
@@ -69,7 +89,7 @@ Use `unawaited` only when intentionally discarding a future. User-visible mutati
 
 Use `AppLogger` from `lib/src/core/logging/app_logger.dart` instead of ad-hoc `print` calls. The logger emits structured JSON-like event payloads, validates event names, redacts sensitive field keys, truncates/redacts unsafe string content, and is covered by tests.
 
-Do not log raw question prompts, answers, profile names, email addresses, import/export payloads, tokens, secrets, authorization material, cookies, or credentials. When reporting a caught exception, prefer a stable event name and a small machine-oriented field such as the exception runtime type instead of serializing arbitrary exception/user content.
+Do not log raw question prompts, answers, profile names, email addresses, import/export/backup payloads, tokens, secrets, authorization material, cookies, or credentials. When reporting a caught exception, prefer a stable event name and a small machine-oriented field such as the exception runtime type instead of serializing arbitrary exception/user content.
 
 ## Dependencies
 
@@ -95,4 +115,6 @@ The maintainer-requested commit email is `sanskarin@outlook.in`; configure it lo
 
 ## Definition of a completed change
 
-A change is complete when relevant tests exist, format/analyze/tests pass, error states are handled, accessibility impact has been considered, documentation reflects the behavior, and no secrets/private data were introduced.
+A change is complete when relevant regression tests exist, repository validators pass, localization generation succeeds when applicable, format/analyze/tests pass, error states are handled, accessibility/privacy impact has been considered, documentation reflects the behavior, and no secrets/private data were introduced.
+
+Release-candidate completion is stricter: final-head GitHub Actions/build/security gates and applicable manual platform/accessibility checks must also be observed as successful rather than inferred from source review.
