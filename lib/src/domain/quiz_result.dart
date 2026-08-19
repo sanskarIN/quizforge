@@ -16,8 +16,12 @@ final class QuizResult {
   QuizResult({
     required this.startedAt,
     required this.completedAt,
-    required this.evaluations,
-  });
+    required Iterable<QuestionEvaluation> evaluations,
+  }) : evaluations = List<QuestionEvaluation>.unmodifiable(evaluations) {
+    if (completedAt.isBefore(startedAt)) {
+      throw ArgumentError('Completion time cannot be before start time.');
+    }
+  }
 
   final DateTime startedAt;
   final DateTime completedAt;
