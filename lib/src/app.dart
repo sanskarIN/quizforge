@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'application/quizforge_controller.dart';
-import 'core/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'data/onboarding_repository.dart';
 import 'domain/app_settings.dart';
@@ -37,8 +37,11 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
       builder: (BuildContext context, Widget? child) {
         final AppSettings settings = widget.controller.settings;
         return MaterialApp(
-          title: AppConstants.appName,
+          onGenerateTitle: (BuildContext context) =>
+              AppLocalizations.of(context).appName,
           debugShowCheckedModeBanner: false,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: _themeMode(settings.themeMode),
@@ -91,7 +94,6 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (mounted) {
-        // Fail open so a preference-store issue cannot block core offline use.
         setState(() => _onboardingComplete = true);
       }
     }
@@ -128,11 +130,12 @@ final class _LoadingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    final AppLocalizations strings = AppLocalizations.of(context);
+    return Scaffold(
       body: Center(
         child: Semantics(
-          label: 'Loading QuizForge',
-          child: CircularProgressIndicator(),
+          label: strings.loadingQuizForge,
+          child: const CircularProgressIndicator(),
         ),
       ),
     );
@@ -150,6 +153,7 @@ final class _ErrorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -163,7 +167,7 @@ final class _ErrorPage extends StatelessWidget {
                   const Icon(Icons.error_outline, size: 48),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'QuizForge could not start',
+                    strings.startupErrorTitle,
                     style: Theme.of(context).textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
@@ -173,7 +177,7 @@ final class _ErrorPage extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: onRetry,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Try again'),
+                    label: Text(strings.tryAgain),
                   ),
                 ],
               ),
