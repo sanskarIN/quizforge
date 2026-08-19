@@ -13,7 +13,8 @@ The project follows Semantic Versioning where practical.
 - Multiple-choice, true/false, multi-select, and short-answer question models.
 - Deterministic quiz selection, daily quizzes, random practice, timed sprints, and configurable custom quiz sets.
 - Exact-set scoring, normalized short-answer scoring, streak calculations, explanations, and review mode.
-- Local profiles, profile rename/delete, bookmarks, progress statistics, activity reset, and device-local leaderboard.
+- Local profiles, profile rename/delete, bookmarks, progress statistics, recent per-profile attempt history, activity reset, and device-local leaderboard.
+- Bounded newest-first recent-attempt queries with persisted score, duration, streak, question count, and accuracy projection.
 - Search by prompt/category/tag plus category, difficulty, and bookmark filters.
 - Question creator with validation and live preview.
 - JSON and CSV question-bank import/export with duplicate protection and bounded import resources.
@@ -22,12 +23,12 @@ The project follows Semantic Versioning where practical.
 - Disabled-by-default private-room multiplayer architecture boundary.
 - Editable QuizForge SVG logo source.
 - Structured application logging with event validation and sensitive-field/content redaction.
-- Domain, codec, deterministic fuzz-style, database integration, application/controller, widget, accessibility, private-room, and primary quiz-journey tests.
+- Domain, codec, deterministic fuzz-style, database integration, application/controller, widget, accessibility, private-room, recent-history, and primary quiz-journey tests.
 - Deterministic quiz-selection and codec benchmark harness.
 - Deterministic repository-local Markdown link validation integrated into CI and local quality scripts.
 - CI artifact capture for the Flutter-resolved `pubspec.lock` so lockfile review can use generated evidence instead of hand-authored dependency state.
 - GitHub Actions quality, Android/Web build, platform build-matrix, dependency-review, OSV vulnerability, secret-scan, and tag-release workflows.
-- Repository documentation, ADRs, community policies, support, privacy, security, CI, accessibility, performance, screenshot-capture, and release foundations.
+- Repository documentation, ADRs, community policies, support, privacy, security, CI, accessibility, performance, progress-history, screenshot-capture, and release foundations.
 - Phase 6 verification evidence ledger and release-candidate audit branch.
 
 ### Changed
@@ -41,9 +42,10 @@ The project follows Semantic Versioning where practical.
 - CSV parsing now enforces quoted-field structure instead of silently accepting quote characters in invalid positions.
 - Large-text mode preserves a larger operating-system text scale instead of reducing it.
 - Review UI listens for controller changes so bookmark state refreshes after toggles.
+- Statistics now surfaces recent completed attempts without duplicating attempt storage or exposing submitted answer content.
 - User-facing startup, import, creator, settings, statistics, and quiz messages were moved toward externalized localization resources.
 - Flutter localization dependency handling now lets the Flutter SDK select its compatible `intl` version.
-- Setup, development, testing, CI, release, question-bank-format, roadmap, and screenshot documentation were synchronized with the current repository behavior.
+- Setup, development, testing, CI, release, question-bank-format, roadmap, progress-history, and screenshot documentation were synchronized with the current repository behavior.
 
 ### Fixed
 
@@ -67,6 +69,7 @@ The project follows Semantic Versioning where practical.
 - Question validation bounds ids, prompts, categories, choices, accepted answers, tags, explanations, and time limits.
 - Accepted answers and tags reject blank or normalized-duplicate entries; true/false questions reject custom choice lists.
 - Database foreign keys are enabled at open time and multi-step persistence uses transactions where required.
+- Recent history reads only attempt summary metadata and does not expose submitted answer payloads.
 - Core application requires no production credentials or remote account.
 - Secret and local signing files are excluded from version control.
 - Structured logs redact secret/authentication fields and user-authored sensitive content.
