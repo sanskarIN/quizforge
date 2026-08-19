@@ -27,12 +27,16 @@ jobs:
         run: |
           python3 tool/test_check_markdown_links.py
           python3 tool/test_check_arb_catalogs.py
+          python3 tool/test_check_release_metadata.py
 
       - name: Validate repository-local Markdown links
         run: python3 tool/check_markdown_links.py
 
       - name: Validate ARB localization catalogs
         run: python3 tool/check_arb_catalogs.py
+
+      - name: Validate release metadata
+        run: python3 tool/check_release_metadata.py
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
