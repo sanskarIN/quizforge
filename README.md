@@ -11,7 +11,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg" /></a>
 </p>
 
-QuizForge is a production-minded **Simple Quiz Game** that supports multiple-choice, true/false, multi-select, and short-answer questions; categories, tags and difficulty; timed and untimed play; local profiles; statistics; bookmarks; review mode; daily quizzes; randomized practice; JSON/CSV question-bank exchange; and accessibility-oriented settings.
+QuizForge is a production-minded **Simple Quiz Game** that supports multiple-choice, true/false, multi-select, and short-answer questions; categories, tags and difficulty; timed and untimed play; local profiles; statistics; bookmarks; review mode; daily quizzes; randomized practice; JSON/CSV question-bank exchange; complete local backup/restore; and accessibility-oriented settings.
 
 ## Highlights
 
@@ -20,9 +20,11 @@ QuizForge is a production-minded **Simple Quiz Game** that supports multiple-cho
 - Offline-first local persistence architecture using SQLite through Drift.
 - Daily quiz and seeded random practice sets.
 - Streaks, bookmarks, recent attempt history, progress summaries, and a local leaderboard.
+- Versioned full local backup/restore with pre-restore validation, confirmation, and cross-store rollback handling.
 - Light, dark, and system themes plus large-text and reduced-motion preferences.
 - Keyboard-friendly responsive UI foundations for mobile, desktop, and web.
 - Persistence-ordering safeguards for settings and local-profile changes, with rollback regression coverage.
+- Repository-local Markdown-link and ARB-localization validation before Flutter CI work begins.
 - No sign-in requirement and no donation gating.
 - Private-room multiplayer is represented by a clean local protocol/architecture boundary so a transport can be added without coupling it to quiz logic.
 
@@ -48,7 +50,8 @@ The codebase is designed for Android, iOS, Windows, macOS, Linux, and Web. Flutt
 - Drift + SQLite
 - Flutter SDK state primitives (`ChangeNotifier` / `ListenableBuilder`)
 - Deterministic pure-Dart quiz engine and codecs
-- GitHub Actions for formatting, analysis, tests, builds, documentation integrity, and security checks
+- Python-stdlib repository documentation/localization validators
+- GitHub Actions for formatting, analysis, tests, builds, documentation integrity, localization integrity, and security checks
 
 ## Quick start
 
@@ -70,26 +73,39 @@ The `flutter create .` step is idempotent for standard runner scaffolding and is
 1. Install the current Flutter stable channel and ensure `flutter doctor` is healthy for the platform you plan to build.
 2. Clone the repository.
 3. Run `flutter create . --platforms=android,ios,web,windows,macos,linux` to materialize platform runners.
-4. Run `flutter pub get` and `flutter gen-l10n`.
-5. Run `dart format --output=none --set-exit-if-changed lib test tool`.
-6. Run `python3 tool/check_markdown_links.py` (`python` may be the Windows launcher).
-7. Run `flutter analyze` and `flutter test`.
+4. Run the repository validator tests: `python3 tool/test_check_markdown_links.py` and `python3 tool/test_check_arb_catalogs.py` (`python` may be the Windows launcher).
+5. Run `python3 tool/check_markdown_links.py` and `python3 tool/check_arb_catalogs.py`.
+6. Run `flutter pub get` and `flutter gen-l10n`.
+7. Run `dart format --output=none --set-exit-if-changed lib test tool`.
+8. Run `flutter analyze` and `flutter test`.
+
+Or use `tool/check.sh` / `tool/check.ps1` to run the supported local quality sequence.
 
 See [`docs/setup.md`](docs/setup.md) and [`docs/development.md`](docs/development.md) for details.
 
 ## Testing
 
 ```bash
+python3 tool/test_check_markdown_links.py
+python3 tool/test_check_arb_catalogs.py
+python3 tool/check_markdown_links.py
+python3 tool/check_arb_catalogs.py
+flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
-python3 tool/check_markdown_links.py
 flutter analyze
 flutter test --coverage
 ```
 
-The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, recent-attempt ordering/rendering, controller persistence/rollback ordering, validation, accessibility semantics, settings, and the primary quiz-completion journey. See [`docs/testing.md`](docs/testing.md).
+The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, local backup validation/round trips/restoration, recent-attempt ordering/rendering, controller persistence/rollback ordering, validation, accessibility semantics, settings, and the primary quiz-completion journey. See [`docs/testing.md`](docs/testing.md).
 
-Recent-attempt storage, refresh behavior, deletion semantics, and privacy boundaries are documented in [`docs/progress-history.md`](docs/progress-history.md).
+Recent-attempt storage, refresh behavior, deletion semantics, and privacy boundaries are documented in [`docs/progress-history.md`](docs/progress-history.md). Whole-app local backup semantics are documented in [`docs/local-backup.md`](docs/local-backup.md).
+
+## Local backup versus question-bank export
+
+JSON/CSV question-bank export is for moving or sharing quiz content. **Local backup** is for preserving the complete offline state and can contain profile names, bookmarks, quiz history, submitted answers, settings, and the active profile in addition to questions.
+
+Treat local backup archives as private user data. Restore validates the archive and requires destructive-replacement confirmation. See [`docs/local-backup.md`](docs/local-backup.md) and [`PRIVACY.md`](PRIVACY.md).
 
 ## Build and release
 
@@ -107,7 +123,7 @@ Release, signing, platform runner generation, locked dependency resolution, and 
 QuizForge is organized as a modular monolith:
 
 - `lib/src/domain/` — immutable models, validation, scoring, selection, duplicate rules.
-- `lib/src/data/` — Drift-backed persistence, deterministic demo data, import/export codecs.
+- `lib/src/data/` — Drift-backed persistence, deterministic demo data, question-bank/local-backup codecs.
 - `lib/src/application/` — use-case orchestration and app state.
 - `lib/src/presentation/` — adaptive Flutter UI.
 - `lib/src/core/` — design tokens, theme, constants, logging helpers, shared utilities.
@@ -116,7 +132,7 @@ Read [`docs/architecture.md`](docs/architecture.md) and the ADRs in [`docs/adr/`
 
 ## Security and privacy
 
-QuizForge is offline-first. It does not require an account, does not embed production credentials, and is designed to keep quiz/profile data on the user's device unless the user explicitly exports it. Imported content is validated before persistence. Read [`SECURITY.md`](SECURITY.md) and [`PRIVACY.md`](PRIVACY.md).
+QuizForge is offline-first. It does not require an account, does not embed production credentials, and is designed to keep quiz/profile data on the user's device unless the user explicitly exports or copies it. Imported question banks and restored local-backup archives are treated as untrusted input and validated before persistence. Read [`SECURITY.md`](SECURITY.md) and [`PRIVACY.md`](PRIVACY.md).
 
 ## Contributing
 
