@@ -81,6 +81,63 @@ void main() {
     expect(leaderboard.single.accuracy, 100);
   });
 
+  test('question batch rolls back when a later item is invalid', () async {
+    final Question valid = Question(
+      id: 'batch-valid',
+      type: QuestionType.shortAnswer,
+      prompt: 'Valid question?',
+      correctAnswers: const <String>{'yes'},
+      category: 'Testing',
+      difficulty: Difficulty.easy,
+    );
+    final Question invalid = Question(
+      id: 'batch-invalid',
+      type: QuestionType.shortAnswer,
+      prompt: 'x',
+      correctAnswers: const <String>{'yes'},
+      category: 'Testing',
+      difficulty: Difficulty.easy,
+    );
+
+    await expectLater(
+      database.upsertQuestions(<Question>[valid, invalid]),
+      throwsA(isA<ArgumentError>()),
+    );
+
+    expect(await database.loadQuestions(), isEmpty);
+  });
+
+  test('attempt write rolls back when an answer references unknown question', () async {
+    const PlayerProfile profile = PlayerProfile(
+      id: 'rollback-profile',
+      displayName: 'Rollback Tester',
+    );
+    await database.upsertProfile(profile);
+    final DateTime start = DateTime(2026, 8, 19, 8);
+    final QuizResult invalidResult = QuizResult(
+      startedAt: start,
+      completedAt: start.add(const Duration(seconds: 5)),
+      evaluations: const <QuestionEvaluation>[
+        QuestionEvaluation(
+          questionId: 'missing-question',
+          submittedAnswers: <String>{'answer'},
+          correct: true,
+          score: 1,
+        ),
+      ],
+    );
+
+    await expectLater(
+      database.saveAttempt(profile.id, invalidResult),
+      throwsA(anything),
+    );
+
+    final ProgressSummary progress = await database.loadProgress(profile.id);
+    expect(progress.quizCount, 0);
+    expect(progress.questionCount, 0);
+    expect(progress.correctCount, 0);
+  });
+
   test('clear profile activity preserves profile and questions', () async {
     final Question question = Question(
       id: 'activity-q1',
