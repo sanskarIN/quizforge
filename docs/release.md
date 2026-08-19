@@ -8,8 +8,9 @@ Before creating a release candidate:
 
 - `main` is up to date and clean;
 - the version in `pubspec.yaml` is intentional;
-- the reviewed application `pubspec.lock` is tracked and matches `pubspec.yaml` after `flutter pub get`;
+- the reviewed application `pubspec.lock` is tracked and matches `pubspec.yaml` after locked dependency resolution;
 - `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md` are current;
+- repository-local Markdown links pass `tool/check_markdown_links.py`;
 - all required platform runner files can be generated from documented commands;
 - no credentials, signing secrets, or private data are tracked;
 - CI is green;
@@ -22,14 +23,17 @@ From a fresh clone:
 
 ```bash
 flutter create . --platforms=android,ios,web,windows,macos,linux
-flutter pub get
+flutter pub get --enforce-lockfile
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
+python3 tool/check_markdown_links.py
 flutter analyze
 flutter test --coverage
 ```
 
-Then build every platform that can be validated on the current host. A queued or pending remote check is not evidence of a passing release candidate.
+On Windows, use `python tool/check_markdown_links.py` when `python` is the configured launcher.
+
+The release workflow intentionally fails when `pubspec.lock` is missing, empty, incompatible with `pubspec.yaml`, or rewritten by locked dependency resolution. A queued or pending remote check is not evidence of a passing release candidate.
 
 ## Android
 
@@ -99,7 +103,7 @@ git push origin vX.Y.Z
 
 If signed tags are not available in the execution environment, do not falsely claim a signed release.
 
-The tag-triggered GitHub Actions release workflow independently verifies the tag/version relationship, generates localizations, reruns formatting/analysis/tests, builds Android/Web release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and publishes the GitHub release.
+The tag-triggered GitHub Actions release workflow independently verifies the tag/version relationship, requires the committed lockfile, resolves dependencies with `--enforce-lockfile`, verifies the lockfile was not rewritten, generates localizations, reruns formatting/documentation-link/analysis/test gates, builds Android/Web release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and publishes the GitHub release.
 
 ## Release notes
 
