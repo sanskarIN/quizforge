@@ -16,7 +16,7 @@ PUBSPEC_VERSION_RE = re.compile(
     re.MULTILINE,
 )
 CHANGELOG_RELEASE_RE = re.compile(
-    r"^## \[(?P<version>0|[1-9]\d*\.\d+\.\d+)\] - "
+    r"^## \[(?P<version>(?:0|[1-9]\d*)\.\d+\.\d+)\] - "
     r"(?P<date>\d{4}-\d{2}-\d{2})\s*$",
     re.MULTILINE,
 )
