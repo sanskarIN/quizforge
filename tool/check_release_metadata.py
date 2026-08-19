@@ -6,24 +6,27 @@ from __future__ import annotations
 import argparse
 import re
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
+SEMVER_COMPONENT = r"(?:0|[1-9]\d*)"
 PUBSPEC_VERSION_RE = re.compile(
-    r"^version:\s*(?P<major>0|[1-9]\d*)\."
-    r"(?P<minor>0|[1-9]\d*)\."
-    r"(?P<patch>0|[1-9]\d*)\+"
+    rf"^version:\s*(?P<major>{SEMVER_COMPONENT})\."
+    rf"(?P<minor>{SEMVER_COMPONENT})\."
+    rf"(?P<patch>{SEMVER_COMPONENT})\+"
     r"(?P<build>[1-9]\d*)\s*$",
     re.MULTILINE,
 )
 CHANGELOG_RELEASE_RE = re.compile(
-    r"^## \[(?P<version>(?:0|[1-9]\d*)\.\d+\.\d+)\] - "
+    rf"^## \[(?P<version>{SEMVER_COMPONENT}\."
+    rf"{SEMVER_COMPONENT}\.{SEMVER_COMPONENT})\] - "
     r"(?P<date>\d{4}-\d{2}-\d{2})\s*$",
     re.MULTILINE,
 )
 APP_VERSION_RE = re.compile(
     r"^\s*static const String version\s*=\s*"
-    r"(?P<quote>['\"])(?P<version>(?:0|[1-9]\d*)\.\d+\.\d+)"
-    r"(?P=quote);\s*$",
+    rf"(?P<quote>['\"])(?P<version>{SEMVER_COMPONENT}\."
+    rf"{SEMVER_COMPONENT}\.{SEMVER_COMPONENT})(?P=quote);\s*$",
     re.MULTILINE,
 )
 
@@ -62,7 +65,7 @@ def validate_release_metadata(root: Path) -> list[str]:
     if len(version_matches) != 1:
         errors.append(
             "pubspec.yaml must contain exactly one MAJOR.MINOR.PATCH+BUILD version "
-            "with a positive build number."
+            "with non-negative SemVer components and a positive build number."
         )
         return errors
 
@@ -78,7 +81,7 @@ def validate_release_metadata(root: Path) -> list[str]:
     if len(app_version_matches) != 1:
         errors.append(
             "lib/src/core/app_constants.dart must contain exactly one semantic "
-            "AppConstants.version constant."
+            "AppConstants.version constant without leading-zero components."
         )
     elif app_version_matches[0].group("version") != current.public:
         errors.append(
@@ -89,16 +92,25 @@ def validate_release_metadata(root: Path) -> list[str]:
     if "## [Unreleased]" not in changelog:
         errors.append("CHANGELOG.md must contain an Unreleased section.")
 
-    releases: list[tuple[SemVer, str]] = []
+    releases: list[tuple[SemVer, date]] = []
     seen: set[SemVer] = set()
     for release_match in CHANGELOG_RELEASE_RE.finditer(changelog):
         version_text = release_match.group("version")
         version = SemVer(*(int(part) for part in version_text.split(".")))
+        release_date_text = release_match.group("date")
+        try:
+            release_date = date.fromisoformat(release_date_text)
+        except ValueError:
+            errors.append(
+                f"CHANGELOG.md release {version.public} has invalid date "
+                f"{release_date_text}."
+            )
+            continue
         if version in seen:
             errors.append(f"CHANGELOG.md contains duplicate release {version.public}.")
         else:
             seen.add(version)
-        releases.append((version, release_match.group("date")))
+        releases.append((version, release_date))
 
     if current not in seen:
         errors.append(
