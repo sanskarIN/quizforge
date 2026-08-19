@@ -59,6 +59,32 @@ void main() {
     expect(result.duplicates, hasLength(1));
   });
 
+  test('JSON import rejects normalized duplicate accepted answers', () {
+    final QuestionBankImportResult result = codec.decodeJson(
+      '{"questions":[{'
+      '"id":"duplicate-json",'
+      '"type":"shortAnswer",'
+      '"prompt":"Provide an answer.",'
+      '"correctAnswers":["Alpha"," alpha "],'
+      '"category":"Testing",'
+      '"difficulty":"easy"'
+      '}]}',
+    );
+
+    expect(result.questions, isEmpty);
+    expect(result.errors.single, contains('non-empty and unique'));
+  });
+
+  test('CSV import rejects normalized duplicate accepted answers', () {
+    final QuestionBankImportResult result = codec.decodeCsv(
+      'id,type,prompt,choices,correctAnswers,category,difficulty,tags,explanation,timeLimitSeconds\n'
+      'duplicate-csv,shortAnswer,Provide an answer.,[],"[""Alpha"","" alpha ""]",Testing,easy,[],,',
+    );
+
+    expect(result.questions, isEmpty);
+    expect(result.errors.single, contains('non-empty and unique'));
+  });
+
   test('malformed JSON is reported without throwing', () {
     final QuestionBankImportResult result = codec.decodeJson('{not-json');
 
