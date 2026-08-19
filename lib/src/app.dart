@@ -45,17 +45,21 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: _themeMode(settings.themeMode),
-          themeAnimationDuration:
-              settings.reducedMotion ? Duration.zero : const Duration(milliseconds: 200),
+          themeAnimationDuration: settings.reducedMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
           builder: (BuildContext context, Widget? child) {
             final MediaQueryData media = MediaQuery.of(context);
-            final TextScaler scaler = settings.largeText
-                ? const TextScaler.linear(1.15)
-                : media.textScaler;
+            final double systemScaleAtBody = media.textScaler.scale(14) / 14;
+            final TextScaler scaler =
+                settings.largeText && systemScaleAtBody < 1.15
+                    ? const TextScaler.linear(1.15)
+                    : media.textScaler;
             return MediaQuery(
               data: media.copyWith(
                 textScaler: scaler,
-                disableAnimations: media.disableAnimations || settings.reducedMotion,
+                disableAnimations:
+                    media.disableAnimations || settings.reducedMotion,
               ),
               child: child ?? const SizedBox.shrink(),
             );
