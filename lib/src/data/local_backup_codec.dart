@@ -53,7 +53,13 @@ final class LocalBackupCodec {
         'bookmarks': payload.database.bookmarks.map(_encodeBookmark).toList(),
       },
     };
-    return const JsonEncoder.withIndent('  ').convert(document);
+    final String encoded = const JsonEncoder.withIndent(' ').convert(document);
+    if (encoded.length > maxSourceCharacters) {
+      throw StateError(
+        'Local backup is larger than the supported archive limit.',
+      );
+    }
+    return encoded;
   }
 
   LocalBackupPayload decode(String source) {
