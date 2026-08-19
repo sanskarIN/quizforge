@@ -87,4 +87,55 @@ void main() {
     expect(controller.questions, isEmpty);
     expect(find.text('Time limit must be greater than zero.'), findsOneWidget);
   });
+
+  testWidgets('duplicate accepted answers stay visible until corrected', (
+    WidgetTester tester,
+  ) async {
+    final AppDatabase database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final QuizForgeController controller = QuizForgeController(
+      database: database,
+      questionRepository: QuestionRepository(database),
+      settingsRepository: SettingsRepository(),
+      profilePreferences: ProfilePreferences(),
+    );
+
+    await tester.pumpWidget(buildTestApp(CreatorPage(controller: controller)));
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Prompt'),
+      'Which value is the answer?',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Category'),
+      'Testing',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Choices'),
+      'Alpha\nBeta',
+    );
+    final Finder answerField =
+        find.widgetWithText(TextField, 'Correct answers');
+    await tester.enterText(answerField, 'Alpha\n alpha ');
+    await tester.pump();
+
+    expect(
+      find.text('Correct answers must be non-empty and unique.'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(answerField, 'Alpha');
+    await tester.pump();
+
+    expect(
+      find.text('Correct answers must be non-empty and unique.'),
+      findsNothing,
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Add to question bank'));
+    await tester.pumpAndSettle();
+
+    expect(controller.questions, hasLength(1));
+    expect(controller.questions.single.correctAnswers, <String>{'Alpha'});
+  });
 }
