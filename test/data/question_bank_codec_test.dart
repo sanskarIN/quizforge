@@ -75,4 +75,32 @@ void main() {
     expect(result.isSuccess, isFalse);
     expect(result.errors.single, contains('Unclosed quoted field'));
   });
+
+  test('oversized import payloads are rejected before parsing', () {
+    final String chunk = List<String>.filled(1024, 'x').join();
+    final int chunkCount =
+        (QuestionBankCodec.maxSourceCharacters ~/ chunk.length) + 2;
+    final String oversized = List<String>.filled(chunkCount, chunk).join();
+
+    expect(oversized.length, greaterThan(QuestionBankCodec.maxSourceCharacters));
+    expect(
+      codec.decodeJson(oversized).errors.single,
+      contains('maximum supported import size'),
+    );
+    expect(
+      codec.decodeCsv(oversized).errors.single,
+      contains('maximum supported import size'),
+    );
+  });
+
+  test('JSON question count limit is enforced before item parsing', () {
+    final String rows =
+        List<String>.filled(QuestionBankCodec.maxQuestions + 1, '{}').join(',');
+    final String source = '{"questions":[$rows]}';
+
+    final QuestionBankImportResult result = codec.decodeJson(source);
+
+    expect(result.questions, isEmpty);
+    expect(result.errors.single, contains('${QuestionBankCodec.maxQuestions}'));
+  });
 }
