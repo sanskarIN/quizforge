@@ -26,7 +26,10 @@ final class SettingsPage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: <Widget>[
-          Text(strings.settings, style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            strings.settings,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: AppSpacing.xl),
           _Section(
             title: strings.profiles,
@@ -36,7 +39,9 @@ final class SettingsPage extends StatelessWidget {
                 for (final PlayerProfile profile in controller.profiles)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.person_outline),
+                    ),
                     title: Text(profile.displayName),
                     subtitle: Text(
                       profile.id == controller.activeProfile?.id
@@ -49,7 +54,13 @@ final class SettingsPage extends StatelessWidget {
                     onTap: profile.id == controller.activeProfile?.id
                         ? null
                         : () {
-                            unawaited(controller.selectProfile(profile.id));
+                            unawaited(
+                              _runSilentAction(
+                                context,
+                                action: () => controller.selectProfile(profile.id),
+                                failureEvent: 'profile.select.failed',
+                              ),
+                            );
                           },
                   ),
                 const SizedBox(height: AppSpacing.sm),
@@ -118,7 +129,8 @@ final class SettingsPage extends StatelessWidget {
                   selected: <AppThemeMode>{settings.themeMode},
                   onSelectionChanged: (Set<AppThemeMode> selected) {
                     unawaited(
-                      controller.updateSettings(
+                      _saveSettings(
+                        context,
                         settings.copyWith(themeMode: selected.single),
                       ),
                     );
@@ -140,7 +152,10 @@ final class SettingsPage extends StatelessWidget {
                   value: settings.largeText,
                   onChanged: (bool value) {
                     unawaited(
-                      controller.updateSettings(settings.copyWith(largeText: value)),
+                      _saveSettings(
+                        context,
+                        settings.copyWith(largeText: value),
+                      ),
                     );
                   },
                 ),
@@ -151,7 +166,8 @@ final class SettingsPage extends StatelessWidget {
                   value: settings.reducedMotion,
                   onChanged: (bool value) {
                     unawaited(
-                      controller.updateSettings(
+                      _saveSettings(
+                        context,
                         settings.copyWith(reducedMotion: value),
                       ),
                     );
@@ -164,7 +180,8 @@ final class SettingsPage extends StatelessWidget {
                   value: settings.screenReaderHints,
                   onChanged: (bool value) {
                     unawaited(
-                      controller.updateSettings(
+                      _saveSettings(
+                        context,
                         settings.copyWith(screenReaderHints: value),
                       ),
                     );
@@ -177,7 +194,8 @@ final class SettingsPage extends StatelessWidget {
                   value: settings.confirmBeforeExitQuiz,
                   onChanged: (bool value) {
                     unawaited(
-                      controller.updateSettings(
+                      _saveSettings(
+                        context,
                         settings.copyWith(confirmBeforeExitQuiz: value),
                       ),
                     );
@@ -496,6 +514,38 @@ final class SettingsPage extends StatelessWidget {
         false;
   }
 
+  Future<void> _saveSettings(
+    BuildContext context,
+    AppSettings nextSettings,
+  ) {
+    return _runSilentAction(
+      context,
+      action: () => controller.updateSettings(nextSettings),
+      failureEvent: 'settings.persist.failed',
+    );
+  }
+
+  Future<void> _runSilentAction(
+    BuildContext context, {
+    required Future<void> Function() action,
+    required String failureEvent,
+  }) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    try {
+      await action();
+    } on Object catch (error) {
+      controller.logger.error(
+        failureEvent,
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.actionFailed)),
+        );
+      }
+    }
+  }
+
   Future<void> _runAction(
     BuildContext context, {
     required Future<void> Function() action,
@@ -546,7 +596,12 @@ final class _Section extends StatelessWidget {
               children: <Widget>[
                 Icon(icon),
                 const SizedBox(width: AppSpacing.sm),
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -594,7 +649,9 @@ final class _LinkTile extends StatelessWidget {
     }
     if (!launched && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).linkOpenFailed(value))),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).linkOpenFailed(value)),
+        ),
       );
     }
   }
