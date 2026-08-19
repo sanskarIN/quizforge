@@ -8,11 +8,13 @@ Before creating a release candidate:
 
 - `main` is up to date and clean;
 - the version in `pubspec.yaml` is intentional;
+- the reviewed application `pubspec.lock` is tracked and matches `pubspec.yaml` after `flutter pub get`;
 - `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md` are current;
 - all required platform runner files can be generated from documented commands;
 - no credentials, signing secrets, or private data are tracked;
 - CI is green;
-- dependency/security checks have been reviewed.
+- dependency/security checks have been reviewed;
+- applicable manual accessibility and real-screenshot checks in `docs/verification.md` are complete.
 
 ## Clean verification
 
@@ -21,12 +23,13 @@ From a fresh clone:
 ```bash
 flutter create . --platforms=android,ios,web,windows,macos,linux
 flutter pub get
-dart format --output=none --set-exit-if-changed lib test
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test --coverage
 ```
 
-Then build every platform that can be validated on the current host.
+Then build every platform that can be validated on the current host. A queued or pending remote check is not evidence of a passing release candidate.
 
 ## Android
 
@@ -63,7 +66,7 @@ flutter build macos --release
 flutter build linux --release
 ```
 
-Do not claim a desktop artifact was verified when it was not built on an appropriate host.
+Do not claim a desktop artifact was verified when it was not built on an appropriate host. The pull-request platform matrix supplies compile/build evidence on GitHub-hosted runners; it does not replace installer and interaction testing on representative devices.
 
 ## iOS
 
@@ -73,7 +76,7 @@ On macOS with a valid Xcode environment:
 flutter build ios --release
 ```
 
-Distribution signing/provisioning is external to the open-source repository and must not expose private certificates or profiles.
+The pull-request matrix performs an iOS release compile with `--no-codesign`. Distribution signing/provisioning is external to the open-source repository and must not expose private certificates or profiles.
 
 ## Versioning
 
@@ -95,6 +98,8 @@ git push origin vX.Y.Z
 ```
 
 If signed tags are not available in the execution environment, do not falsely claim a signed release.
+
+The tag-triggered GitHub Actions release workflow independently verifies the tag/version relationship, generates localizations, reruns formatting/analysis/tests, builds Android/Web release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and publishes the GitHub release.
 
 ## Release notes
 
