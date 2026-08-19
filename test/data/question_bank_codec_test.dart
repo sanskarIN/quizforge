@@ -76,6 +76,29 @@ void main() {
     expect(result.errors.single, contains('Unclosed quoted field'));
   });
 
+  test('quote inside unquoted CSV field is rejected', () {
+    final QuestionBankImportResult result = codec.decodeCsv(
+      'id,type,prompt,choices,correctAnswers,category,difficulty,tags,explanation,timeLimitSeconds\n'
+      'q1,shortAnswer,bad"quote,[],["answer"],Demo,easy,[],Explanation,',
+    );
+
+    expect(result.isSuccess, isFalse);
+    expect(result.errors.single, contains('Unexpected quote in unquoted field'));
+  });
+
+  test('characters after closing quoted CSV field are rejected', () {
+    final QuestionBankImportResult result = codec.decodeCsv(
+      'id,type,prompt,choices,correctAnswers,category,difficulty,tags,explanation,timeLimitSeconds\n'
+      'q1,shortAnswer,"prompt"suffix,[],["answer"],Demo,easy,[],Explanation,',
+    );
+
+    expect(result.isSuccess, isFalse);
+    expect(
+      result.errors.single,
+      contains('Unexpected character after closing quoted field'),
+    );
+  });
+
   test('oversized import payloads are rejected before parsing', () {
     final String chunk = List<String>.filled(1024, 'x').join();
     final int chunkCount =
