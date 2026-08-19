@@ -219,6 +219,10 @@ final class _CreatorPageState extends State<CreatorPage> {
   }
 
   Question _buildQuestion() {
+    final String rawTimeLimit = _timeLimit.text.trim();
+    final int? parsedTimeLimit = rawTimeLimit.isEmpty
+        ? null
+        : int.tryParse(rawTimeLimit) ?? 0;
     return Question(
       id: _generatedId(),
       type: _type,
@@ -236,7 +240,7 @@ final class _CreatorPageState extends State<CreatorPage> {
           .where((String value) => value.isNotEmpty)
           .toList(growable: false),
       explanation: _explanation.text.trim(),
-      timeLimitSeconds: int.tryParse(_timeLimit.text.trim()),
+      timeLimitSeconds: parsedTimeLimit,
     );
   }
 
@@ -399,7 +403,7 @@ final class _PreviewPanel extends StatelessWidget {
                 children: <Widget>[
                   const Icon(Icons.check_circle_outline, size: 18),
                   const SizedBox(width: AppSpacing.sm),
-                  Text(strings.readyToSave),
+                  Expanded(child: Text(strings.readyToSave)),
                 ],
               ),
           ],
