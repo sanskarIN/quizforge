@@ -85,7 +85,6 @@
   "multiSelect": "Multi-select",
   "shortAnswer": "Short answer",
   "chooseOneAnswerHint": "Choose one answer.",
-  "chooseTrueFalseAnswerHint": "Choose true or false.",
   "chooseTrueFalseHint": "Choose true or false.",
   "chooseEveryAnswerHint": "Choose every answer that applies.",
   "enterShortAnswerHint": "Enter a short text answer.",
@@ -269,6 +268,12 @@
   "resetAllConfirmDescription": "This permanently deletes profiles, history, bookmarks, custom/imported questions, and settings from this app. Starter questions and a default local profile will be recreated.",
   "resetEverything": "Reset everything",
   "resetCompleted": "QuizForge local data was reset.",
+  "linkOpenFailed": "Could not open {value}",
+  "@linkOpenFailed": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
   "actionFailed": "The requested local action could not be completed.",
   "madeBySanskar": "Made by the Sanskar"
 }
