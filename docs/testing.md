@@ -71,7 +71,12 @@ These tests protect the rule that user-visible controller state and durable loca
 Backup coverage is deliberately split across layers:
 
 - `test/data/local_backup_codec_test.dart` covers versioned JSON round trips, unsupported versions, invalid active-profile references, inconsistent aggregate metadata, and the maximum archive-size guard;
-- `test/data/app_database_backup_test.dart` covers logical database export/reset/restore, dangling-reference rejection, best-streak consistency, and non-finite aggregate-score rejection;
+- `test/data/local_backup_required_active_profile_test.dart` verifies that version 1 cannot encode or decode a complete archive without an active-profile selection;
+- `test/data/app_database_backup_test.dart` covers logical database export/reset/restore, dangling-reference rejection, profile/minimum-state checks, best-streak consistency, missing-answer-order semantics, and non-finite aggregate-score rejection;
+- `test/data/app_database_backup_minimum_state_test.dart` verifies that a complete archive cannot omit every question and rely on initialization to silently reseed state after restore;
+- `test/data/app_database_backup_answer_integrity_test.dart` verifies that a crafted archive cannot mark a wrong submitted answer correct or assign a score that disagrees with the archived question's normal QuizForge evaluation;
+- `test/data/app_database_backup_bookmark_key_test.dart` verifies that distinct bookmark `(profileId, questionId)` pairs remain distinct even when identifier text contains a character that would collide in a delimiter-concatenated composite key;
+- `test/data/app_database_backup_attempt_bounds_test.dart` verifies that restored attempts respect the same 1–100-question session-size range as normal quiz configuration;
 - `test/application/quizforge_controller_backup_test.dart` covers whole-controller restoration and cross-store rollback behavior;
 - `test/widget/local_backup_page_test.dart` verifies that restore cannot proceed without the destructive-replacement confirmation dialog.
 
@@ -133,7 +138,7 @@ Both validators have stdlib-only regression tests and run in CI before Flutter s
 - Scoring changes must add deterministic domain tests.
 - New settings should test defaults, persistence, and UI behavior.
 - New progress/history queries should test profile isolation, ordering, bounds, deletion semantics, and empty state.
-- Backup-format changes must test old-version compatibility or explicit rejection, complete reference validation, rollback behavior, and privacy-safe logging.
+- Backup-format changes must test old-version compatibility or explicit rejection, complete reference validation, answer-scoring integrity, session-size bounds, collision-safe composite identities, rollback behavior, and privacy-safe logging.
 - New localization catalogs/messages must pass the ARB validator and localization generation.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
 - Platform clipboard/file-adapter changes should test success and failure paths with platform-channel fakes where practical.
@@ -163,7 +168,7 @@ The repository includes deterministic fuzz-style malformed-input coverage withou
 - arbitrary malformed input never causes an uncontrolled application crash;
 - duplicate partitioning never emits the same id/fingerprint twice in the accepted set;
 - CSV quote handling either parses deterministically or reports a format error;
-- a local backup is accepted only when its format version, object graph, aggregate metadata, and active-profile reference are internally consistent.
+- a local backup is accepted only when its format version, minimum initialized state, object graph, submitted-answer scoring, aggregate metadata, bounded attempt sizes, bookmark pair identity, and active-profile reference are internally consistent.
 
 A dedicated property-testing package should be added only if it provides materially stronger coverage and passes dependency/security review.
 
