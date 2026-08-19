@@ -64,6 +64,7 @@ final class FakeProfileSelectionStore implements ProfileSelectionStore {
   FakeProfileSelectionStore({this.activeProfileId});
 
   String? activeProfileId;
+  bool failSave = false;
   int clearCount = 0;
 
   @override
@@ -71,6 +72,9 @@ final class FakeProfileSelectionStore implements ProfileSelectionStore {
 
   @override
   Future<void> saveActiveProfileId(String profileId) async {
+    if (failSave) {
+      throw StateError('profile selection save failed');
+    }
     activeProfileId = profileId;
   }
 
