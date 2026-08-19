@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizforge/src/application/quizforge_controller.dart';
 import 'package:quizforge/src/data/app_database.dart';
@@ -26,15 +27,22 @@ void main() {
 
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Profiles'), findsOneWidget);
-    expect(find.text('Appearance'), findsOneWidget);
-    expect(find.text('Accessibility'), findsOneWidget);
-    expect(find.text('Privacy and data'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text('Made by the Sanskar'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Made by the Sanskar'), findsOneWidget);
+    final Finder scrollable = find.byType(Scrollable).first;
+    for (final String section in <String>[
+      'Appearance',
+      'Accessibility',
+      'Privacy and data',
+      'Updates',
+      'About',
+      'Made by the Sanskar',
+    ]) {
+      await tester.scrollUntilVisible(
+        find.text(section),
+        400,
+        scrollable: scrollable,
+      );
+      expect(find.text(section), findsOneWidget);
+    }
   });
 }
