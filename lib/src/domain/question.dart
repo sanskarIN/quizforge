@@ -199,12 +199,22 @@ final class Question {
     final Object? rawChoices = json['choices'];
     final Object? rawCorrectAnswers = json['correctAnswers'];
     final Object? rawTags = json['tags'];
+    final List<String> correctAnswers = _stringList(rawCorrectAnswers);
+    final Set<String> normalizedCorrectAnswers = correctAnswers
+        .map(normalizeAnswer)
+        .where((String value) => value.isNotEmpty)
+        .toSet();
+    if (normalizedCorrectAnswers.length != correctAnswers.length) {
+      throw const FormatException(
+        'Correct answers must be non-empty and unique.',
+      );
+    }
     return Question(
       id: _requiredString(json, 'id'),
       type: QuestionType.values.byName(_requiredString(json, 'type')),
       prompt: _requiredString(json, 'prompt'),
       choices: _stringList(rawChoices),
-      correctAnswers: _stringList(rawCorrectAnswers).toSet(),
+      correctAnswers: correctAnswers.toSet(),
       category: _requiredString(json, 'category'),
       difficulty: Difficulty.values.byName(_requiredString(json, 'difficulty')),
       tags: _stringList(rawTags),

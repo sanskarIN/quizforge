@@ -75,6 +75,28 @@ void main() {
       );
     });
 
+    test('JSON parser rejects duplicate accepted answers before set collapse', () {
+      final Map<String, Object?> json = <String, Object?>{
+        'id': 'duplicate-json-answer',
+        'type': 'shortAnswer',
+        'prompt': 'Provide an answer.',
+        'correctAnswers': <String>['Alpha', ' alpha '],
+        'category': 'Testing',
+        'difficulty': 'easy',
+      };
+
+      expect(
+        () => Question.fromJson(json),
+        throwsA(
+          isA<FormatException>().having(
+            (FormatException error) => error.message,
+            'message',
+            'Correct answers must be non-empty and unique.',
+          ),
+        ),
+      );
+    });
+
     test('rejects duplicate tags after normalization', () {
       final Question question = Question(
         id: 'duplicate-tags',

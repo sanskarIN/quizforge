@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'question.dart';
 import 'quiz_config.dart';
 import 'quiz_result.dart';
@@ -30,8 +28,7 @@ final class QuizEngine {
       return categoryMatches && difficultyMatches && tagMatches;
     }).toList(growable: false);
 
-    final int seed = config.seed ?? 0;
-    final Random random = Random(seed);
+    final _StableRandom random = _StableRandom(config.seed ?? 0);
     final List<Question> shuffled = List<Question>.of(candidates);
     for (int index = shuffled.length - 1; index > 0; index -= 1) {
       final int swapIndex = random.nextInt(index + 1);
@@ -40,7 +37,7 @@ final class QuizEngine {
       shuffled[swapIndex] = current;
     }
 
-    return shuffled.take(min(config.questionCount, shuffled.length)).toList();
+    return shuffled.take(config.questionCount).toList(growable: false);
   }
 
   List<Question> dailyQuiz(
@@ -100,5 +97,35 @@ final class QuizEngine {
       completedAt: completedAt,
       evaluations: List<QuestionEvaluation>.unmodifiable(evaluations),
     );
+  }
+}
+
+/// Small deterministic PRNG used only for quiz ordering.
+///
+/// Park-Miller arithmetic stays below JavaScript's exact-integer limit, so the
+/// same seed produces the same sequence on Dart VM and Dart-compiled Web.
+final class _StableRandom {
+  _StableRandom(int seed) : _state = _normalizeSeed(seed);
+
+  static const int _modulus = 2147483647;
+  static const int _multiplier = 48271;
+
+  int _state;
+
+  int nextInt(int maxExclusive) {
+    if (maxExclusive <= 0) {
+      throw ArgumentError.value(
+        maxExclusive,
+        'maxExclusive',
+        'Must be greater than zero.',
+      );
+    }
+    _state = (_state * _multiplier) % _modulus;
+    return _state % maxExclusive;
+  }
+
+  static int _normalizeSeed(int seed) {
+    final int range = _modulus - 1;
+    return ((seed % range) + range) % range + 1;
   }
 }

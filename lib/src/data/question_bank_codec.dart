@@ -168,12 +168,18 @@ final class QuestionBankCodec {
         continue;
       }
       try {
+        final List<String> correctAnswers = _jsonStringList(row[4]);
+        if (!_isNormalizedUniqueNonEmpty(correctAnswers)) {
+          throw const FormatException(
+            'Correct answers must be non-empty and unique.',
+          );
+        }
         final Question question = Question(
           id: row[0],
           type: QuestionType.values.byName(row[1]),
           prompt: row[2],
           choices: _jsonStringList(row[3]),
-          correctAnswers: _jsonStringList(row[4]).toSet(),
+          correctAnswers: correctAnswers.toSet(),
           category: row[5],
           difficulty: Difficulty.values.byName(row[6]),
           tags: _jsonStringList(row[7]),
@@ -219,6 +225,15 @@ final class QuestionBankCodec {
       }
       return item;
     }).toList(growable: false);
+  }
+
+  static bool _isNormalizedUniqueNonEmpty(Iterable<String> values) {
+    final List<String> source = values.toList(growable: false);
+    final Set<String> normalized = source
+        .map(normalizeAnswer)
+        .where((String value) => value.isNotEmpty)
+        .toSet();
+    return normalized.length == source.length;
   }
 
   static String _escapeCsvCell(String value) {
