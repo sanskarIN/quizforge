@@ -251,8 +251,8 @@ final class QuizForgeController extends ChangeNotifier {
       (PlayerProfile profile) => profile.id == profileId,
       orElse: () => throw ArgumentError('Unknown profile id.'),
     );
-    _activeProfile = selected;
     await profilePreferences.saveActiveProfileId(selected.id);
+    _activeProfile = selected;
     await _refreshProfileData();
     logger.info('profile.select.completed');
     notifyListeners();
