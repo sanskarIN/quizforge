@@ -6,7 +6,7 @@ QuizForge targets WCAG-oriented accessible product behavior across mobile, deskt
 
 - Material controls use touch-friendly target sizes.
 - The application supports light, dark, and system themes.
-- A large-text preference increases application text scaling.
+- A large-text preference increases application text scaling without replacing stronger operating-system scaling.
 - A reduced-motion preference is persisted for motion-sensitive UI behavior.
 - Timers and progress expose semantic labels.
 - Correct/incorrect review states use icons and text, not color alone.
@@ -17,7 +17,9 @@ QuizForge targets WCAG-oriented accessible product behavior across mobile, deskt
 
 Layouts must remain usable with large text. Do not fix text containers to heights that clip scaled labels. Prefer wrapping, flexible layouts, scroll views, and bounded responsive widths.
 
-The large-text preference adds scaling without preventing users from using operating-system text scaling.
+When QuizForge large text is enabled, the existing Flutter `TextScaler` is clamped to a **minimum** scale factor of `1.15`. It is not replaced by a fixed linear scaler. This matters because modern platforms can use nonlinear text scaling: an operating-system scaler that produces larger text at any font size remains authoritative, while QuizForge only raises text that would otherwise be below its large-text minimum.
+
+Do not reintroduce code that estimates a single system scale from one sample font size and then swaps in `TextScaler.linear(...)`; that can discard nonlinear system behavior.
 
 ## Keyboard and focus
 
@@ -45,6 +47,8 @@ Use colors from the Material color scheme and manually inspect key surfaces for 
 
 The reduced-motion setting exists to avoid non-essential transitions. New animation should check that preference before introducing movement. Do not add fake loading delays or looping decorative motion that blocks or distracts from quiz content.
 
+QuizForge also preserves an operating-system request to disable animations. The app preference can reduce motion further; it must not override the platform in the opposite direction.
+
 ## Timed modes
 
 Timed quizzes can create accessibility barriers. QuizForge therefore keeps untimed practice available. Custom quiz configuration should preserve the ability to disable timing and future timer options should not make the default offline experience timing-dependent.
@@ -53,13 +57,15 @@ Timed quizzes can create accessibility barriers. QuizForge therefore keeps untim
 
 Validation errors should be expressed in text near the relevant workflow and remain discoverable by assistive technology. Do not indicate invalid fields only by red outlines.
 
+The question creator updates its validation preview as the draft changes. Duplicate accepted answers and invalid time limits are kept visible as errors instead of being silently normalized into a valid-looking draft.
+
 ## Manual release checklist
 
 Before release-candidate status, verify representative flows with:
 
 - platform screen reader where available;
 - keyboard-only navigation on desktop/web;
-- system text scaling plus QuizForge large text;
+- system text scaling plus QuizForge large text, including a platform configuration that uses nonlinear scaling where available;
 - light and dark themes;
 - reduced motion enabled;
 - narrow phone width and wide desktop width.
