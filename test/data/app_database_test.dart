@@ -132,8 +132,8 @@ void main() {
     expect(attempts, hasLength(2));
     expect(attempts[0].startedAt.minute, 2);
     expect(attempts[1].startedAt.minute, 1);
-    expect(
-      () => database.loadRecentAttempts(profile.id, limit: 0),
+    await expectLater(
+      database.loadRecentAttempts(profile.id, limit: 0),
       throwsArgumentError,
     );
   });
