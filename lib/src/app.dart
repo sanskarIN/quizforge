@@ -4,24 +4,26 @@ import '../l10n/app_localizations.dart';
 import 'application/quizforge_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'data/onboarding_repository.dart';
+import 'data/onboarding_store.dart';
 import 'domain/app_settings.dart';
 import 'presentation/home_page.dart';
 import 'presentation/onboarding_page.dart';
 
 final class QuizForgeApp extends StatefulWidget {
-  const QuizForgeApp({
+  QuizForgeApp({
     required this.controller,
+    OnboardingStore? onboardingStore,
     super.key,
-  });
+  }) : onboardingStore = onboardingStore ?? OnboardingRepository();
 
   final QuizForgeController controller;
+  final OnboardingStore onboardingStore;
 
   @override
   State<QuizForgeApp> createState() => _QuizForgeAppState();
 }
 
 final class _QuizForgeAppState extends State<QuizForgeApp> {
-  final OnboardingRepository _onboardingRepository = OnboardingRepository();
   bool? _onboardingComplete;
 
   @override
@@ -84,7 +86,7 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
 
   Future<void> _loadOnboarding() async {
     try {
-      final bool completed = await _onboardingRepository.isCompleted();
+      final bool completed = await widget.onboardingStore.isCompleted();
       if (mounted) {
         setState(() => _onboardingComplete = completed);
       }
@@ -101,7 +103,7 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
 
   Future<void> _completeOnboarding() async {
     try {
-      await _onboardingRepository.markCompleted();
+      await widget.onboardingStore.markCompleted();
     } on Object catch (error) {
       widget.controller.logger.warning(
         'onboarding.persist.failed',
