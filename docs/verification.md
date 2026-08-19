@@ -1,47 +1,55 @@
-# Phase 6 Verification Evidence
+# Final Release-Candidate Verification Evidence
 
-This document records evidence for the final release-candidate verification of QuizForge. It is intentionally evidence-driven: items are marked complete only after a corresponding command, GitHub Actions check, or documented manual review has actually succeeded.
+This document records evidence for the consolidated QuizForge release-candidate audit. It is intentionally evidence-driven: an item is marked complete only after a corresponding command, GitHub Actions result, or documented manual review has actually succeeded on the applicable candidate.
 
-## Audit identity
+## Candidate identity
 
-- Branch: `audit/phase-6-verification-2026-08-19`
-- Pull request: `#9` — `ci: complete Phase 6 hardening and release-candidate audit`
-- Base commit at audit start: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
+- Branch: `final/consolidated-release-audit-20260819`
+- Pull request: `#12` — `release: consolidate final QuizForge audit`
+- Base branch: `main`
+- Base commit: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
+- Consolidation source line: PR `#10` / `feature/phase-7-attempt-history-2026-08-19`, which already contained the stronger Phase 6 hardening from PR `#9`
+- Additional audited source line: PR `#11` / `audit/phase6-20260819`
 - Audit date: 2026-08-19
 - Maintainer commit-email target: `sanskarin@outlook.in`
-- Release-candidate status: **BLOCKED — verification is not complete**
+- Release-candidate status: **BLOCKED — final verification is not complete**
 
-## Code/configuration audit completed in this phase
+PR #12 deliberately consolidates the strongest implementation from the parallel branches instead of blindly merging overlapping store/controller refactors. The newer recent-attempt feature and Phase 6 persistence/import/security work remain the base; the full local-backup feature, ARB validation tooling, validator tests, and useful documentation from the parallel audit line were ported into that stronger base and then audited further.
 
-- [x] Localization message identifiers were audited and Dart-keyword collisions removed.
-- [x] Primary quiz, creator, question-bank, import/export, statistics, and settings UI were moved to externalized English localization resources.
-- [x] Large-text behavior was corrected so the app does not reduce a larger OS text scale.
-- [x] Review bookmark state refresh behavior was corrected.
-- [x] Settings updates now mutate in-memory state only after persistence succeeds.
-- [x] Active-profile selection now loads target data and persists the target preference before mutating visible controller state.
-- [x] Profile creation/deletion now use rollback-aware persistence ordering and preserve original stack traces when failures are rethrown.
-- [x] Controller regression tests cover failed settings saves, failed profile switching, failed profile creation activation, and failed active-profile deletion preference persistence.
-- [x] Import payload size and question-count limits were added.
-- [x] Question ids/content/choices/answers/tags/explanations/time limits gained explicit bounds and canonical duplicate checks.
-- [x] CSV parsing now rejects structurally invalid quote placement and trailing data after a closing quoted field.
-- [x] Accessibility, import, settings, private-room, scoring, controller, and primary quiz-journey regression tests were expanded.
-- [x] A deterministic repository-local Markdown link checker was added to CI and local quality scripts.
-- [x] CI captures the Flutter-generated `pubspec.lock` as a short-lived artifact when dependency resolution executes, allowing lockfile review without hand-authoring it.
-- [x] The tagged release workflow requires a committed lockfile, uses `flutter pub get --enforce-lockfile`, verifies the lockfile is unchanged, and runs the documentation-link gate.
-- [x] Quality/build/security workflows gained superseded-run cancellation where applicable.
-- [x] OSV scanning was added to relevant pull-request dependency changes.
-- [x] Obsolete self-mutating bootstrap workflows were removed from the maintained branch.
-- [x] Release workflow generates localization output before analysis/tests/builds.
-- [x] README, setup, development, testing, CI, release, question-bank format, screenshot, roadmap, and changelog documentation were synchronized with the maintained branch.
+## Source/configuration audit completed on the consolidated branch
+
+- [x] Phase 6 import, question-validation, localization, persistence-ordering, privacy/logging, workflow, and documentation hardening retained.
+- [x] Recent per-profile attempt history retained with bounded newest-first queries, profile isolation, cleanup behavior, UI rendering, and documentation/tests.
+- [x] Complete versioned local backup added for questions, profiles, bookmarks, quiz attempts/submitted answers, application settings, and active-profile selection.
+- [x] Database restore is transactional and validates the logical archive before destructive replacement.
+- [x] Controller-level restore snapshots database/settings/profile selection and attempts compensating rollback when a later cross-store step fails.
+- [x] Restore requires a destructive-replacement confirmation in the UI.
+- [x] Backup archives are documented and handled as private user data; raw archive content is not logged.
+- [x] Backup format/version, archive size, question/profile validity, duplicate content/ids, references, attempt counts/scores, bookmarks, and active-profile membership are validated.
+- [x] Whole-app backups with no local profile are rejected instead of silently restoring into a different default-profile state.
+- [x] The encoder refuses to emit an archive above the decoder's supported archive-size limit, preventing an intentionally exported archive that the same version rejects solely for size.
+- [x] Schema-version-1 answer-order limitation was identified and fixed: `attempt_answers` has no position column, so backup validation does not invent play order from question-id-sorted rows or incorrectly recompute `bestStreak` from that order.
+- [x] Stored `bestStreak` is preserved while order-independent streak invariants are still validated.
+- [x] Database, codec, controller, and widget backup regressions were added, including cross-store rollback and missing-answer-order coverage.
+- [x] Deterministic ARB catalog validation was added for duplicate JSON keys, locale/message shape, metadata consistency, and translated-catalog key parity.
+- [x] ARB validator regression tests were added.
+- [x] The Markdown validator regression-test helper referenced by CI/local scripts was added so the quality graph is self-contained.
+- [x] CI runs repository-validator tests plus Markdown and ARB validation before Flutter setup.
+- [x] Tagged release automation now runs the same repository-validator tests and Markdown/ARB structural gates before Flutter setup/packaging.
+- [x] Local shell/PowerShell quality scripts run the maintained validator + Flutter sequence.
+- [x] README, architecture, privacy, data lifecycle, development, setup, testing, CI, release, roadmap, changelog, and local-backup documentation were synchronized with the consolidated behavior.
 
 ## Required automated gates
 
-These remain unchecked until the **final** pull-request head completes successfully. A queued, pending, cancelled, or superseded run is not a pass.
+These remain unchecked until the **final pull-request head** completes successfully. A queued, pending, cancelled, skipped because of path filtering when the gate is actually applicable, or superseded run is not a pass.
 
+- [ ] Markdown-validator regression tests succeed.
+- [ ] ARB-validator regression tests succeed.
+- [ ] Repository-local Markdown validation succeeds.
+- [ ] ARB localization-catalog validation succeeds.
 - [ ] Dependency installation succeeds and produces/reuses the expected lockfile.
 - [ ] Flutter localization generation succeeds.
 - [ ] Dart formatting check succeeds for `lib`, `test`, and `tool`.
-- [ ] Repository-local Markdown link validation succeeds.
 - [ ] Flutter analyzer succeeds with no errors.
 - [ ] Unit/widget/integration/application tests succeed.
 - [ ] Android build succeeds.
@@ -54,26 +62,26 @@ These remain unchecked until the **final** pull-request head completes successfu
 - [ ] OSV dependency scan succeeds.
 - [ ] Secret Scan succeeds.
 
-## GitHub Actions observation
+## Initial PR #12 GitHub Actions observation
 
-On source/documentation head `cc730b84c92cbf694d62f03064f30bdd5eafc6cd`, the following pull-request runs were observed on 2026-08-19. They had **not completed successfully**, so none is recorded as passing evidence:
+Immediately after PR #12 was opened, the exact source/documentation head was `6e05fcbd0a7c306f621541df0007cdef37458d8e`. The following runs were observed on 2026-08-19 and were all still **queued**, so none is recorded as a passing result:
 
 | Workflow | Run id | Observed status |
 | --- | ---: | --- |
-| CI | `32221756338` | pending |
-| Build Gate | `32221756335` | queued |
-| Platform Build Matrix | `32221756332` | queued |
-| Dependency Review | `32221756374` | queued |
-| OSV Vulnerability Scan | `32221756662` | queued |
-| Secret Scan | `32221756319` | queued |
+| CI | `32267984788` | queued |
+| Secret Scan | `32267984765` | queued |
+| Platform Build Matrix | `32267984940` | queued |
+| Dependency Review | `32267984972` | queued |
+| Build Gate | `32267985062` | queued |
+| OSV Vulnerability Scan | `32267985458` | queued |
 
-Earlier CI run `32221531069` for head `62d536941b12e8b5ae18903038ad1f5bf96d5e12` was later observed as **cancelled** after newer commits superseded it. That cancellation is expected from the workflow concurrency policy and is not counted as a pass or product failure.
-
-This evidence document and later handoff commits themselves create newer pull-request heads. The release decision must always use the latest PR head and its corresponding final runs rather than any historical run ids in this table.
+This verification-ledger commit and the final handoff commit create newer PR heads. Therefore the table above is historical evidence only. **The release decision must always use the newest PR #12 head and its own corresponding completed runs.** Do not transfer a green status from an older head to a newer candidate.
 
 ## Tooling limitation during this audit session
 
-The execution environment used for repository editing did not provide a local Flutter/Dart toolchain, and direct container network cloning was unavailable. Therefore local `flutter pub get`, localization generation, formatting, analyzer, tests, and platform builds could not be truthfully recorded as executed in that environment. GitHub Actions is the available verification environment for these gates.
+The execution environment used for repository editing did not provide a local Flutter/Dart toolchain, and direct container cloning/network access to GitHub was unavailable. Therefore local `flutter pub get`, `flutter gen-l10n`, Dart formatting, Flutter analyzer, Flutter tests, or platform builds could not be truthfully recorded as executed in that environment.
+
+The same limitation prevented executing the repository Python validators from a real checked-out tree inside the container even though the validator code/tests were audited and wired into GitHub Actions. Their actual success must come from an observed final-head CI run or another documented checkout environment.
 
 This is an evidence limitation, not a reason to waive any gate.
 
@@ -81,53 +89,66 @@ This is an evidence limitation, not a reason to waive any gate.
 
 - [ ] `pubspec.lock` is generated, reviewed, and committed from a supported Flutter environment.
 
-A temporary write-capable one-shot workflow used earlier in the audit was removed rather than leaving unnecessary `contents: write` automation in the repository. The maintained CI workflow now follows a safer bootstrap path: normal read-only CI runs `flutter pub get` and uploads the generated `pubspec.lock` as a short-lived workflow artifact. Once a successful CI run exists, that exact generated artifact can be reviewed and committed through the normal branch/PR flow.
+The maintained read-only CI workflow resolves dependencies and uploads the generated application lockfile as a short-lived artifact when it reaches that step. Once a successful final-head CI run produces the artifact, review and commit that exact generated lockfile through the normal branch/PR process. Do **not** hand-author the application lockfile.
 
-The tagged release workflow will refuse to package a release without a non-empty committed lockfile and enforced locked dependency resolution. Do **not** hand-author the application lockfile.
+The tag release workflow intentionally refuses to package a release without a committed, non-empty lockfile and enforced locked dependency resolution.
+
+## Database and backup verification
+
+- [x] Database schema remains explicitly versioned as version 1.
+- [x] Foreign keys are enabled at database open.
+- [x] Database creation and core persistence are covered by in-memory SQLite tests in source control.
+- [x] Attempt/question multi-step writes are transactional where required.
+- [x] Complete logical database backup export/restore has in-memory integration coverage in source control.
+- [x] Invalid backup references/aggregates/profile invariants have source-controlled regression coverage.
+- [x] Cross-store controller rollback has source-controlled regression coverage.
+- [x] Restore confirmation has widget regression coverage.
+- [x] Schema-v1 missing answer-order behavior has a regression test so valid historical streak metadata is not rejected based on invented ordering.
+- [ ] Database creation is exercised inside applicable final release builds.
+- [ ] Android complete-backup export/mutate/restore smoke test is completed using fictional data.
+- [ ] Web complete-backup export/mutate/restore and refresh/reload persistence smoke test is completed using fictional data.
+- [ ] At least one applicable native-desktop complete-backup smoke test is completed when a desktop target is part of the release.
+- [ ] Historical schema migration test exists — **not applicable until a schema version greater than 1 is introduced**. The first schema increment must add real migration code and an old-version-to-new-version test.
 
 ## Required manual/release-host checks
 
 - [ ] Clean checkout setup follows `docs/setup.md` without undocumented steps.
 - [ ] Generated platform runners are reproducible from documented commands.
-- [ ] Drift persistence is exercised on Android and Web builds as applicable.
-- [ ] Web refresh/reload preserves expected local data in the built release artifact.
+- [ ] Drift persistence is exercised on Android and Web release builds as applicable.
+- [ ] Web refresh/reload preserves expected local data in the built artifact.
+- [ ] Local backup restore is manually exercised with fictional custom question/profile/bookmark/history/settings data on the applicable release targets.
 - [ ] Keyboard navigation and focus visibility are manually checked on desktop/web.
 - [ ] Representative screen-reader checks are completed.
 - [ ] Large-text behavior is manually checked with both app and OS scaling.
 - [ ] Reduced-motion behavior is manually reviewed.
 - [ ] Light/dark contrast and non-color-only status indicators are reviewed.
-- [ ] Real screenshots listed in `docs/screenshots/README.md` are captured from the verified release candidate.
-- [ ] External documentation URLs are manually spot-checked where release-critical; repository-local links are now covered by automation.
-- [ ] Final repository/history secret review is completed after the final head is fixed.
-
-## Database verification
-
-- [x] Schema is explicitly versioned as version 1.
-- [x] Database creation is covered by in-memory SQLite integration tests in source control.
-- [x] Foreign keys are enabled at open time.
-- [x] Multi-step attempt/question persistence uses transactions where needed.
-- [x] Profile-controller persistence ordering has dedicated in-memory regression tests around preference failures and rollback behavior.
-- [ ] Database creation is exercised inside applicable platform builds/release candidates.
-- [ ] Historical migration test exists — **not applicable yet because no schema version greater than 1 has been released**. The first schema increment must introduce a real migration and old-version-to-new-version test.
+- [ ] Real screenshots listed in `docs/screenshots/README.md` are captured from the verified release candidate using fictional/demo data.
+- [ ] External documentation URLs are manually spot-checked where release-critical; repository-local links are covered by automation once that final-head gate passes.
+- [ ] Final repository/history secret review completes successfully after the candidate head is fixed.
 
 ## Evidence log
 
 | Date | Check | Result | Evidence |
 | --- | --- | --- | --- |
-| 2026-08-19 | Repository state inspected before Phase 6 audit | PASS | Base commit `d8c27cc81f678b1e49c17670c3d1efeab3d044d3` |
-| 2026-08-19 | Fresh audit branch created from inspected `main` | PASS | `audit/phase-6-verification-2026-08-19` |
-| 2026-08-19 | Active verification PR created | PASS | PR `#9` |
-| 2026-08-19 | Superseded audit PRs closed | PASS | PRs `#6`, `#7`, and `#8` closed as superseded |
-| 2026-08-19 | Obsolete self-mutating bootstrap workflows removed from audit branch | PASS | Focused `ci:` deletion commits on PR #9 |
-| 2026-08-19 | Import resource limits and question validation bounds added with regression tests | PASS (source audit) | Phase 6 focused source/test commits |
-| 2026-08-19 | Settings persistence ordering fixed | PASS (source audit) | Controller/settings repository changes plus regression tests |
-| 2026-08-19 | Profile selection/create/delete failure ordering hardened | PASS (source audit) | `c2a9bea`, `0f49519`, `33d2008`, `a4a974b`, `9a52597`, `8a14a9f`, `00fcbdc`, `0af9f84` |
-| 2026-08-19 | Strict malformed-CSV quote handling added | PASS (source audit) | `2f2313e`, `f96086b` |
-| 2026-08-19 | Deterministic local Markdown-link gate added | PASS (source/config audit) | `920c71f`, `3f89f14`, local-script/CI/release follow-up commits |
-| 2026-08-19 | Final-head automated verification | PENDING | Latest GitHub Actions runs must complete successfully |
-| 2026-08-19 | Release-candidate lockfile | BLOCKED | `pubspec.lock` not yet generated/reviewed from successful Flutter CI/environment evidence |
-| 2026-08-19 | Manual accessibility/screenshots/platform interaction review | PENDING | Requires verified built application on representative targets |
+| 2026-08-19 | Original repository state inspected | PASS | `main` at `d8c27cc81f678b1e49c17670c3d1efeab3d044d3` |
+| 2026-08-19 | Strongest integrated feature base selected | PASS (source audit) | PR #10 already contained PR #9 hardening plus recent attempt history |
+| 2026-08-19 | Parallel PR #11 unique work inspected | PASS (source audit) | Backup/restore and ARB/tooling work selectively ported instead of blindly merging overlapping store refactors |
+| 2026-08-19 | Consolidated final branch created | PASS | `final/consolidated-release-audit-20260819` |
+| 2026-08-19 | Complete local backup/restore integrated into hardened controller | PASS (source audit) | focused feature commits on consolidated branch |
+| 2026-08-19 | Cross-store restore rollback covered | PASS (source audit) | controller backup regression test |
+| 2026-08-19 | Missing answer-order/best-streak bug found and fixed | PASS (source audit) | order-independent backup validation + regression test |
+| 2026-08-19 | Unrestorable oversized-export edge case fixed | PASS (source audit) | encoder now enforces its decoder archive limit |
+| 2026-08-19 | Profileless whole-app archive ambiguity fixed | PASS (source audit) | snapshot validation + regression test |
+| 2026-08-19 | Markdown/ARB validator tests and CI/local gates aligned | PASS (source/config audit) | quality workflow/scripts/tool commits |
+| 2026-08-19 | Tagged release validator gates aligned with CI | PASS (source/config audit) | release workflow commit |
+| 2026-08-19 | Consolidated pull request opened | PASS | PR #12 |
+| 2026-08-19 | First PR #12 workflow observation | PENDING | six applicable runs queued on head `6e05fcbd...` |
+| 2026-08-19 | Final-head automated verification | PENDING | newest PR #12 head must complete applicable checks successfully |
+| 2026-08-19 | Release-candidate lockfile | BLOCKED | `pubspec.lock` not yet generated/reviewed/committed from verified Flutter evidence |
+| 2026-08-19 | Manual platform/accessibility/screenshots/backup smoke verification | PENDING | requires verified built application on representative targets |
 
 ## Release decision rule
 
-QuizForge must not be described as production/release verified and must not be tagged as a verified release candidate until every applicable blocker above has passed on the final commit. Any failed automated gate must be fixed with a focused commit and regression coverage where appropriate, then all affected gates must be re-run. Pending/cancelled infrastructure is recorded as such rather than converted into a success claim.
+QuizForge must not be described as production/release verified and must not be tagged as a verified release candidate until every applicable blocker above has passed on the final commit. Any failed automated gate must be fixed with a focused commit and regression coverage where appropriate, then affected gates must run again on the new head.
+
+Pending, queued, cancelled, or superseded infrastructure is recorded as such rather than converted into a success claim.
