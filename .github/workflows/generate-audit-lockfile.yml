@@ -1,0 +1,48 @@
+name: Generate Audit Lockfile
+
+on:
+  push:
+    branches:
+      - audit/phase-6-verification-2026-08-19
+    paths:
+      - .github/workflows/generate-audit-lockfile.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    name: Generate verified Flutter lockfile once
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out audit branch
+        uses: actions/checkout@v6
+        with:
+          ref: audit/phase-6-verification-2026-08-19
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve application dependency graph
+        run: |
+          flutter --version
+          flutter pub get
+          test -f pubspec.lock
+
+      - name: Commit lockfile and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+          rm .github/workflows/generate-audit-lockfile.yml
+          git add pubspec.lock .github/workflows/generate-audit-lockfile.yml
+          git commit -m "build: lock verified Flutter dependencies"
+          git push origin HEAD:audit/phase-6-verification-2026-08-19
