@@ -13,7 +13,9 @@ Application/package versions use `MAJOR.MINOR.PATCH+BUILD` in `pubspec.yaml`.
 
 Git release tags omit the Flutter build suffix and use `vMAJOR.MINOR.PATCH`, for example `v2.7.4`.
 
-The maintained release-candidate line currently targets **2.7.4+1**. A later store rebuild of the same public 2.7.4 release may increment only the build suffix when no public SemVer behavior changes.
+The maintained release-candidate line currently targets **2.7.4+1**. The in-app public version shown by `AppConstants.version` is **2.7.4**, and the intended public Git tag is **`v2.7.4`**. A later store rebuild of the same public 2.7.4 release may increment only the build suffix when no public SemVer behavior changes.
+
+`tool/check_release_metadata.py` enforces that the public `pubspec.yaml` version, `AppConstants.version`, dated changelog entry, and maintained package/tag documentation agree before Flutter setup.
 
 ## Post-1.0 compatibility policy
 
@@ -70,7 +72,8 @@ The current network transport is disabled by default. A future real private-room
 
 Before tagging `v2.7.4` or any later release:
 
-- `pubspec.yaml` public version and Git tag must agree;
+- `pubspec.yaml`, `AppConstants.version`, and the Git tag public version must agree;
+- `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py` must pass;
 - the application lockfile must be generated, reviewed, committed, and accepted by locked dependency resolution;
 - `CHANGELOG.md` must contain the dated release entry;
 - database migrations must be tested from every supported previous release baseline when the schema changes;
