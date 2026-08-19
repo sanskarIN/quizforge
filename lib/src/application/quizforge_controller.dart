@@ -31,7 +31,7 @@ final class QuizForgeController extends ChangeNotifier {
 
   final AppDatabase database;
   final QuestionRepository questionRepository;
-  final SettingsRepository settingsRepository;
+  final AppSettingsStore settingsRepository;
   final ActiveProfilePreferences profilePreferences;
   final AppLogger logger;
   final QuizEngine quizEngine;
