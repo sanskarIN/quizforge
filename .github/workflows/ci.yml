@@ -23,6 +23,17 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Test repository validation tooling
+        run: |
+          python3 tool/test_check_markdown_links.py
+          python3 tool/test_check_arb_catalogs.py
+
+      - name: Validate repository-local Markdown links
+        run: python3 tool/check_markdown_links.py
+
+      - name: Validate ARB localization catalogs
+        run: python3 tool/check_arb_catalogs.py
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
         with:
@@ -48,9 +59,6 @@ jobs:
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed lib test tool
-
-      - name: Validate repository-local Markdown links
-        run: python3 tool/check_markdown_links.py
 
       - name: Analyze
         run: flutter analyze
