@@ -49,6 +49,83 @@ void main() {
       expect(profilePreferences.activeProfileId, 'profile-a');
     });
 
+    test('failed profile creation preference save rolls back new profile', () async {
+      final AppDatabase database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final _FakeProfilePreferences profilePreferences =
+          _FakeProfilePreferences();
+      final QuizForgeController controller = QuizForgeController(
+        database: database,
+        questionRepository: QuestionRepository(database),
+        settingsRepository: _FakeSettingsStore(),
+        profilePreferences: profilePreferences,
+      );
+      await controller.initialize();
+
+      final String originalProfileId = controller.activeProfile!.id;
+      final int originalProfileCount = controller.profiles.length;
+      profilePreferences.failSaves = true;
+
+      await expectLater(
+        controller.createProfile('Player B'),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(controller.profiles, hasLength(originalProfileCount));
+      expect(controller.activeProfile?.id, originalProfileId);
+      expect(profilePreferences.activeProfileId, originalProfileId);
+      final List<PlayerProfile> storedProfiles = await database.loadProfiles();
+      expect(storedProfiles, hasLength(originalProfileCount));
+      expect(
+        storedProfiles.map((PlayerProfile profile) => profile.id),
+        contains(originalProfileId),
+      );
+    });
+
+    test('failed active-profile deletion preference save leaves profile intact', () async {
+      final AppDatabase database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await database.upsertProfile(
+        PlayerProfile(
+          id: 'profile-a',
+          displayName: 'Player A',
+          createdAt: DateTime(2026),
+        ),
+      );
+      await database.upsertProfile(
+        PlayerProfile(
+          id: 'profile-b',
+          displayName: 'Player B',
+          createdAt: DateTime(2026, 1, 2),
+        ),
+      );
+
+      final _FakeProfilePreferences profilePreferences =
+          _FakeProfilePreferences(activeProfileId: 'profile-a');
+      final QuizForgeController controller = QuizForgeController(
+        database: database,
+        questionRepository: QuestionRepository(database),
+        settingsRepository: _FakeSettingsStore(),
+        profilePreferences: profilePreferences,
+      );
+      await controller.initialize();
+      profilePreferences.failSaves = true;
+
+      await expectLater(
+        controller.deleteProfile('profile-a'),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(controller.profiles, hasLength(2));
+      expect(controller.activeProfile?.id, 'profile-a');
+      expect(profilePreferences.activeProfileId, 'profile-a');
+      final List<PlayerProfile> storedProfiles = await database.loadProfiles();
+      expect(
+        storedProfiles.map((PlayerProfile profile) => profile.id).toSet(),
+        <String>{'profile-a', 'profile-b'},
+      );
+    });
+
     test('failed settings persistence keeps in-memory settings unchanged', () async {
       final AppDatabase database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
