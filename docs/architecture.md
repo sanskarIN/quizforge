@@ -13,6 +13,23 @@ presentation  ---> application ---> domain
 
 The domain layer does not import Flutter widgets, Drift, SQLite, platform APIs, or network clients.
 
+## Cross-platform architecture boundary
+
+QuizForge 2.7.4 targets Android, iOS, Web, Windows, macOS, and Linux from the same application/domain source tree.
+
+Core quiz, scoring, validation, selection, backup, controller, and presentation behavior is shared. The maintained application code does not require `dart:io` or `Platform.*` branches to fork core product logic by operating system.
+
+Platform differences are kept at infrastructure/build boundaries:
+
+- Android/iOS/Windows/macOS/Linux use the native `drift_flutter` SQLite path;
+- Web uses the same database abstraction with explicit `DriftWebOptions`, `sqlite3.wasm`, and `drift_worker.js`;
+- small settings/profile preferences use Flutter-compatible Shared Preferences adapters;
+- clipboard flows use Flutter clipboard APIs;
+- external support/project links use `url_launcher`;
+- standard Flutter platform runners are reproducibly generated instead of becoming separate application forks.
+
+This keeps feature behavior consistent while allowing host-specific build/signing/storage behavior to remain explicit. See [`platform-support.md`](platform-support.md).
+
 ## Layers
 
 ### `lib/src/domain/`
@@ -32,7 +49,7 @@ Pure product rules and immutable value-oriented models:
 
 Infrastructure adapters:
 
-- `app_database.dart` — Drift-managed SQLite connection with explicit SQL schema and transactional writes.
+- `app_database.dart` — Drift-managed SQLite connection with explicit SQL schema and transactional writes, including explicit Web runtime options.
 - `app_database_progress.dart` — read-side progress projections, including category progress and bounded newest-first attempt history.
 - `app_database_maintenance.dart` — explicit local profile/activity/data maintenance operations.
 - `app_database_backup.dart` — logical database snapshot export/validation and transactional restore.
@@ -74,6 +91,21 @@ Schema version 1 contains:
 - `bookmarks`
 
 Question ids are primary keys. A normalized question fingerprint is unique to reduce accidental duplicate content. Attempt writes and their answer rows use a transaction. Foreign keys are enabled when the database opens.
+
+### Native database path
+
+Android, iOS, Windows, macOS, and Linux use `driftDatabase(name: 'quizforge')` through `drift_flutter`'s native implementation.
+
+### Web database path
+
+The same `AppDatabase.defaults()` constructor passes `DriftWebOptions` containing:
+
+- `sqlite3Wasm: Uri.parse('sqlite3.wasm')`;
+- `driftWorker: Uri.parse('drift_worker.js')`.
+
+The corresponding files are prepared by `tool/prepare_web_assets.py` from the maintained Drift compatibility line. Build/release workflows validate them in the final Web bundle.
+
+This packaging validation proves that required runtime files exist and have the expected basic format. It does not replace real-browser storage verification: release evidence must still exercise database creation, write/read persistence, refresh/reload behavior, and backup restore.
 
 Recent history does **not** introduce another persistence table. `AttemptSummary` is projected from existing `attempts` rows. This keeps aggregate progress and recent-history metadata tied to the same source of truth and avoids migration work for a feature that needs no new stored fields.
 
@@ -125,6 +157,21 @@ A complete local restore crosses stores that cannot participate in one physical 
 
 This is a compensating-transaction design. It minimizes partial-state risk but does not claim atomicity across unrelated platform stores. Users are still advised to keep an independent backup before important destructive restores.
 
+## Platform runner and release architecture
+
+Generated platform projects are treated as reproducible shells. Development/CI materializes the applicable runner with Flutter tooling, then applies only QuizForge-specific runtime preparation that cannot be inferred by Flutter itself (currently the Web SQLite WASM/worker assets).
+
+Pull-request build evidence is split by host:
+
+- Ubuntu: Android release + Web release;
+- Ubuntu: Linux release;
+- Windows: Windows release;
+- macOS: macOS release + iOS no-codesign compile.
+
+The tag workflow first verifies the shared source once, then packages all six targets in host-appropriate jobs. GitHub release publication depends on every platform job. This prevents a partial cross-platform tag from being automatically published when one supported platform fails its packaging job.
+
+Distribution signing/provisioning remains separate from application architecture. An unsigned iOS compile or unsigned/notarized desktop bundle must not be described as a signed store artifact.
+
 ## Multiplayer boundary
 
 Private-room multiplayer is represented by `PrivateRoomTransport`. The default implementation fails closed and performs no networking. A future implementation must add an ADR covering transport security, privacy, room-code entropy, abuse/rate limits, retention, and threat modeling before it can become enabled product behavior.
@@ -149,10 +196,11 @@ ARB catalogs are validated with the stdlib-only `tool/check_arb_catalogs.py` str
 
 ## Architecture decisions and supporting contracts
 
-See `docs/adr/` for durable decisions and their tradeoffs. Additional feature contracts include:
+See `docs/adr/` for durable decisions and their tradeoffs. Additional feature/platform contracts include:
 
-- `docs/progress-history.md`
-- `docs/progress-history-data-contract.md`
-- `docs/attempt-history-verification.md`
-- `docs/local-backup.md`
-- `docs/data-lifecycle.md`
+- [`progress-history.md`](progress-history.md)
+- [`progress-history-data-contract.md`](progress-history-data-contract.md)
+- [`attempt-history-verification.md`](attempt-history-verification.md)
+- [`local-backup.md`](local-backup.md)
+- [`data-lifecycle.md`](data-lifecycle.md)
+- [`platform-support.md`](platform-support.md)
