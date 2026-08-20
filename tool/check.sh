@@ -4,6 +4,7 @@ set -euo pipefail
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
+python3 tool/test_prepare_web_assets.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
