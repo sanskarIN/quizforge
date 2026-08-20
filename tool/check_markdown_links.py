@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Validate repository-local Markdown links without network access.
 
-The checker intentionally ignores HTTP(S), mailto, data, and pure-fragment links.
-It validates inline links/images and reference definitions, while ignoring fenced
-code blocks so documentation examples do not create false failures.
+The checker intentionally ignores HTTP(S), mailto, data, tel, and pure-fragment
+links. It validates inline links/images and reference definitions, ignores fenced
+code blocks, and rejects local targets that escape the repository root.
 """
 
 from __future__ import annotations
@@ -26,14 +26,15 @@ class BrokenLink:
     source: Path
     line: int
     target: str
+    reason: str
 
 
-def _markdown_files() -> list[Path]:
+def _markdown_files(root: Path) -> list[Path]:
     ignored = {".git", "build", ".dart_tool"}
     return sorted(
         path
-        for path in ROOT.rglob("*.md")
-        if not any(part in ignored for part in path.relative_to(ROOT).parts)
+        for path in root.rglob("*.md")
+        if not any(part in ignored for part in path.relative_to(root).parts)
     )
 
 
@@ -42,6 +43,21 @@ def _targets_from_line(line: str) -> list[str]:
     reference_match = REFERENCE_DEF_RE.match(line)
     if reference_match is not None:
         targets.append(reference_match.group(1).strip())
+    return targets
+
+
+def extract_targets(markdown: str) -> list[str]:
+    """Return local-or-external Markdown targets while ignoring fenced examples."""
+
+    targets: list[str] = []
+    in_fence = False
+    for line in markdown.splitlines():
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        targets.extend(_targets_from_line(line))
     return targets
 
 
@@ -67,38 +83,73 @@ def _normalized_target(raw_target: str) -> str | None:
     return unquote(split.path)
 
 
-def _resolve(source: Path, target: str) -> Path:
+def _resolved_target(source: Path, target: str, root: Path) -> Path:
     if target.startswith("/"):
-        return ROOT / target.lstrip("/")
-    return source.parent / target
+        return (root / target.lstrip("/")).resolve()
+    return (source.parent / target).resolve()
 
 
-def find_broken_links() -> list[BrokenLink]:
+def _is_within(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    return True
+
+
+def validate_file(source: Path, root: Path) -> list[BrokenLink]:
+    """Validate one Markdown file against *root* and return deterministic errors."""
+
+    root = root.resolve()
+    source = source.resolve()
+    try:
+        source_label = source.relative_to(root)
+    except ValueError:
+        source_label = source
+
     broken: list[BrokenLink] = []
-    for markdown in _markdown_files():
-        in_fence = False
-        for line_number, line in enumerate(
-            markdown.read_text(encoding="utf-8").splitlines(), start=1
-        ):
-            if FENCE_RE.match(line):
-                in_fence = not in_fence
-                continue
-            if in_fence:
+    in_fence = False
+    for line_number, line in enumerate(
+        source.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+
+        for raw_target in _targets_from_line(line):
+            target = _normalized_target(raw_target)
+            if target is None:
                 continue
 
-            for raw_target in _targets_from_line(line):
-                target = _normalized_target(raw_target)
-                if target is None:
-                    continue
-                resolved = _resolve(markdown, target)
-                if not resolved.exists():
-                    broken.append(
-                        BrokenLink(
-                            source=markdown.relative_to(ROOT),
-                            line=line_number,
-                            target=raw_target,
-                        )
+            resolved = _resolved_target(source, target, root)
+            if not _is_within(resolved, root):
+                broken.append(
+                    BrokenLink(
+                        source=source_label,
+                        line=line_number,
+                        target=raw_target,
+                        reason="target escapes repository root",
                     )
+                )
+            elif not resolved.exists():
+                broken.append(
+                    BrokenLink(
+                        source=source_label,
+                        line=line_number,
+                        target=raw_target,
+                        reason="local target does not exist",
+                    )
+                )
+    return broken
+
+
+def find_broken_links(root: Path = ROOT) -> list[BrokenLink]:
+    root = root.resolve()
+    broken: list[BrokenLink] = []
+    for markdown in _markdown_files(root):
+        broken.extend(validate_file(markdown, root))
     return broken
 
 
@@ -111,7 +162,7 @@ def main() -> int:
     print("Broken repository-local Markdown links:", file=sys.stderr)
     for item in broken:
         print(
-            f"- {item.source}:{item.line}: {item.target}",
+            f"- {item.source}:{item.line}: {item.target} ({item.reason})",
             file=sys.stderr,
         )
     return 1
