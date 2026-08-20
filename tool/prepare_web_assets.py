@@ -43,8 +43,10 @@ def validate_worker(data: bytes) -> None:
         text = data.decode("utf-8")
     except UnicodeDecodeError as error:
         raise ValueError("drift_worker.js is not valid UTF-8 JavaScript") from error
-    if "drift" not in text.lower():
-        raise ValueError("drift_worker.js does not look like a Drift worker")
+
+    normalized = text.lstrip().lower()
+    if normalized.startswith("<!doctype html") or normalized.startswith("<html"):
+        raise ValueError("drift_worker.js contains an HTML response instead of JavaScript")
 
 
 def validate_asset(name: str, data: bytes) -> None:
