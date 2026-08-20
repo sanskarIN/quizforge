@@ -18,12 +18,14 @@ class PrepareWebAssetsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "WebAssembly magic"):
             prepare_web_assets.validate_sqlite3_wasm(b"not-wasm")
 
-    def test_accepts_utf8_drift_worker(self) -> None:
-        prepare_web_assets.validate_worker(b"// drift worker fixture\n")
+    def test_accepts_minified_utf8_worker(self) -> None:
+        prepare_web_assets.validate_worker(
+            b"(function(){self.onmessage=function(e){postMessage(e.data)}})();"
+        )
 
-    def test_rejects_worker_without_drift_identity(self) -> None:
-        with self.assertRaisesRegex(ValueError, "does not look like"):
-            prepare_web_assets.validate_worker(b"console.log('worker');\n")
+    def test_rejects_html_instead_of_worker(self) -> None:
+        with self.assertRaisesRegex(ValueError, "HTML response"):
+            prepare_web_assets.validate_worker(b"<!doctype html><html></html>")
 
     def test_check_assets_reports_missing_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -37,7 +39,8 @@ class PrepareWebAssetsTest(unittest.TestCase):
             destination = Path(temporary_directory)
             (destination / "sqlite3.wasm").write_bytes(b"\x00asmfixture")
             (destination / "drift_worker.js").write_text(
-                "// Drift worker fixture\n", encoding="utf-8"
+                "(function(){self.onmessage=function(e){}})();\n",
+                encoding="utf-8",
             )
             self.assertEqual(prepare_web_assets.check_assets(destination), [])
 
