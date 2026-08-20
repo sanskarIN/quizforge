@@ -14,14 +14,17 @@ Before creating or promoting a release candidate:
 - `tool/check_release_metadata.py` confirms that package, in-app, changelog, and versioning metadata agree;
 - the reviewed application `pubspec.lock` is tracked and matches `pubspec.yaml` after locked dependency resolution;
 - `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md` are current;
-- repository-validator regression tests pass;
+- repository/tool regression tests pass;
 - repository-local Markdown links pass `tool/check_markdown_links.py`;
 - localization catalogs pass `tool/check_arb_catalogs.py` and `flutter gen-l10n`;
-- all required platform runner files can be generated from documented commands;
+- all six Flutter platform runners can be generated from documented commands;
+- the Web runner contains compatible Drift SQLite WASM/worker assets;
 - no credentials, signing secrets, real backup archives, or private user data are tracked;
 - CI is green on the exact final head;
 - dependency/security checks have been reviewed on the exact final head;
 - applicable local-backup restore, manual accessibility, platform interaction, and real-screenshot checks in `docs/verification.md` are complete.
+
+See [`platform-support.md`](platform-support.md) for the six-platform runtime contract.
 
 ## Clean verification
 
@@ -29,9 +32,11 @@ From a fresh clone:
 
 ```bash
 flutter create . --platforms=android,ios,web,windows,macos,linux
+python3 tool/prepare_web_assets.py --destination web
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
+python3 tool/test_prepare_web_assets.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
@@ -58,7 +63,25 @@ The release workflow intentionally fails when `pubspec.lock` is missing, empty, 
 - no stale pre-1.0 compatibility policy while the package is on a stable major version;
 - maintained package identity `2.7.4+1` and tag identity `v2.7.4` in `docs/versioning.md`.
 
-Its regression suite is `tool/test_check_release_metadata.py`. The tests cover package syntax, in-app version drift/non-semantic values, impossible release dates, historical `0.1.0` recognition, duplicate/out-of-order releases, stable-major policy, and maintained package/tag documentation. Both the validator and its tests run in pull-request CI and the tag release workflow.
+Its regression suite is `tool/test_check_release_metadata.py`.
+
+## Cross-platform database/runtime preparation
+
+Native Android, iOS, Windows, macOS, and Linux use the native `drift_flutter` database path.
+
+Web uses explicit `DriftWebOptions` and requires `sqlite3.wasm` plus a compatible worker. The maintained preparation command is:
+
+```bash
+python3 tool/prepare_web_assets.py --destination web
+```
+
+The script is pinned to the maintained Drift 2.34.3 line and validates the asset shape before writing it. After a Web release build, verify those files actually reached the output:
+
+```bash
+python3 tool/prepare_web_assets.py --destination build/web --check
+```
+
+A successful Web compile without these runtime files is not sufficient release evidence. Deployment must also serve `.wasm` using the WebAssembly MIME type and a real-browser smoke test must verify database creation, persistence, refresh/reload behavior, and backup restore.
 
 ## Local backup/restore verification
 
@@ -82,18 +105,12 @@ Then:
 5. verify questions, profiles, active-profile selection, bookmark, progress/history, and settings return;
 6. verify restore requires the destructive-replacement confirmation;
 7. verify a malformed/unsupported archive fails safely without exposing raw archive content;
-8. repeat on Android and Web release builds when those targets are released;
-9. perform a native-desktop restore smoke check on an applicable host when a desktop target is included.
+8. repeat on Android and Web release builds;
+9. perform a native-desktop restore smoke check on at least one desktop target and expand that coverage for platforms actually distributed.
 
 Do not use real user backup archives as public release evidence. `docs/local-backup.md` defines the format/limitations, including schema-version-1 answer-order semantics.
 
 ## Android
-
-Debug verification:
-
-```bash
-flutter build apk --debug
-```
 
 Release packaging:
 
@@ -102,37 +119,98 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
+The tagged workflow publishes both APK and AAB artifacts after the shared verification job passes.
+
 A store release requires separate signing configuration. Never commit keystores, passwords, service-account credentials, or `key.properties` values containing secrets.
 
 ## Web
 
 ```bash
+python3 tool/prepare_web_assets.py --destination web
 flutter build web --release
+python3 tool/prepare_web_assets.py --destination build/web --check
 ```
 
-Before publishing a web build, verify Drift's web runtime assets for the exact dependency/toolchain version and test database creation, refresh/reload, persistence, question-bank import/export, complete local-backup restore, and browser storage behavior in the built artifact.
+Before publishing a Web build, verify database creation, refresh/reload persistence, question-bank import/export, complete local-backup restore, browser storage behavior, clipboard behavior, and correct WebAssembly serving.
 
-## Desktop
+## Linux
 
-Desktop release builds must be produced on the corresponding supported host where Flutter requires it:
+On a supported Linux host:
 
 ```bash
-flutter build windows --release
-flutter build macos --release
+flutter config --enable-linux-desktop
 flutter build linux --release
 ```
 
-Do not claim a desktop artifact was verified when it was not built on an appropriate host. The pull-request platform matrix supplies compile/build evidence on GitHub-hosted runners; it does not replace installer and interaction testing on representative devices.
+The tagged workflow packages the x64 release bundle as a `.tar.gz` artifact.
+
+## Windows
+
+On a supported Windows host:
+
+```powershell
+flutter config --enable-windows-desktop
+flutter build windows --release
+```
+
+The tagged workflow packages the x64 release output as a `.zip` artifact.
+
+## macOS
+
+On macOS/Xcode:
+
+```bash
+flutter config --enable-macos-desktop
+flutter build macos --release
+```
+
+The tagged workflow packages the generated release output. Distribution signing/notarization remains a separate maintainer activity and must not expose credentials in the public repository.
 
 ## iOS
 
-On macOS with a valid Xcode environment:
+On macOS/Xcode, compile verification without signing uses:
 
 ```bash
-flutter build ios --release
+flutter build ios --release --no-codesign
 ```
 
-The pull-request matrix performs an iOS release compile with `--no-codesign`. Distribution signing/provisioning is external to the open-source repository and must not expose private certificates or profiles.
+The tagged workflow can publish an artifact explicitly named `ios-unsigned` as compile evidence. **That artifact is not represented as an App Store/device-signed distribution build.** Real iOS distribution requires certificates/profiles and signing outside the public repository.
+
+## Tagged cross-platform release pipeline
+
+`.github/workflows/release.yml` uses a gated multi-job design.
+
+### 1. Verify source once
+
+Before any platform packaging starts, the workflow:
+
+- verifies the Git tag matches the public package version;
+- requires the committed application lockfile;
+- runs all repository/tool regression tests and validators;
+- enforces locked dependency resolution;
+- generates localizations;
+- checks formatting;
+- runs Flutter analysis and tests with coverage.
+
+### 2. Build/package all supported targets
+
+After verification, host-specific jobs produce:
+
+- Android APK;
+- Android AAB;
+- Web release bundle with validated WASM/worker assets;
+- Linux x64 bundle;
+- Windows x64 bundle;
+- macOS release output;
+- unsigned iOS release compile output.
+
+Each job independently uses `flutter pub get --enforce-lockfile` and verifies that dependency resolution does not rewrite `pubspec.lock`.
+
+### 3. Publish only after all platform jobs pass
+
+The final publication job depends on every platform job. It downloads the immutable workflow artifacts, creates SHA-256 checksums, and then creates the GitHub release. Only this final job has `contents: write` permission.
+
+This means a failed Windows/macOS/Linux/iOS/Android/Web packaging job prevents publication instead of creating a knowingly partial cross-platform release.
 
 ## Versioning
 
@@ -159,10 +237,6 @@ For later releases, substitute the matching `vX.Y.Z` value.
 
 If signed tags are not available in the execution environment, do not falsely claim a signed release.
 
-The tag-triggered GitHub Actions release workflow independently verifies the tag/version relationship, requires the committed lockfile, reruns Markdown/ARB/release-metadata validator tests and validators, resolves dependencies with `--enforce-lockfile`, verifies the lockfile was not rewritten, generates localizations, reruns formatting/analysis/test gates, builds Android/Web release artifacts, creates SHA-256 checksums, uploads workflow artifacts, and publishes the GitHub release.
-
-A future release-workflow edit should keep all repository validator/test sequences aligned with CI/local scripts rather than allowing release automation to bypass a pull-request gate.
-
 ## Release notes
 
 Release notes should include:
@@ -173,11 +247,12 @@ Release notes should include:
 - known limitations;
 - migration or data-format notes;
 - local-backup compatibility notes when applicable;
-- verified platforms and exact build scope.
+- verified platforms and exact build scope;
+- signing/provisioning state for mobile/desktop artifacts where relevant.
 
 The maintained 2.7.4 notes are in [`release-notes-2.7.4.md`](release-notes-2.7.4.md).
 
-Do not describe an unverified build as supported by that release merely because source code contains a target runner.
+Do not describe an unverified build as supported by that release merely because source code contains a target runner or an older head passed compilation.
 
 ## Post-release
 
@@ -188,4 +263,5 @@ After publication:
 3. confirm the installed/About version still matches the published public version;
 4. update `what_changed.md` and `docs/verification.md` with the exact tag and release commit;
 5. record actual verified platform scope and any remaining limitations in the release notes;
-6. record any store/distribution-specific follow-up separately from open-source source control.
+6. complete distribution signing/notarization/provisioning separately where required;
+7. record any store/distribution-specific follow-up separately from open-source source control.
