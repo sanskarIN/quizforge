@@ -1,785 +1,652 @@
-# QuizForge — What Changed / Version 2.7.4 Final Continuation Ledger
+# QuizForge — What Changed / Version 2.7.4 Cross-Platform Final Continuation Ledger
 
-Last updated: 2026-08-19 (Asia/Kolkata)
+Last updated: 2026-08-20 (Asia/Kolkata)
 
-This file is the primary detailed cross-chat handoff for the QuizForge repository. It records what is actually implemented, what was fixed during the final audit, what is documented, what is automated, and what still requires real verification.
+This file is the primary detailed cross-chat handoff for the QuizForge repository. It records the maintained release path, implemented product/data hardening, version 2.7.4 work, six-platform support work, observed GitHub Actions evidence, and the remaining release blockers.
 
-Do **not** convert a queued, pending, cancelled, superseded, skipped-but-applicable, unobserved, or planned check into a passing claim.
+Do **not** convert a queued, pending, cancelled, superseded, skipped-but-applicable, unobserved, or merely planned check into a passing claim.
 
 ## Current repository milestone
 
 - Repository: `https://github.com/sanskarIN/quizforge`
 - Visibility/source model: public / open source
 - License: MIT
-- Package/application version currently in source: **`2.7.4+1`**
+- Package/application version: **`2.7.4+1`**
+- In-app/About public version: **`2.7.4`**
 - Intended public Git tag after verification: **`v2.7.4`**
 - Database schema version: `1`
 - Local-backup format version: `1`
 - Stack: Flutter + Dart + Drift/SQLite
-- Intended source targets: Android, iOS, Web, Windows, macOS, Linux
+- Supported source targets: **Android, iOS, Web, Windows, macOS, Linux**
 - Required product credit: **Made by the Sanskar**
 - Requested maintainer commit email: `sanskarin@outlook.in`
 - Final consolidation branch: `final/consolidated-release-audit-20260819`
 - Maintained pull request: **PR #12 — `release: prepare QuizForge 2.7.4 final candidate`**
 - PR #12 base: `main`
-- Original `main` base SHA when the consolidation PR was opened: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
-- Status: **2.7.4 source/release-candidate hardening is implemented; release verification remains blocked until exact-final-head automated/manual evidence is complete.**
+- Original `main` base SHA: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
+- Earlier fully observed six-platform build-evidence head: `306bee785cbebbf5b5d6bea875f8d5b4988ea175`
+- Status: **six-platform implementation/release engineering is present, but exact-final-head verification and manual release-host evidence remain incomplete.**
 
-The version declaration is intentional and complete in source metadata. It is not, by itself, evidence that `v2.7.4` is already a verified production release.
+The version declaration and supported-target declaration are source/release contracts. Neither is, by itself, evidence that the exact current head is already a production-verified release.
 
-## Why PR #12 is the only maintained final path
+## Maintained branch/PR consolidation
 
-Three earlier work lines contained useful but overlapping changes:
+The repository previously had three overlapping lines of work:
 
 1. PR #9 — `audit/phase-6-verification-2026-08-19`
    - import/resource validation;
+   - persistence ordering/rollback;
    - localization/accessibility hardening;
-   - persistence ordering and rollback behavior;
    - privacy/logging improvements;
    - CI/build/security/release hardening;
-   - broad tests and release documentation.
+   - broad test/documentation expansion.
 2. PR #10 — `feature/phase-7-attempt-history-2026-08-19`
    - based on the stronger PR #9 line;
-   - added bounded, privacy-preserving recent per-profile attempt history;
-   - added database/UI/tests/docs for that feature.
+   - added bounded per-profile recent attempt history and its database/UI/tests/docs.
 3. PR #11 — `audit/phase6-20260819`
-   - parallel audit branch;
-   - contained useful complete local-backup/restore work;
-   - contained ARB validation and repository-tooling additions;
-   - also contained overlapping store/controller work that was not blindly preferred over PR #10's stronger persistence behavior.
+   - parallel audit work;
+   - contained useful whole-app local backup/restore, ARB validation, tooling/tests/docs;
+   - also contained overlapping store/controller refactors that were not blindly preferred over the already-hardened PR #10 implementation.
 
-The final consolidation branch started from PR #10's stronger integrated base and selectively ported/audited the useful unique work from the parallel branch. PRs #9, #10, and #11 were closed as superseded so there is one unambiguous release-candidate path.
+PR #12 deliberately started from the stronger integrated PR #10 line and selectively ported/audited unique useful PR #11 work. PRs #9, #10, and #11 were closed as superseded. PR #12 is the only maintained final candidate path.
 
-## Product functionality present in the 2.7.4 candidate
+## Core QuizForge functionality retained in 2.7.4
 
-The maintained branch contains the major QuizForge product surface:
+The maintained branch includes:
 
 - multiple-choice questions;
 - true/false questions;
 - multi-select questions;
 - short-answer questions;
-- exact-set scoring for set-based answers;
-- normalized short-answer scoring;
-- deterministic seeded quiz selection;
-- daily quiz mode;
+- deterministic exact-set and normalized short-answer scoring;
+- deterministic seeded selection;
+- daily quiz;
 - random practice;
 - timed sprint;
-- configurable custom quiz setup;
-- category filtering;
-- difficulty filtering;
-- tag filtering;
-- explanations and answer review;
-- question bookmarks;
-- local profiles;
-- profile rename/delete;
-- per-profile progress summaries;
+- configurable custom quizzes;
+- category/difficulty/tag filtering;
+- explanations and review;
+- bookmarks;
+- local profiles with rename/delete;
+- per-profile progress;
 - category statistics;
 - local leaderboard;
 - bounded recent per-profile attempt history;
 - question creator with validation/preview;
-- JSON question-bank import/export;
-- CSV question-bank import/export;
-- duplicate-id and normalized-content protection;
-- Drift/SQLite local persistence;
-- active-profile activity clearing;
-- complete local-data reset;
+- JSON/CSV question-bank import/export;
+- duplicate-id and normalized-content handling;
+- Drift/SQLite persistence;
+- local activity clearing and complete local-data reset;
 - onboarding;
-- adaptive Material 3 application shell;
+- adaptive Material 3 presentation;
 - light/dark/system themes;
-- large-text preference;
-- reduced-motion preference;
-- screen-reader-oriented semantics/hints;
-- safe confirmation before abandoning an in-progress quiz;
-- offline-first application architecture;
-- disabled-by-default/fail-closed private-room multiplayer boundary;
-- project/business/support/funding identity UI;
-- About page;
-- branding SVG assets;
-- deterministic unit/integration/widget tests;
-- deterministic benchmark tooling;
-- repository-local validation tools;
-- CI/build/security/release workflows.
+- large-text and reduced-motion preferences;
+- accessibility semantics/hints;
+- safe confirmation before abandoning an active quiz;
+- offline-first architecture;
+- disabled-by-default/fail-closed private-room transport boundary;
+- project/contact/support/funding/About UI;
+- deterministic tests/benchmarking;
+- repository-local validators;
+- CI/build/security/release automation.
 
-## Persistence-ordering and rollback safety retained
+## Persistence-ordering and rollback hardening retained
 
-The final controller keeps the stronger persistence-first behavior from the earlier audit line rather than replacing it with overlapping weaker refactors.
+The final controller keeps persistence-first behavior from the stronger audit line.
 
 ### Settings
 
-- Settings persistence happens before visible controller settings are replaced.
-- A failed preference write therefore does not falsely show a setting as saved.
-- The settings repository uses the versioned `settings.v1` payload.
-- Malformed/newer values fall back safely.
-- Legacy preference keys remain a migration fallback where documented.
-- Reset removes both maintained and legacy preference state as required.
+- settings are persisted before visible in-memory settings are replaced;
+- failed preference persistence does not falsely display unsaved settings as committed;
+- versioned `settings.v1` payload is maintained;
+- malformed/newer values fall back safely;
+- legacy key cleanup/migration fallback remains documented/tested.
 
-### Active profile switching
+### Active profile
 
-- Target profile data is loaded before switching.
-- The active-profile preference write succeeds before visible active-profile state is mutated.
-- A failed preference write therefore cannot partially switch the visible profile.
+- target profile data is loaded before visible switching;
+- active-profile preference persistence succeeds before visible controller mutation;
+- failed preference persistence does not partially switch the visible profile.
 
-### Profile creation
+### Profile creation/deletion
 
-- A newly inserted profile is rolled back if activation persistence fails.
-- The application does not intentionally leave a hidden profile row after failed activation.
+- failed activation after profile insertion rolls the new profile back;
+- active-profile deletion persists a replacement selection before deleting the old row;
+- rollback-aware paths preserve the original error stack trace.
 
-### Profile deletion
+### Reset/read refresh behavior
 
-- A replacement active-profile preference is persisted before the previous active profile is removed.
-- Failure ordering prevents deletion from leaving an invalid active-profile reference.
+- partial reset failures reload durable state instead of leaving stale pre-reset memory;
+- a successful primary durable write is not incorrectly reported as failed only because a later derived statistics/leaderboard refresh fails.
 
-### Error propagation
+## Question-bank import safety retained
 
-- Rollback-aware operations preserve original stack traces when rethrowing the primary persistence error.
-- Post-write leaderboard/statistics refreshes are treated separately from a successful primary durable write so a completed save is not incorrectly reported as unsaved only because a derived read later failed.
+The JSON/CSV path enforces:
 
-### Full reset
+- source-size bounds;
+- question-count bounds;
+- bounded ids/prompts/categories/choices/answers/tags/explanations/timers;
+- required domain fields;
+- canonical true/false rules;
+- unique normalized choices/answers/tags;
+- correct-answer membership where applicable;
+- duplicate id/content partitioning before persistence;
+- malformed JSON rejection;
+- strict CSV quote handling;
+- rejection of unexpected quote characters in unquoted fields;
+- rejection of trailing characters after closed quoted fields;
+- deterministic malformed-input/fuzz-style tests.
 
-- Independent store resets are attempted according to the maintained reset contract.
-- In-memory state is reloaded from durable state after partial failure so stale pre-reset data is not left visible.
+## Recent attempt history retained
 
-## Question-bank/import safety retained
-
-The maintained JSON/CSV path includes bounded local processing and domain validation.
-
-### Resource boundaries
-
-- source-size limits;
-- question-count limits;
-- bounded question ids;
-- bounded prompts;
-- bounded categories;
-- bounded choices;
-- bounded correct/accepted answers;
-- bounded tags;
-- bounded explanations;
-- bounded time limits.
-
-### Domain validation
-
-- required ids/prompts/categories;
-- correct-answer requirements by question type;
-- canonical true/false behavior;
-- no custom true/false choices;
-- non-empty unique normalized choices;
-- non-empty unique normalized accepted answers;
-- non-empty unique normalized tags;
-- correct answers must belong to available choices where required.
-
-### Parser hardening
-
-- malformed JSON is rejected;
-- malformed/unclosed CSV quoting is rejected;
-- unexpected quote characters in unquoted fields are rejected;
-- trailing characters after a quoted CSV field closes are rejected;
-- duplicate ids/content are partitioned before persistence;
-- deterministic malformed-input/fuzz-style tests protect parser failure behavior.
-
-## Recent local attempt history retained
-
-The 2.7.4 candidate preserves PR #10's newer recent-history feature.
-
-### `AttemptSummary` projection
-
-The summary intentionally contains only privacy-preserving attempt metadata:
+`AttemptSummary` exposes privacy-preserving summary metadata only:
 
 - attempt id;
-- started timestamp;
-- completed timestamp;
-- correct count;
-- question count;
+- started/completed timestamps;
+- correct/question counts;
 - best streak;
 - earned score;
-- computed accuracy;
-- computed duration.
+- derived accuracy;
+- derived duration.
 
-Submitted-answer content is intentionally not exposed in the recent-history summary.
+Submitted-answer content is intentionally excluded from the summary UI.
 
-### Database query contract
+`loadRecentAttempts(profileId, limit: ...)` is profile-scoped, bounded, newest-first, uses attempt id as deterministic tie-breaker, and projects the existing attempt table without a schema migration.
 
-`loadRecentAttempts(profileId, limit: ...)`:
+The Statistics page caches its async read future, refreshes on meaningful profile/quiz changes, uses localized date/time rendering, and follows profile activity cleanup semantics.
 
-- scopes reads to one profile;
-- defaults to a bounded result;
-- accepts only supported limits;
-- orders newest first by completion timestamp;
-- uses attempt id as deterministic tie-breaker;
-- projects the existing attempt table rather than duplicating persistence;
-- does not require a schema migration because it is a read-only projection.
+## Complete local backup/restore retained and hardened
 
-### UI behavior
-
-The Statistics recent-history UI:
-
-- caches its asynchronous read future rather than performing a fresh query on every build;
-- refreshes after meaningful profile/completed-quiz state changes;
-- uses localized date/time formatting;
-- renders score/progress/duration/streak/accuracy summaries;
-- follows active-profile activity cleanup semantics;
-- does not surface submitted-answer payloads.
-
-### Related documentation
-
-- `docs/progress-history.md`
-- `docs/progress-history-data-contract.md`
-- `docs/attempt-history-verification.md`
-
-## Complete local backup/restore in 2.7.4
-
-The final branch contains a logical, versioned whole-application local backup distinct from shareable JSON/CSV question-bank interchange.
-
-### Backup version 1 scope
-
-A valid archive can contain:
-
-- all local questions;
-- choices/correct answers;
-- categories/difficulty/tags/explanations/time limits;
-- local profiles;
-- profile creation timestamps;
-- completed attempt summaries;
-- submitted-answer sets;
-- per-answer correctness and score rows;
-- bookmarks;
-- appearance/accessibility/application settings;
-- active-profile selection;
-- archive creation timestamp.
-
-Because it can contain profile names, authored quiz content, and submitted answers, a complete local backup is treated as **private user data**, not as a public question pack.
-
-### Backup format identity
+Backup format identity:
 
 - `format`: `quizforge-local-backup`
-- backup `version`: `1`
+- backup version: `1`
 - JSON archive;
-- UTC creation timestamp;
-- bounded maximum archive size before decode;
-- the encoder enforces the same supported size ceiling so QuizForge does not intentionally create an archive that the same version immediately refuses only because of size.
+- UTC archive timestamp;
+- bounded archive size;
+- encoder and decoder use a symmetric supported size boundary.
 
-Application version `2.7.4+1` and backup format version `1` are deliberately independent version contracts.
+Backup version 1 can contain:
 
-## Backup validation hardening completed during the final audit
+- questions and answer metadata;
+- categories/difficulty/tags/explanations/timers;
+- profiles;
+- attempts and submitted-answer evaluations;
+- bookmarks;
+- settings;
+- active-profile selection.
 
-The final backup path goes beyond simple JSON shape validation.
+A complete backup is therefore private user data and must not be treated as a public question pack.
 
 ### Minimum directly restorable state
 
-Version 1 describes a complete initialized QuizForge state. It therefore requires:
+A version-1 whole-app backup requires:
 
 - at least one valid question;
-- at least one valid local profile;
-- a non-null active-profile id;
-- that active-profile id must reference an archived profile.
+- at least one valid profile;
+- a non-null active profile;
+- active profile membership in the archived profiles.
 
-Why this matters: if a hand-crafted archive contained no questions/profile/active selection, normal initialization would seed/select state not actually present in the archive. The final validator fails closed rather than silently changing the meaning of the restored snapshot.
+This prevents restore followed by implicit initialization from silently creating state that was not actually present in the archive.
 
-### Referential integrity
+### Referential/duplicate integrity
 
-The snapshot rejects:
+Validation rejects:
 
-- attempts referencing unknown profiles;
-- attempt answers referencing unknown questions;
-- bookmarks referencing unknown profiles;
-- bookmarks referencing unknown questions;
-- active-profile ids not present in the archived profiles.
-
-### Duplicate integrity
-
-The snapshot rejects:
-
+- unknown attempt profile references;
+- unknown attempt question references;
+- unknown bookmark profile/question references;
+- invalid active-profile references;
 - duplicate question ids;
 - duplicate normalized question content;
 - duplicate profile ids;
-- duplicate question answers inside one attempt;
-- duplicate bookmark pairs.
+- duplicate question answers within an attempt;
+- duplicate bookmarks.
 
-Bookmark identity is validated as the exact `(profileId, questionId)` pair. The earlier delimiter-concatenation approach was removed because arbitrary identifier text could create composite-key collisions.
+Bookmark identity is exact `(profileId, questionId)` tuple identity rather than delimiter-concatenated text, avoiding arbitrary-id collision ambiguity.
 
-### Attempt bounds
+### Attempt/score integrity
 
-Restored attempt summaries must represent sessions normal QuizForge configuration can create:
+- restored attempts must contain 1–100 questions;
+- evaluation count must match question count;
+- correct count must agree with evaluation flags;
+- scores must be finite/non-negative;
+- attempt total must agree with evaluation score totals;
+- each archived submitted answer is re-evaluated with normal `QuizEngine` logic;
+- stored correctness/score must agree with that evaluation.
 
-- minimum question count: 1;
-- maximum question count: 100;
-- evaluation count must match stored question count;
-- correct count must agree with evaluation correctness;
-- counts cannot be negative or impossible.
+### Schema-v1 answer-order limitation
 
-### Score integrity
+Schema version 1 does not store original per-answer position in `attempt_answers`. Database export may deterministically order rows for stable archives, but that is not historical play order.
 
-- attempt total score must be finite and non-negative;
-- per-answer score must be finite and non-negative;
-- attempt total must agree with the sum of evaluation scores.
+Because `bestStreak` depends on play order, the validator must not recompute it from question-id-sorted export rows. The maintained behavior:
 
-### Submitted-answer tamper resistance
+- preserves stored attempt-level `bestStreak`;
+- checks order-independent streak invariants only;
+- does not invent historical order;
+- requires a future schema migration + backup compatibility design if exact historical answer order becomes a product requirement.
 
-A crafted backup can no longer simply claim that an answer was correct or assign arbitrary score metadata while keeping aggregate counts superficially consistent.
+### Restore transaction model
 
-For every archived evaluation whose question exists, the validator re-evaluates the submitted answers using the same normal `QuizEngine` rules used during quiz play. It rejects a backup if:
+SQLite replacement is validated before destructive work and performed transactionally.
 
-- stored correctness disagrees with the QuizEngine result;
-- stored answer score disagrees with the QuizEngine result.
+Whole-app restore also touches settings and active-profile preference stores, so the controller uses a compensating workflow:
 
-Focused regression coverage protects this behavior.
+1. decode/validate requested archive;
+2. snapshot current database/settings/active-profile preference;
+3. restore database transactionally;
+4. persist restored settings;
+5. persist/clear restored active-profile preference;
+6. reload controller state;
+7. if a later step fails, attempt compensation to the old database/settings/profile selection;
+8. reload after compensation;
+9. rethrow the original restore failure while logging rollback failure separately if compensation fails.
 
-## Important schema-v1 answer-order limitation and fix
+## Version 2.7.4 identity hardening
 
-A subtle bug was found during consolidation.
+This continuation moved the candidate from the stale `0.1.0+1` identity to **`2.7.4+1`** and then audited every user/release-facing version surface.
 
-Schema version 1 stores `attempt_answers` using attempt/question identity but does **not** store original per-answer sequence/position. Export can sort rows deterministically for archive stability, but that order is not necessarily the historical play order.
+Completed:
 
-`bestStreak` depends on historical play order.
+- `pubspec.yaml` → `2.7.4+1`;
+- `AppConstants.version` → `2.7.4`;
+- About-page test → `Installed version: 2.7.4`;
+- dated 2.7.4 changelog entry;
+- stable post-1.0/2.x versioning policy;
+- maintained package/tag identity in `docs/versioning.md`;
+- dedicated `docs/release-notes-2.7.4.md`;
+- 2.7.4-specific setup/testing/CI/release/support/repository policy docs;
+- bug-report example updated from `v0.1.0` to `v2.7.4`;
+- PR #12 retitled/reframed as the 2.7.4 candidate.
 
-Therefore, recomputing `bestStreak` from exported rows sorted by question id is invalid and can reject a legitimate historical attempt.
+## Release-metadata validator
 
-The final rule is:
+Added `tool/check_release_metadata.py` plus `tool/test_check_release_metadata.py`.
 
-- preserve the stored attempt-level `bestStreak`;
-- validate only order-independent streak invariants;
-- do not invent play order that schema version 1 never stored;
-- if future functionality needs exact historical answer sequence, add an explicit order field through a real schema migration and backup-format compatibility design.
+The validator checks:
 
-A dedicated regression test protects this boundary.
-
-## Restore transaction and cross-store rollback
-
-### SQLite restore
-
-The database snapshot is validated before destructive replacement. Replacement then runs inside a Drift transaction and rebuilds dependent records in foreign-key-safe order.
-
-### Cross-store controller restore
-
-A complete restore changes SQLite state, settings preferences, and active-profile preference state. These independent stores cannot participate in one native SQLite transaction.
-
-The controller therefore performs a compensating workflow:
-
-1. decode/validate the requested backup;
-2. snapshot current logical database state;
-3. load current settings;
-4. load current active-profile preference;
-5. transactionally restore the new database snapshot;
-6. persist restored settings;
-7. persist/clear restored active-profile preference;
-8. reload controller state;
-9. if a later step fails, attempt to restore the old database/settings/profile preference;
-10. reload after compensation;
-11. preserve/rethrow the original restore failure while separately recording safe rollback failure metadata if compensation itself fails.
-
-This reduces partial cross-store restore risk without pretending unrelated platform preference stores can join a database transaction.
-
-## Backup UI
-
-`ImportExportPage` includes a separate Local backup section with:
-
-- Copy local backup;
-- paste backup JSON;
-- Restore backup;
-- destructive replacement confirmation;
-- restore-in-progress disabling;
-- safe success/failure feedback;
-- clipboard read/write failure handling;
-- localized backup/privacy guidance.
-
-The UI distinguishes whole-app backup from JSON/CSV question-bank sharing.
-
-## Backup test coverage
-
-The maintained source contains focused coverage across multiple layers.
-
-### Data/codec tests
-
-- `test/data/local_backup_codec_test.dart`
-- `test/data/local_backup_required_active_profile_test.dart`
-- `test/data/app_database_backup_test.dart`
-- `test/data/app_database_backup_minimum_state_test.dart`
-- `test/data/app_database_backup_answer_integrity_test.dart`
-- `test/data/app_database_backup_bookmark_key_test.dart`
-- `test/data/app_database_backup_attempt_bounds_test.dart`
-
-These collectively cover format round trips, unsupported versions, active-profile requirements, archive-size boundaries, logical export/reset/restore, dangling references, minimum state, streak semantics, non-finite values, answer-score tampering, exact bookmark-pair identity, and normal session-size bounds.
-
-### Application tests
-
-`test/application/quizforge_controller_backup_test.dart` covers:
-
-- whole-controller restoration;
-- malformed archive rejection before mutation;
-- simulated failure after database replacement;
-- compensating rollback across database/settings/profile-selection state.
-
-### Widget test
-
-`test/widget/local_backup_page_test.dart` covers the destructive-replacement confirmation and successful restore feedback flow.
-
-## Repository validators in the 2.7.4 line
-
-The maintained quality graph now has three deterministic Python-standard-library validator families.
-
-### Markdown validator
-
-`tool/check_markdown_links.py`
-
-Checks repository-local Markdown/image/reference targets while ignoring fenced examples, pure anchors, and external network URLs.
-
-Regression suite:
-
-- `tool/test_check_markdown_links.py`
-
-### ARB localization validator
-
-`tool/check_arb_catalogs.py`
-
-Checks:
-
-- valid JSON object root;
-- duplicate JSON keys;
-- non-empty locale metadata;
-- message value shape;
-- empty/non-string messages;
-- metadata object shape;
-- orphan metadata;
-- translated-catalog key parity with the English template.
-
-Regression suite:
-
-- `tool/test_check_arb_catalogs.py`
-
-`flutter gen-l10n` remains the authoritative Flutter generator compatibility gate after this early structural check.
-
-### New 2.7.4 release-metadata validator
-
-`tool/check_release_metadata.py`
-
-Purpose: detect version drift on a pull request before a Git tag exists.
-
-It validates:
-
-- exactly one `MAJOR.MINOR.PATCH+BUILD` package version in `pubspec.yaml`;
-- a positive Flutter build number;
-- presence of `## [Unreleased]` in `CHANGELOG.md`;
-- a dated changelog release entry matching the package public version;
+- one canonical `MAJOR.MINOR.PATCH+BUILD` package version;
+- positive build number;
+- no leading-zero SemVer components;
+- one semantic in-app `AppConstants.version`;
+- exact in-app/public package-version equality;
+- presence of Unreleased changelog section;
+- matching dated release entry;
+- real calendar dates;
 - unique release headings;
-- descending release-version ordering;
-- historical zero-major release recognition such as `0.1.0`;
-- no stale `Pre-1.0 policy` heading when the package major version is stable (`>=1`);
-- matching maintained package identity in `docs/versioning.md`;
-- matching public tag identity in `docs/versioning.md`.
+- descending release order;
+- historical zero-major releases such as `0.1.0`;
+- no stale pre-1.0 policy on a stable-major package;
+- package/tag identity in versioning documentation.
 
-Regression suite:
+A first regex edge case that did not fully recognize historical `0.x.y` releases was found during source review, fixed, and protected by regression coverage before treating the tool as maintained.
 
-- `tool/test_check_release_metadata.py`
+## Markdown validator CI defect discovered from real Actions evidence
 
-The first validator implementation had a release-heading regex edge case that did not fully recognize historical `0.x.y` headings. That was caught during source review, fixed, and protected with an explicit `0.1.0` history fixture before the new gate was treated as maintained.
+The earlier exact head `306bee785cbebbf5b5d6bea875f8d5b4988ea175` produced a real main-CI failure in run `32273890486`.
 
-## Current local quality sequence
+Failure location: `Test repository validation tooling` before Flutter setup.
 
-Unix-like hosts:
+All Markdown checker tests errored because `tool/test_check_markdown_links.py` expected a public regression contract that the implementation did not expose:
+
+- `extract_targets(markdown)`;
+- `validate_file(source, root)`;
+- `BrokenLink.reason`.
+
+The repository-escape regression also established that `../outside.md` needed explicit rejection rather than merely resolving a path and checking existence.
+
+Fixed in commit:
+
+- `8120a2605671894dbc99e2a502f472c0eb8f3cb4` — `fix: align Markdown validator with regression contract`
+
+The maintained checker now:
+
+- exposes the tested APIs;
+- reports deterministic reasons;
+- ignores fenced examples;
+- validates local targets;
+- rejects targets escaping the repository root.
+
+This was a real source/tooling defect, not classified as runner noise.
+
+## Cross-platform continuation — 2026-08-20
+
+The user requested that QuizForge become fully cross-platform supportable rather than only being described as cross-platform by design.
+
+The maintained target set is:
+
+1. Android
+2. iOS
+3. Web
+4. Windows
+5. macOS
+6. Linux
+
+### Shared-code audit
+
+Repository code search did not find core application dependencies on `dart:io`, `Platform.*`, or `kIsWeb` branches. Core quiz/domain/controller behavior therefore remains shared instead of becoming six separate application implementations.
+
+### Plugin/infrastructure boundary
+
+Cross-platform behavior uses Flutter-compatible infrastructure:
+
+- Drift/SQLite database;
+- Shared Preferences for small local preferences;
+- Flutter clipboard APIs for current import/export/backup UI;
+- URL launcher for support/project links.
+
+### Standard platform runners
+
+Platform runner shells remain reproducible with:
 
 ```text
-python3 tool/test_check_markdown_links.py
-python3 tool/test_check_arb_catalogs.py
-python3 tool/test_check_release_metadata.py
-python3 tool/check_markdown_links.py
-python3 tool/check_arb_catalogs.py
-python3 tool/check_release_metadata.py
-flutter pub get
-flutter gen-l10n
-dart format --output=none --set-exit-if-changed lib test tool
-flutter analyze
-flutter test --coverage
+flutter create . --platforms=android,ios,web,windows,macos,linux
 ```
 
-Windows uses the equivalent `python` launcher in `tool/check.ps1`.
+They are intentionally not hand-maintained as six divergent application forks.
 
-## CI quality gate
+## Web persistence defect discovered and fixed
 
-`.github/workflows/ci.yml` now performs before Flutter setup:
+The previous `AppDatabase.defaults()` used only:
 
-1. Markdown-validator regression tests;
-2. ARB-validator regression tests;
-3. release-metadata-validator regression tests;
-4. repository-local Markdown validation;
-5. ARB catalog validation;
-6. release metadata validation.
+```text
+driftDatabase(name: 'quizforge')
+```
 
-Then it:
+That can compile as shared Flutter code, but the Web backend needs explicit Drift Web runtime configuration plus compatible SQLite WASM/worker files for persistent database startup.
 
-7. sets up Flutter stable;
-8. records the toolchain;
-9. resolves dependencies;
-10. uploads the generated `pubspec.lock` as short-lived workflow evidence;
-11. generates localizations;
-12. checks Dart formatting across `lib`, `test`, and `tool`;
-13. runs Flutter analyzer;
-14. runs automated tests with coverage.
+Fixed in:
 
-The workflow retains read-only repository content permissions and concurrency cancellation for superseded pull-request runs.
+- `ea8b5652e9146fb91966de5bb690dd20653b571d` — `fix: configure Drift persistence for Flutter Web`
 
-## Build and platform workflows
+The default database connection now supplies:
 
-### Build Gate
+```text
+DriftWebOptions(
+  sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+  driftWorker: Uri.parse('drift_worker.js'),
+)
+```
 
-`.github/workflows/build.yml` materializes Android/Web runners in the ephemeral checkout and provides Android/Web build compatibility evidence.
+Native Android/iOS/Windows/macOS/Linux behavior continues through the normal `drift_flutter` native path.
 
-### Platform Build Matrix
+## Drift Web runtime preparation
 
-`.github/workflows/platform-builds.yml` provides host-appropriate release compile/build gates for Linux, Windows, macOS, and iOS. iOS uses a no-codesign release compile because distribution credentials must not be committed.
+Added:
 
-A passing build matrix is required evidence but does not replace installer/device interaction/accessibility testing.
+- `tool/prepare_web_assets.py`
+- `tool/test_prepare_web_assets.py`
 
-### Dependency Review
+The tool is pinned to Drift `2.34.3` and prepares:
 
-`.github/workflows/dependency-review.yml` reviews dependency changes on pull requests.
+- `sqlite3.wasm`;
+- `drift_worker.js`.
 
-### OSV vulnerability scan
+The tool:
 
-`.github/workflows/osv-scan.yml` scans dependency state on applicable pull request/push/scheduled paths.
+- is idempotent for already-valid files;
+- validates WebAssembly magic bytes;
+- enforces bounded WASM/worker sizes;
+- validates worker UTF-8;
+- rejects HTML error pages masquerading as JavaScript;
+- writes files atomically;
+- supports `--check` for offline verification of existing assets.
 
-### Secret Scan
+A first worker check looked for the literal text `drift`, which could incorrectly reject a minified official worker. That source-review issue was fixed in:
 
-`.github/workflows/secret-scan.yml` uses full-history Gitleaks scanning in its isolated security job.
+- `7ac68d4246a84d3abd4509bb76f5ef6649b2e349` — `fix: avoid minifier-sensitive worker validation`
+- `6cdc4e835454b88c6989f9364b9fb67ce8ee0aff` — regression test alignment for minified workers/HTML rejection.
 
-## Tagged release workflow for 2.7.4
+## Android/Web build gate strengthened
 
-`.github/workflows/release.yml` is the tag-triggered Android/Web release path.
+`.github/workflows/build.yml` now:
 
-Before Flutter setup/packaging it now:
+1. tests Web runtime asset tooling;
+2. sets up Flutter;
+3. generates Android/Web runners;
+4. prepares Drift Web runtime assets;
+5. resolves dependencies;
+6. generates localizations;
+7. builds Android **release APK**;
+8. builds Web release bundle;
+9. validates `sqlite3.wasm` and `drift_worker.js` inside `build/web`.
 
-- verifies Git tag/public package-version agreement;
-- requires a committed non-empty `pubspec.lock`;
-- runs Markdown validator tests;
-- runs ARB validator tests;
-- runs release-metadata validator tests;
-- validates repository-local Markdown targets;
-- validates ARB catalogs;
-- validates package/changelog/versioning release metadata.
+This prevents a Web build from being treated as runtime-persistence-ready merely because Dart compilation succeeded.
 
-It then:
+Key commit:
 
-- sets up Flutter stable;
-- regenerates Android/Web runners in the ephemeral checkout;
-- runs `flutter pub get --enforce-lockfile`;
-- verifies dependency resolution did not rewrite `pubspec.lock`;
-- generates localizations;
-- verifies formatting;
-- analyzes;
-- tests;
-- builds Android release APK;
-- builds Web release bundle;
-- prepares release artifacts;
-- produces SHA-256 checksums;
-- uploads workflow artifacts;
-- publishes the GitHub release for the explicitly pushed matching tag.
+- `d01d3c01c100ccbec64abe2d61614ab48464b7dd` — `ci: verify Android and Web release runtime support`
 
-For this candidate, the intended public tag is `v2.7.4`.
+## Main CI/local tooling alignment
 
-## Version 2.7.4 metadata work completed in this continuation
+Main CI now runs `tool/test_prepare_web_assets.py` with the other deterministic repository-tool tests before Flutter setup.
 
-The user explicitly requested this final pass to be made for version **2.7.4**.
+The general source-quality job does not download the runtime files; network-dependent preparation stays in Web build/release jobs.
 
-The following source/release identity changes are complete:
+Local scripts were aligned:
 
-- `pubspec.yaml` changed from `0.1.0+1` to **`2.7.4+1`**;
-- `CHANGELOG.md` now has an explicit dated `2.7.4` release-candidate entry plus a fresh Unreleased section;
-- `docs/versioning.md` no longer describes the project as pre-1.0;
-- stable 2.x compatibility expectations are documented;
-- `docs/versioning.md` records package `2.7.4+1` and tag `v2.7.4`;
-- the database schema remains version 1 because application version metadata alone does not alter database layout;
-- local-backup format remains version 1 because backup-format identity is independent from application SemVer;
-- README displays the 2.7.4 release-candidate identity and explicitly avoids equating version metadata with successful verification;
-- `docs/release.md` contains the exact 2.7.4 release procedure;
-- `docs/release-notes-2.7.4.md` contains dedicated release notes, compatibility notes, and known blockers;
-- `docs/testing.md` documents release-metadata validation;
-- `docs/ci.md` documents the three maintained repository-validator families;
-- `docs/verification.md` is now the 2.7.4 evidence ledger;
-- PR #12 title/body now identify it as the maintained QuizForge 2.7.4 final candidate.
+- `tool/check.sh`
+- `tool/check.ps1`
 
-## Notable 2.7.4 continuation commits
+These test the Web asset validator alongside Markdown/ARB/release metadata tooling.
 
-The final version/release continuation was intentionally kept as multiple focused commits rather than one opaque rewrite.
+## Six-platform PR build evidence
 
-- `5a6b733bea985d227209040ff30825be19788929` — `release: set QuizForge version 2.7.4`
-- `0b82802a178c9b52faf535eb459f5d3357f03ca3` — `docs: align compatibility policy with version 2.7.4`
-- `2a4a54dc138e01c7849597127d4784048962c954` — `docs: cut the 2.7.4 changelog entry`
-- `b31cf60cee98378be8ca9d1f5ff1a5d06376aa10` — `tool: validate release metadata consistency`
-- `f3543e8cc09d4adc805090783b736f7574289c1d` — `test: cover release metadata validator`
-- `7d98b3608e6d933b2a68d3b4dc122fab1e11f609` — `tool: enforce release metadata in shell checks`
-- `4721e2a471499b1eb6bb5faa1a05f118085198d6` — `tool: enforce release metadata in PowerShell checks`
-- `7a0792b18604408355c9c0a7d11c8e784a424c2e` — `ci: gate release metadata consistency`
-- `8e5ecfc2dca8b76c595db669419454f36ac7e80a` — `ci: validate release metadata before packaging`
-- `a2e1c3ea57a99e8d7ff36ee9d0c7d7ef01002572` — `fix: validate historical zero-major releases`
-- `bc2a7eddfe02ebe5eed9f773d37f3235a6f5020a` — `test: cover zero-major release history validation`
-- `393de1ea163df42d92eb0e6d6109d6787a718111` — `docs: present the 2.7.4 release candidate`
-- `39221af68920d50330424da5a3f22f0090266ddc` — `docs: document 2.7.4 release metadata checks`
-- `697e31b8040acfb3648feb017b7b2eee586854dd` — `docs: align CI guide with 2.7.4 metadata gates`
-- `444ecd4b91f63be70571a525a2cb61488b27cc25` — `docs: define the 2.7.4 release procedure`
-- `a67b52beb1dd96465bf6122907c999c009fdde49` — `docs: add QuizForge 2.7.4 release notes`
-- `b99a6e2dfba792fabd02955128768b509c1702e9` — `docs: reset verification ledger for 2.7.4`
+On earlier exact head `306bee785cbebbf5b5d6bea875f8d5b4988ea175`, GitHub Actions completed with:
 
-This `what_changed.md` update creates another newer PR head; final verification must therefore always use the newest head rather than any SHA listed above as an old check target.
+- Build Gate `32273890444` — **SUCCESS**;
+- Platform Build Matrix `32273890427` — **SUCCESS**;
+- Dependency Review `32273890437` — **SUCCESS**;
+- OSV Vulnerability Scan `32273890873` — **SUCCESS**;
+- Secret Scan `32273890415` — **SUCCESS**;
+- CI `32273890486` — **FAILURE** for the Markdown checker contract issue described above.
 
-## Documentation surface maintained
+The successful Platform Build Matrix means that head successfully built/compiled:
 
-The repository includes and maintains documentation for:
+- Linux release;
+- Windows release;
+- macOS release;
+- iOS release with `--no-codesign`.
 
-- README/project overview;
-- setup;
-- development workflow;
-- architecture;
-- architectural decision records;
-- testing strategy;
-- CI workflows;
-- release process;
-- versioning/compatibility;
-- 2.7.4 release notes;
-- verification evidence;
-- maintenance;
-- repository settings;
-- security tooling;
-- threat model;
-- privacy;
-- data lifecycle;
-- accessibility;
-- performance;
-- benchmarking;
-- question-bank format;
-- localization;
-- branding;
-- screenshots/capture policy;
-- progress/history behavior;
-- progress/history data contract;
-- attempt-history verification;
-- local backup/restore contract;
-- troubleshooting;
-- project roadmap;
-- changelog;
-- contributing/support/code-of-conduct/security policies;
-- this continuation ledger.
+The successful Build Gate established Android/Web build evidence for that head.
 
-## Lockfile status — still a real blocker
+These successes are valuable historical proof that the source line compiled across all six targets. They are **not** transferred to the newer Web-runtime/cross-platform-release head; affected jobs must pass again.
 
-`pubspec.lock` must not be hand-authored.
+## Gated six-platform tag release pipeline
 
-The maintained CI quality workflow resolves dependencies and uploads its generated application lockfile as short-lived evidence when it reaches dependency resolution.
+The old tag workflow only packaged Android/Web.
 
-During this continuation:
+It has been replaced with a gated multi-job cross-platform pipeline.
 
-- earlier PR #9 matching-manifest runs were still queued/pending;
-- PR #10's final head had no completed pull-request workflow evidence available through the connector;
-- earlier PR #12 runs were also queued;
-- no completed CI-generated lockfile artifact was found that could be safely reviewed and reused.
+### Verify job
 
-The root package version changed from `0.1.0+1` to `2.7.4+1`, while the dependency constraints themselves remained unchanged. Even so, the repository keeps the stronger evidence rule: commit a lockfile only after a supported Flutter resolver actually generates it and the exact generated content is reviewed.
+Before platform packaging:
 
-The tag release workflow intentionally fails if:
-
-- `pubspec.lock` is missing;
-- it is empty;
-- locked resolution cannot use it;
-- locked resolution rewrites it.
-
-Therefore the lockfile blocker is deliberately not waived just to make a release appear complete.
-
-## Automated verification still required on the exact final 2.7.4 head
-
-The following must actually complete successfully:
-
-- Markdown-validator regression tests;
-- ARB-validator regression tests;
-- release-metadata-validator regression tests;
-- Markdown local-link validation;
-- ARB catalog validation;
-- release metadata validation;
-- dependency resolution;
-- generated/reviewed lockfile evidence;
+- tag/public package version agreement;
+- committed non-empty lockfile;
+- all repository/tool regression tests;
+- Markdown/ARB/release metadata validators;
+- `flutter pub get --enforce-lockfile`;
+- lockfile no-rewrite check;
 - localization generation;
-- Dart formatting gate;
-- Flutter analyzer;
-- Flutter tests;
-- Android build gate;
-- Web build gate;
-- Linux platform build;
-- Windows platform build;
-- macOS platform build;
-- iOS no-codesign build;
-- Dependency Review;
-- OSV vulnerability scan;
-- full-history Secret Scan.
+- formatting;
+- Flutter analysis;
+- tests with coverage.
 
-A workflow run that remains queued/pending is not a pass.
+### Platform jobs
 
-## Manual/release-host verification still required
+After verification succeeds:
 
-Source tests and compile gates cannot establish every real application behavior. Before describing 2.7.4 as fully release-verified, the applicable release candidate still needs:
+- Android: APK + AAB;
+- Web: release bundle + packaged Drift WASM/worker verification;
+- Linux: x64 release bundle;
+- Windows: x64 release bundle;
+- macOS: release output;
+- iOS: release compile with `--no-codesign`, packaged explicitly as unsigned compile evidence.
 
-- clean-checkout setup using `docs/setup.md`;
-- reproducible platform-runner generation;
-- Android release-build database creation/persistence check;
-- Web built-artifact database creation and refresh/reload persistence check;
-- complete local-backup export → mutate/reset → restore smoke check on Android using fictional data;
-- complete local-backup restore and reload persistence smoke check on Web using fictional data;
-- at least one applicable native-desktop backup/restore smoke check when desktop is part of the release scope;
-- malformed backup failure UX review;
-- destructive replacement confirmation review;
-- keyboard navigation review;
-- visible focus review;
-- representative screen-reader review;
-- large-text behavior with app and OS scaling;
+Each host job again uses locked dependency resolution and checks the lockfile is unchanged.
+
+### Publication job
+
+Publication depends on every platform job.
+
+It:
+
+- downloads all immutable workflow artifacts;
+- verifies multiple artifacts exist;
+- creates SHA-256 checksums;
+- creates the GitHub release only after all platform jobs succeed.
+
+Only this final job has `contents: write`; build/verification jobs use read-only repository permission.
+
+This prevents automatic publication of a knowingly partial six-platform tag when a maintained target fails packaging.
+
+## Six-platform documentation added/synchronized
+
+Added:
+
+- `docs/platform-support.md`
+
+Synchronized:
+
+- `README.md`
+- `docs/setup.md`
+- `docs/testing.md`
+- `docs/ci.md`
+- `docs/release.md`
+- `docs/architecture.md`
+- `docs/release-notes-2.7.4.md`
+- `docs/verification.md`
+- `CHANGELOG.md`
+- this ledger.
+
+The docs now explicitly distinguish:
+
+- supported source target;
+- compile/build evidence;
+- runtime persistence verification;
+- distribution signing/provisioning;
+- production-release verification.
+
+## Current six-platform release boundaries
+
+### Android
+
+Implemented/buildable through Flutter and dedicated release APK build gate. Final release still needs real-device persistence/backup and signing/store evidence where distributed.
+
+### iOS
+
+Implemented/compileable through Flutter on macOS. CI uses `--no-codesign`. A packaged unsigned `.app` is compile evidence only; signed device/App Store distribution requires private provisioning outside the public repository.
+
+### Web
+
+Implemented with explicit Drift Web configuration and pinned WASM/worker preparation. Build output now checks those runtime files. Final release still needs real-browser database creation/write/read, refresh/reload persistence, correct `.wasm` MIME serving, clipboard flows, and backup restore.
+
+### Windows
+
+Implemented/buildable through Flutter Windows release workflow. Final release still needs representative local persistence/interaction smoke testing and any desired installer/signing work.
+
+### macOS
+
+Implemented/buildable through Flutter macOS release workflow. Final distribution still needs representative persistence/interaction checks plus signing/notarization where required.
+
+### Linux
+
+Implemented/buildable through Flutter Linux release workflow. Final distribution still needs representative persistence/interaction testing and packaging validation for intended distribution format.
+
+## Application lockfile remains a deliberate release blocker
+
+`pubspec.lock` is not hand-authored.
+
+The maintained PR CI resolves dependencies and uploads the generated lockfile as short-lived evidence when it reaches that step. The exact generated contents should be reviewed and committed before tagging.
+
+The tag workflow refuses to package a release without a committed lockfile and enforces it in both shared verification and platform packaging jobs.
+
+Do not weaken this rule simply to make the release appear complete.
+
+## Manual/release-host evidence still required
+
+Before calling 2.7.4 fully release-verified:
+
+- clean checkout setup;
+- exact-final-head repository validators;
+- exact-final-head Flutter dependency/localization/format/analyzer/tests;
+- exact-final-head Android/Web build gate;
+- exact-final-head Linux/Windows/macOS/iOS matrix;
+- exact-final-head Dependency Review/OSV/Secret Scan;
+- generated/reviewed/committed lockfile;
+- Android database persistence + backup restore smoke test;
+- Web WASM/worker loading + database persistence + refresh/reload + backup restore smoke test;
+- representative Windows/Linux/macOS local persistence/core-flow smoke tests;
+- signed iOS device validation if iOS is distributed;
+- keyboard/focus review on desktop/Web;
+- screen-reader review;
+- large-text review;
 - reduced-motion review;
-- light/dark contrast review;
-- non-color-only correctness/status review;
-- real screenshots captured from actual verified candidate builds using fictional/demo data;
-- release-critical external-link spot checks;
-- final exact-head history/secret review;
-- distribution signing/provisioning where a store/channel requires it.
+- contrast/non-color cue review;
+- verified screenshots from actual built candidates using fictional/demo data;
+- distribution signing/notarization/provisioning where applicable.
 
-## Evidence limitations of the repository-editing environment
+## Repository-editing environment limitation
 
-The environment used for this audit can modify/read GitHub repository content through the connected GitHub tooling, but its local execution container does not provide the project Flutter/Dart toolchain and cannot be used as a truthful substitute for a supported Flutter checkout/build host.
+The connected editing environment can inspect and modify GitHub source/configuration but does not provide the authoritative local Flutter/Dart build toolchain for six-platform execution.
 
-Therefore this ledger intentionally does not claim execution of:
+Therefore no local Flutter build/test claim is invented. GitHub Actions exact-head results and real platform smoke tests remain the evidence source.
 
-- `flutter pub get`;
-- `flutter gen-l10n`;
-- `dart format` against the real checkout;
-- `flutter analyze`;
-- `flutter test`;
-- Android/Web/desktop/iOS builds.
+## Important cross-platform continuation commits
 
-The new release-metadata regex behavior was independently sanity-checked for current `2.7.4+1` parsing and historical `0.1.0` changelog recognition, but the authoritative repository-validator execution remains CI or another real checkout.
+- `8120a2605671894dbc99e2a502f472c0eb8f3cb4` — fix Markdown validator CI contract and repository escape handling
+- `b50f4be1c40f2d86a39e8845f47d8272bdd3a6ff` — add deterministic Drift Web asset preparation
+- `b625a2115fabe36ad3fdc2e7ff44807a1ce5fa40` — add Web asset regression tests
+- `ea8b5652e9146fb91966de5bb690dd20653b571d` — configure Drift persistence for Flutter Web
+- `d01d3c01c100ccbec64abe2d61614ab48464b7dd` — verify Android release/Web runtime support in build CI
+- `e41978455abcf69d2a310b08932aa310b466a26b` — test Web runtime tooling in main CI
+- `6d5a1a26cb4bb376ba057499df5a3502dd991a33` — add Web runtime assets to tagged release path
+- `7a8ac34ec491e1596800bbf3524edf823bbb9030` — align Unix local checks
+- `a1e6ce4ddd7cb2e0e8029b46bbed566adf2fb45f` — align PowerShell local checks
+- `f6e4ac3b79b727235f987db7310f5f2cdf1903a3` — add six-platform support contract
+- `7ac68d4246a84d3abd4509bb76f5ef6649b2e349` — make worker validation minifier-safe
+- `6cdc4e835454b88c6989f9364b9fb67ce8ee0aff` — align Web worker regression tests
+- `ff298d4ce388ca3f7ed504c1dfb6b630bea8c7c0` — document Web persistence setup
+- `2dc4aa9d52eeae8b7ef02f54a5c052a2603dfce1` — document cross-platform runtime/build testing
+- `7b512b057c6cf38354b467a00ba96b697df215c7` — publish gated cross-platform release artifacts
+- `344e8c540385af41cd285ba750834be430ffadb1` — document cross-platform CI/release packaging
+- `24fa14843162617f014221160670b77533b478de` — define gated six-platform release process
+- `e2658467a2d3f48d2679ac7cb05c233ecb41d2a1` — present QuizForge as six-platform application in README
+- `3126a5bd6a86fc94892847d61909a158480a137a` — record six-platform 2.7.4 hardening in changelog
+- `6e12419de9cad0938229fa320ab0157723aa1e4b` — expand 2.7.4 release notes for six-platform support
+- `675858cdf7e6edc1fa96771c2f734bc58907f913` — record six-platform verification evidence
+- `a885353861b8b09e41a2ceb76198bf1179d73c30` — document cross-platform persistence architecture
 
-This limitation does not weaken the release gate. It is recorded so future work knows exactly which evidence is source-level and which evidence still needs execution.
+The commit that writes this ledger creates a newer exact PR head. Use the PR's current head SHA after this commit for all final workflow decisions.
 
 ## Current release decision
 
-The project has a complete, intentionally versioned **QuizForge 2.7.4+1 release candidate** in the maintained branch and PR #12.
+QuizForge 2.7.4 is now a **six-platform implementation/release candidate** in the maintained branch:
 
-Do **not** yet claim:
+- Android
+- iOS
+- Web
+- Windows
+- macOS
+- Linux
 
-- all GitHub Actions checks are green;
-- a reviewed lockfile is committed;
-- every platform has been release built;
-- backup/restore has been manually smoke-verified on every release target;
-- accessibility manual review is complete;
-- screenshots are verified release screenshots;
-- `v2.7.4` is already a verified production release.
+Do **not** yet claim that the exact current head is fully production/release verified on all six platforms. The remaining work is evidence collection and focused repair of any failures revealed by exact-head automation/manual platform tests.
 
-Those claims become valid only after the corresponding evidence actually exists on the exact final release head.
+Do not create/promote `v2.7.4` until the applicable blockers in `docs/verification.md` are cleared.
 
 ## Next continuation rule
 
 If work continues after this file:
 
-1. inspect PR #12's newest head SHA;
-2. read workflow runs for that exact SHA;
-3. fix real source/test/config failures with focused commits and regression coverage;
-4. do not change code merely because a run is queued;
-5. if CI reaches dependency resolution, review its generated `pubspec.lock` artifact and commit that exact resolver output when valid;
-6. after any commit, treat prior check results as historical and read checks again for the new head;
-7. when all automated and required manual gates are genuinely complete, update `docs/verification.md`, `docs/release-notes-2.7.4.md`, and this file with exact evidence;
-8. only then create/promote `v2.7.4` according to `docs/release.md`.
-
-The remaining work is therefore primarily **exact-final-head verification and evidence collection**, plus focused fixes for any failures that verification reveals.
+1. fetch PR #12's newest head SHA;
+2. fetch workflow runs for that exact SHA;
+3. inspect any completed failure at job/log level;
+4. make focused fixes only for real failures;
+5. after a source commit, discard older check states as final evidence and read the new exact head again;
+6. when CI generates `pubspec.lock`, review and commit the exact generated resolver output instead of hand-authoring it;
+7. perform the required real-platform persistence/backup/accessibility/screenshot checks;
+8. update `docs/verification.md`, release notes, and this ledger with exact evidence;
+9. only then create/promote `v2.7.4` through the gated six-platform release workflow.
 
 **Made by the Sanskar**
