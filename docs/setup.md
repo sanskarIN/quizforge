@@ -47,6 +47,26 @@ flutter create . --platforms=android,ios,web,windows,macos,linux
 
 Run the command from the repository root. Review generated diffs before committing platform files; generated local paths, signing material, and machine-specific configuration must remain untracked.
 
+### Web database runtime assets
+
+The Web runner needs Drift's compatible SQLite WebAssembly module and worker in addition to the generated Flutter shell. Prepare the pinned runtime assets after creating the Web runner:
+
+```bash
+python3 tool/prepare_web_assets.py --destination web
+```
+
+On Windows, use `python` when that is the configured Python launcher. The command is idempotent for already-valid assets. It fetches the assets from the pinned Drift 2.34.3 release, validates the WebAssembly header and bounded file shape, and writes them atomically.
+
+To verify an existing Web runner without downloading anything:
+
+```bash
+python3 tool/prepare_web_assets.py --destination web --check
+```
+
+`AppDatabase.defaults()` references `sqlite3.wasm` and `drift_worker.js` for the Web backend. A Web deployment that omits those files may compile but cannot be treated as a working persistent QuizForge build.
+
+See [`platform-support.md`](platform-support.md) for the complete six-platform contract.
+
 ## Validate repository inputs
 
 Before Flutter generation/build work, run the deterministic repository validators and their regression tests:
@@ -55,6 +75,7 @@ Before Flutter generation/build work, run the deterministic repository validator
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
+python3 tool/test_prepare_web_assets.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
@@ -62,9 +83,10 @@ python3 tool/check_release_metadata.py
 
 On Windows, use `python` instead of `python3` when that is the configured launcher.
 
-- The Markdown checker validates repository-local documentation targets.
+- The Markdown checker validates repository-local documentation targets and rejects local links that escape the repository root.
 - The ARB checker validates localization catalog structure/key parity.
-- The release-metadata checker validates package/changelog/versioning consistency, including the maintained `2.7.4+1` / `v2.7.4` identity.
+- The release-metadata checker validates package/in-app/changelog/versioning consistency, including the maintained `2.7.4+1` / `2.7.4` / `v2.7.4` identity.
+- The Web-asset tool tests protect the SQLite WASM/worker validation path without requiring network access.
 - Flutter localization generation remains the authoritative framework-level localization check after the early ARB validator.
 
 ## Install packages and generate localizations
@@ -92,7 +114,7 @@ or in PowerShell:
 ./tool/check.ps1
 ```
 
-The complete maintained sequence includes repository-validator tests/validators followed by:
+The complete maintained sequence includes repository/tool regression tests and validators followed by:
 
 ```bash
 flutter pub get
@@ -104,14 +126,16 @@ flutter test --coverage
 
 The `tool/` directory is part of the formatting gate because it contains repository utilities and the deterministic benchmark utility.
 
-If the platform runners are present, also verify the primary build appropriate to your host, for example:
+If the platform runners are present, verify the release build appropriate to your host. Examples:
 
 ```bash
-flutter build apk --debug
+flutter build apk --release
+python3 tool/prepare_web_assets.py --destination web
 flutter build web --release
+python3 tool/prepare_web_assets.py --destination build/web --check
 ```
 
-Desktop and Apple-platform release builds require their corresponding supported host environments. The pull-request platform-build workflow provides additional cross-platform evidence on GitHub-hosted runners.
+Desktop and Apple-platform release builds require their corresponding supported host environments. The pull-request platform-build workflow provides Linux, Windows, macOS, and iOS compile/build evidence on GitHub-hosted runners.
 
 ## Run the app
 
@@ -127,11 +151,15 @@ Then run on a selected device:
 flutter run -d <device-id>
 ```
 
+For Web development, ensure `web/sqlite3.wasm` and `web/drift_worker.js` were prepared before launching the app.
+
 Without `-d`, Flutter can prompt for a target when multiple devices are available.
 
 ## Local data and backup
 
 QuizForge creates its SQLite database in application-managed storage. Do not rely on a database path being identical across platforms. Removing app data or uninstalling the app can remove local QuizForge state that has not been separately backed up.
+
+On Web, the database uses Drift's Web SQLite runtime. Browser/site storage policies are therefore part of release verification: a production Web build must be tested for database creation, write/read persistence, refresh/reload behavior, and complete local-backup restore.
 
 The **Import / export** screen provides two different portable-data paths:
 
@@ -158,4 +186,4 @@ On the first successful startup QuizForge:
 
 For errors, continue with `docs/troubleshooting.md`.
 
-For release verification rather than development setup, continue with `docs/release.md`, `docs/release-notes-2.7.4.md`, and `docs/verification.md`.
+For release verification rather than development setup, continue with `docs/platform-support.md`, `docs/release.md`, `docs/release-notes-2.7.4.md`, and `docs/verification.md`.
