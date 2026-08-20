@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 python tool/test_check_markdown_links.py
 python tool/test_check_arb_catalogs.py
 python tool/test_check_release_metadata.py
+python tool/test_prepare_web_assets.py
 python tool/check_markdown_links.py
 python tool/check_arb_catalogs.py
 python tool/check_release_metadata.py
