@@ -10,7 +10,16 @@ import '../domain/quiz_result.dart';
 final class AppDatabase extends GeneratedDatabase {
   AppDatabase(QueryExecutor executor) : super(executor);
 
-  AppDatabase.defaults() : super(driftDatabase(name: 'quizforge'));
+  AppDatabase.defaults()
+      : super(
+          driftDatabase(
+            name: 'quizforge',
+            web: DriftWebOptions(
+              sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+              driftWorker: Uri.parse('drift_worker.js'),
+            ),
+          ),
+        );
 
   @override
   int get schemaVersion => 1;
