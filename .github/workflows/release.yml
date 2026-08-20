@@ -12,7 +12,7 @@ jobs:
   release:
     name: Verify and package release
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -39,6 +39,7 @@ jobs:
           python3 tool/test_check_markdown_links.py
           python3 tool/test_check_arb_catalogs.py
           python3 tool/test_check_release_metadata.py
+          python3 tool/test_prepare_web_assets.py
 
       - name: Validate repository-local Markdown links
         run: python3 tool/check_markdown_links.py
@@ -57,6 +58,9 @@ jobs:
 
       - name: Generate release runners
         run: flutter create . --platforms=android,web
+
+      - name: Prepare Drift Web runtime assets
+        run: python3 tool/prepare_web_assets.py --destination web
 
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
@@ -81,6 +85,9 @@ jobs:
 
       - name: Build web bundle
         run: flutter build web --release
+
+      - name: Verify packaged Drift Web runtime assets
+        run: python3 tool/prepare_web_assets.py --destination build/web --check
 
       - name: Prepare artifacts
         shell: bash
