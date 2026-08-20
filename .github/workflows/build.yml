@@ -14,14 +14,17 @@ permissions:
 
 jobs:
   build:
-    name: Flutter build gate
+    name: Flutter Android/Web build gate
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - name: Test Web runtime asset tooling
+        run: python3 tool/test_prepare_web_assets.py
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
@@ -32,14 +35,20 @@ jobs:
       - name: Materialize Android and Web runners
         run: flutter create . --platforms=android,web
 
+      - name: Prepare Drift Web runtime assets
+        run: python3 tool/prepare_web_assets.py --destination web
+
       - name: Resolve dependencies
         run: flutter pub get
 
       - name: Generate localizations
         run: flutter gen-l10n
 
-      - name: Build Android debug APK
-        run: flutter build apk --debug
+      - name: Build Android release APK
+        run: flutter build apk --release
 
       - name: Build Web release bundle
         run: flutter build web --release
+
+      - name: Verify packaged Drift Web runtime assets
+        run: python3 tool/prepare_web_assets.py --destination build/web --check
