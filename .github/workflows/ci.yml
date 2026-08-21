@@ -37,22 +37,44 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Apply canonical Dart formatting
-        run: dart format lib test tool
+      - name: Configure requested Git identity
+        run: |
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
 
-      - name: Commit tracked formatting changes
+      - name: Resolve and commit dependency lockfile
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- lib test tool; then
-            echo "Tracked Dart sources are already formatted."
-            exit 0
+          flutter pub get
+          if git status --porcelain -- pubspec.lock analysis_options.yaml | grep -q .; then
+            git add --force pubspec.lock
+            git add analysis_options.yaml
+            git commit -m "build: lock Flutter dependency resolution"
+          else
+            echo "Dependency lockfile and analyzer configuration are already current."
           fi
 
-          git config user.name "Sanskar"
-          git config user.email "sanskarin@outlook.in"
-          git add -u -- lib test tool
-          git commit -m "style: apply canonical Dart formatting"
+      - name: Apply and commit canonical Dart formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format lib test tool
+          if git diff --quiet -- lib test tool; then
+            echo "Tracked Dart sources are already formatted."
+          else
+            git add -u -- lib test tool
+            git commit -m "style: apply canonical Dart formatting"
+          fi
+
+      - name: Push release-candidate repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/${{ github.head_ref }})" ]; then
+            echo "No repair commits to push."
+            exit 0
+          fi
           git push origin HEAD:${{ github.head_ref }}
 
   quality:
