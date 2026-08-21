@@ -13,72 +13,6 @@ permissions:
   contents: read
 
 jobs:
-  repair:
-    name: One-shot release-candidate repair
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'final/consolidated-release-audit-20260819'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: write
-    steps:
-      - name: Check out live pull-request branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Set up Flutter toolchain
-        uses: subosito/flutter-action@v2.23.0
-        with:
-          channel: stable
-          cache: true
-
-      - name: Configure requested Git identity
-        run: |
-          git config user.name "Sanskar"
-          git config user.email "sanskarin@outlook.in"
-
-      - name: Resolve and commit application lockfile
-        shell: bash
-        run: |
-          set -euo pipefail
-          flutter pub get
-          if git status --porcelain -- pubspec.lock analysis_options.yaml | grep -q .; then
-            git add --force pubspec.lock
-            git add analysis_options.yaml
-            git commit -m "build: lock Flutter dependency resolution"
-          else
-            echo "Dependency lockfile and analyzer configuration are already current."
-          fi
-
-      - name: Apply Dart analyzer fixes and canonical formatting
-        shell: bash
-        run: |
-          set -euo pipefail
-          flutter gen-l10n
-          dart fix --apply
-          dart format lib test tool
-          git add -u -- lib test tool
-          if git diff --cached --quiet; then
-            echo "Tracked Dart sources already satisfy automated repairs."
-          else
-            git commit -m "fix: apply Dart analyzer and formatting repairs"
-          fi
-
-      - name: Push repair commits
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/${{ github.head_ref }})" ]; then
-            echo "No repair commits to push."
-            exit 0
-          fi
-          git push origin HEAD:${{ github.head_ref }}
-
   quality:
     name: Flutter quality gate
     runs-on: ubuntu-latest
@@ -114,37 +48,14 @@ jobs:
       - name: Show toolchain
         run: flutter --version
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Verify resolver files stay clean
+        run: git diff --exit-code -- pubspec.lock analysis_options.yaml
 
       - name: Generate localizations
         run: flutter gen-l10n
-
-      - name: Canonicalize release-candidate Dart sources
-        if: github.head_ref == 'final/consolidated-release-audit-20260819'
-        run: dart format lib test tool
-
-      - name: Preserve release-candidate repair evidence
-        if: github.head_ref == 'final/consolidated-release-audit-20260819'
-        uses: actions/upload-artifact@v7
-        with:
-          name: release-candidate-repair-${{ github.sha }}
-          path: |
-            analysis_options.yaml
-            pubspec.lock
-            lib/
-            test/
-            tool/
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Preserve resolved lockfile evidence
-        uses: actions/upload-artifact@v7
-        with:
-          name: pubspec-lock-${{ github.sha }}
-          path: pubspec.lock
-          if-no-files-found: error
-          retention-days: 7
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed lib test tool
