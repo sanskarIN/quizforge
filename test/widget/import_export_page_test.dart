@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizforge/src/application/quizforge_controller.dart';
 import 'package:quizforge/src/data/app_database.dart';
@@ -10,7 +11,9 @@ import 'package:quizforge/src/presentation/import_export_page.dart';
 import '../test_app.dart';
 
 void main() {
-  testWidgets('imports a valid JSON question bank', (WidgetTester tester) async {
+  testWidgets('imports a valid JSON question bank', (
+    WidgetTester tester,
+  ) async {
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(
@@ -52,6 +55,8 @@ void main() {
     expect(controller.questions, hasLength(1));
     expect(controller.questions.single.id, 'import-widget-1');
     expect(find.text('Import report'), findsOneWidget);
-    expect(find.text('Import: 1'), findsOneWidget);
+    expect(find.text('Imported: 1'), findsOneWidget);
+    expect(find.text('Duplicates skipped: 0'), findsOneWidget);
+    expect(find.text('Errors: 0'), findsOneWidget);
   });
 }

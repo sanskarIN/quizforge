@@ -15,7 +15,6 @@ on:
       - 'ios/**'
       - '.github/workflows/platform-builds.yml'
   pull_request:
-    branches: [main]
     paths:
       - 'lib/**'
       - 'assets/**'
@@ -27,6 +26,10 @@ on:
       - 'macos/**'
       - 'ios/**'
       - '.github/workflows/platform-builds.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

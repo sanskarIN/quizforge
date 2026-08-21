@@ -18,68 +18,135 @@ void main() {
     await database.close();
   });
 
-  test('stores questions profiles bookmarks progress and category stats', () async {
-    final Question question = Question(
-      id: 'db-q1',
-      type: QuestionType.shortAnswer,
-      prompt: 'What is 2 + 2?',
-      correctAnswers: const <String>{'4'},
-      category: 'Math',
-      difficulty: Difficulty.easy,
-    );
-    const PlayerProfile profile = PlayerProfile(
-      id: 'profile-1',
-      displayName: 'Tester',
-    );
+  test(
+    'stores questions profiles bookmarks progress and category stats',
+    () async {
+      final Question question = Question(
+        id: 'db-q1',
+        type: QuestionType.shortAnswer,
+        prompt: 'What is 2 + 2?',
+        correctAnswers: const <String>{'4'},
+        category: 'Math',
+        difficulty: Difficulty.easy,
+      );
+      const PlayerProfile profile = PlayerProfile(
+        id: 'profile-1',
+        displayName: 'Tester',
+      );
 
-    await database.upsertQuestions(<Question>[question]);
-    await database.upsertProfile(profile);
+      await database.upsertQuestions(<Question>[question]);
+      await database.upsertProfile(profile);
 
-    expect((await database.loadQuestions()).single.id, question.id);
-    expect((await database.loadProfiles()).single.displayName, 'Tester');
+      expect((await database.loadQuestions()).single.id, question.id);
+      expect((await database.loadProfiles()).single.displayName, 'Tester');
 
-    await database.setBookmark(
-      profileId: profile.id,
-      questionId: question.id,
-      bookmarked: true,
-    );
-    expect(await database.loadBookmarkIds(profile.id), <String>{question.id});
+      await database.setBookmark(
+        profileId: profile.id,
+        questionId: question.id,
+        bookmarked: true,
+      );
+      expect(await database.loadBookmarkIds(profile.id), <String>{question.id});
 
-    final DateTime start = DateTime(2026, 8, 19, 8);
-    final QuizResult result = QuizResult(
-      startedAt: start,
-      completedAt: start.add(const Duration(seconds: 42)),
-      evaluations: const <QuestionEvaluation>[
-        QuestionEvaluation(
-          questionId: 'db-q1',
-          submittedAnswers: <String>{'4'},
-          correct: true,
-          score: 1,
-        ),
-      ],
-    );
-    await database.saveAttempt(profile.id, result);
+      final DateTime start = DateTime(2026, 8, 19, 8);
+      final QuizResult result = QuizResult(
+        startedAt: start,
+        completedAt: start.add(const Duration(seconds: 42)),
+        evaluations: const <QuestionEvaluation>[
+          QuestionEvaluation(
+            questionId: 'db-q1',
+            submittedAnswers: <String>{'4'},
+            correct: true,
+            score: 1,
+          ),
+        ],
+      );
+      await database.saveAttempt(profile.id, result);
 
-    final ProgressSummary progress = await database.loadProgress(profile.id);
-    expect(progress.quizCount, 1);
-    expect(progress.questionCount, 1);
-    expect(progress.correctCount, 1);
-    expect(progress.bestStreak, 1);
-    expect(progress.totalSeconds, 42);
+      final ProgressSummary progress = await database.loadProgress(profile.id);
+      expect(progress.quizCount, 1);
+      expect(progress.questionCount, 1);
+      expect(progress.correctCount, 1);
+      expect(progress.bestStreak, 1);
+      expect(progress.totalSeconds, 42);
 
-    final List<CategoryProgress> categoryProgress =
-        await database.loadCategoryProgress(profile.id);
-    expect(categoryProgress, hasLength(1));
-    expect(categoryProgress.single.category, 'Math');
-    expect(categoryProgress.single.questionCount, 1);
-    expect(categoryProgress.single.correctCount, 1);
-    expect(categoryProgress.single.accuracy, 100);
+      final List<CategoryProgress> categoryProgress = await database
+          .loadCategoryProgress(profile.id);
+      expect(categoryProgress, hasLength(1));
+      expect(categoryProgress.single.category, 'Math');
+      expect(categoryProgress.single.questionCount, 1);
+      expect(categoryProgress.single.correctCount, 1);
+      expect(categoryProgress.single.accuracy, 100);
 
-    final List<LeaderboardEntry> leaderboard = await database.loadLeaderboard();
-    expect(leaderboard.single.profileId, profile.id);
-    expect(leaderboard.single.points, 110);
-    expect(leaderboard.single.accuracy, 100);
-  });
+      final List<AttemptSummary> attempts = await database.loadRecentAttempts(
+        profile.id,
+      );
+      expect(attempts, hasLength(1));
+      expect(attempts.single.startedAt, start);
+      expect(attempts.single.duration, const Duration(seconds: 42));
+      expect(attempts.single.correctCount, 1);
+      expect(attempts.single.questionCount, 1);
+      expect(attempts.single.bestStreak, 1);
+      expect(attempts.single.earnedScore, 1);
+      expect(attempts.single.accuracy, 100);
+
+      final List<LeaderboardEntry> leaderboard = await database
+          .loadLeaderboard();
+      expect(leaderboard.single.profileId, profile.id);
+      expect(leaderboard.single.points, 110);
+      expect(leaderboard.single.accuracy, 100);
+    },
+  );
+
+  test(
+    'recent attempts are newest first and honor the requested limit',
+    () async {
+      final Question question = Question(
+        id: 'history-q1',
+        type: QuestionType.shortAnswer,
+        prompt: 'History question?',
+        correctAnswers: const <String>{'yes'},
+        category: 'History',
+        difficulty: Difficulty.easy,
+      );
+      const PlayerProfile profile = PlayerProfile(
+        id: 'history-profile',
+        displayName: 'History Tester',
+      );
+      await database.upsertQuestions(<Question>[question]);
+      await database.upsertProfile(profile);
+
+      for (int index = 0; index < 3; index += 1) {
+        final DateTime start = DateTime(2026, 8, 19, 9, index);
+        await database.saveAttempt(
+          profile.id,
+          QuizResult(
+            startedAt: start,
+            completedAt: start.add(Duration(seconds: 10 + index)),
+            evaluations: const <QuestionEvaluation>[
+              QuestionEvaluation(
+                questionId: 'history-q1',
+                submittedAnswers: <String>{'yes'},
+                correct: true,
+                score: 1,
+              ),
+            ],
+          ),
+        );
+      }
+
+      final List<AttemptSummary> attempts = await database.loadRecentAttempts(
+        profile.id,
+        limit: 2,
+      );
+      expect(attempts, hasLength(2));
+      expect(attempts[0].startedAt.minute, 2);
+      expect(attempts[1].startedAt.minute, 1);
+      await expectLater(
+        database.loadRecentAttempts(profile.id, limit: 0),
+        throwsArgumentError,
+      );
+    },
+  );
 
   test('clear profile activity preserves profile and questions', () async {
     final Question question = Question(
@@ -125,6 +192,7 @@ void main() {
     expect(await database.loadBookmarkIds(profile.id), isEmpty);
     expect((await database.loadProgress(profile.id)).quizCount, 0);
     expect(await database.loadCategoryProgress(profile.id), isEmpty);
+    expect(await database.loadRecentAttempts(profile.id), isEmpty);
   });
 
   test('profile rename and delete respect foreign-key cleanup', () async {

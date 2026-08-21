@@ -29,11 +29,12 @@ final class QuizResult {
   int get totalCount => evaluations.length;
 
   double get earnedScore => evaluations.fold<double>(
-        0,
-        (double total, QuestionEvaluation item) => total + item.score,
-      );
+    0,
+    (double total, QuestionEvaluation item) => total + item.score,
+  );
 
-  double get percentage => totalCount == 0 ? 0 : (earnedScore / totalCount) * 100;
+  double get percentage =>
+      totalCount == 0 ? 0 : (earnedScore / totalCount) * 100;
 
   int get bestStreak {
     int current = 0;

@@ -12,9 +12,10 @@ import 'package:quizforge/src/presentation/quiz_page.dart';
 import '../test_app.dart';
 
 void main() {
-  testWidgets('exposes quiz progress and timer semantics', (
+  testWidgets('exposes localized quiz progress and timer semantics', (
     WidgetTester tester,
   ) async {
+    addTearDown(tester.ensureSemantics().dispose);
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(
@@ -27,7 +28,7 @@ void main() {
       id: 'a11y-q1',
       type: QuestionType.trueFalse,
       prompt: 'This is a deterministic accessibility fixture.',
-      correctAnswers: const <String>{'True'},
+      correctAnswers: const <String>{'true'},
       category: 'Accessibility',
       difficulty: Difficulty.easy,
     );
@@ -47,10 +48,10 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel('1/1'), findsOneWidget);
-    expect(find.bySemanticsLabel('20s'), findsOneWidget);
+    expect(find.bySemanticsLabel('Question 1 of 1'), findsOneWidget);
+    expect(find.bySemanticsLabel('20 seconds remaining'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 1));
-    expect(find.bySemanticsLabel('19s'), findsOneWidget);
+    expect(find.bySemanticsLabel('19 seconds remaining'), findsOneWidget);
   });
 }

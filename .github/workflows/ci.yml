@@ -4,7 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -13,10 +16,28 @@ jobs:
   quality:
     name: Flutter quality gate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Test repository validation tooling
+        run: |
+          python3 tool/test_check_markdown_links.py
+          python3 tool/test_check_arb_catalogs.py
+          python3 tool/test_check_release_metadata.py
+          python3 tool/test_prepare_web_assets.py
+
+      - name: Validate repository-local Markdown links
+        run: python3 tool/check_markdown_links.py
+
+      - name: Validate ARB localization catalogs
+        run: python3 tool/check_arb_catalogs.py
+
+      - name: Validate release metadata
+        run: python3 tool/check_release_metadata.py
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
@@ -27,11 +48,17 @@ jobs:
       - name: Show toolchain
         run: flutter --version
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Verify resolver files stay clean
+        run: git diff --exit-code -- pubspec.lock analysis_options.yaml
+
+      - name: Generate localizations
+        run: flutter gen-l10n
 
       - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib test tool
 
       - name: Analyze
         run: flutter analyze

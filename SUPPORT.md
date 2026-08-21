@@ -2,11 +2,13 @@
 
 QuizForge is an open-source, offline-first project. Community support is provided on a best-effort basis.
 
+The maintained release-candidate line is `2.7.4+1` / public version `2.7.4`. When reporting a problem, use the About-page version plus the exact commit SHA when possible.
+
 ## Before requesting help
 
 1. Read `README.md` and `docs/setup.md`.
-2. Check `docs/troubleshooting.md` for common Flutter, build, database, import, and platform issues.
-3. Run `flutter doctor -v` and the repository quality commands.
+2. Check `docs/troubleshooting.md` for common Flutter, build, database, import, backup/restore, and platform issues.
+3. Run `flutter doctor -v` and the maintained repository quality commands (`tool/check.sh` or `tool/check.ps1`) when you have a development checkout.
 4. Search existing GitHub issues before opening a duplicate.
 
 ## Support contacts
@@ -23,7 +25,9 @@ For security vulnerabilities, follow `SECURITY.md` and report privately rather t
 
 ## Helpful details for bug reports
 
-Include the QuizForge version or commit, operating system, Flutter version, reproduction steps, expected behavior, actual behavior, and relevant sanitized logs. Do not post credentials, private user data, signing material, or other secrets.
+Include the QuizForge public/package version (for this candidate, `2.7.4` / `2.7.4+1`), exact commit when known, operating system, Flutter version, reproduction steps, expected behavior, actual behavior, and relevant sanitized logs.
+
+Do not post credentials, private user data, signing material, submitted-answer payloads, raw imports, or real local-backup archives. A complete QuizForge backup can contain profile names, authored questions, bookmarks, quiz history, submitted answers, settings, and active-profile selection. Reproduce backup bugs with fictional data whenever possible.
 
 ## Funding
 

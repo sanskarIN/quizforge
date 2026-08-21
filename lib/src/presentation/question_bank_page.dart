@@ -2,16 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
 import 'import_export_page.dart';
 
 final class QuestionBankPage extends StatefulWidget {
-  const QuestionBankPage({
-    required this.controller,
-    super.key,
-  });
+  const QuestionBankPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -33,11 +31,13 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> categories = widget.controller.questions
-        .map((Question question) => question.category)
-        .toSet()
-        .toList()
-      ..sort();
+    final AppLocalizations strings = AppLocalizations.of(context);
+    final List<String> categories =
+        widget.controller.questions
+            .map((Question question) => question.category)
+            .toSet()
+            .toList()
+          ..sort();
     final List<Question> results = widget.controller.searchQuestions(
       _searchController.text,
       category: _category,
@@ -58,37 +58,39 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
+                Wrap(
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.sm,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        'Question bank',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
+                    Text(
+                      strings.questionBank,
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     OutlinedButton.icon(
                       onPressed: () {
                         unawaited(
                           Navigator.of(context).push<void>(
                             MaterialPageRoute<void>(
-                              builder: (BuildContext context) => ImportExportPage(
-                                controller: widget.controller,
-                              ),
+                              builder: (BuildContext context) =>
+                                  ImportExportPage(
+                                    controller: widget.controller,
+                                  ),
                             ),
                           ),
                         );
                       },
                       icon: const Icon(Icons.import_export),
-                      label: const Text('Import / export'),
+                      label: Text(strings.importExport),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _searchController,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    labelText: 'Search questions, categories, or tags',
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    labelText: strings.searchQuestions,
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -99,11 +101,11 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                   children: <Widget>[
                     DropdownMenu<String?>(
                       initialSelection: _category,
-                      label: const Text('Category'),
+                      label: Text(strings.category),
                       dropdownMenuEntries: <DropdownMenuEntry<String?>>[
-                        const DropdownMenuEntry<String?>(
+                        DropdownMenuEntry<String?>(
                           value: null,
-                          label: 'All categories',
+                          label: strings.allCategories,
                         ),
                         ...categories.map(
                           (String category) => DropdownMenuEntry<String?>(
@@ -112,20 +114,21 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                           ),
                         ),
                       ],
-                      onSelected: (String? value) => setState(() => _category = value),
+                      onSelected: (String? value) =>
+                          setState(() => _category = value),
                     ),
                     DropdownMenu<Difficulty?>(
                       initialSelection: _difficulty,
-                      label: const Text('Difficulty'),
+                      label: Text(strings.difficulty),
                       dropdownMenuEntries: <DropdownMenuEntry<Difficulty?>>[
-                        const DropdownMenuEntry<Difficulty?>(
+                        DropdownMenuEntry<Difficulty?>(
                           value: null,
-                          label: 'All difficulties',
+                          label: strings.allDifficultiesFilter,
                         ),
                         ...Difficulty.values.map(
                           (Difficulty value) => DropdownMenuEntry<Difficulty?>(
                             value: value,
-                            label: value.name,
+                            label: _difficultyLabel(strings, value),
                           ),
                         ),
                       ],
@@ -133,7 +136,7 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                           setState(() => _difficulty = value),
                     ),
                     FilterChip(
-                      label: const Text('Bookmarks only'),
+                      label: Text(strings.bookmarksOnly),
                       selected: _bookmarkedOnly,
                       onSelected: (bool value) =>
                           setState(() => _bookmarkedOnly = value),
@@ -141,7 +144,7 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text('${results.length} question${results.length == 1 ? '' : 's'}'),
+                Text(strings.questionCountLabel(results.length)),
               ],
             ),
           ),
@@ -156,16 +159,17 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                       AppSpacing.lg,
                     ),
                     itemCount: results.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const SizedBox(height: AppSpacing.md),
                     itemBuilder: (BuildContext context, int index) {
                       final Question question = results[index];
                       return _QuestionCard(
                         question: question,
-                        bookmarked:
-                            widget.controller.bookmarkIds.contains(question.id),
+                        bookmarked: widget.controller.bookmarkIds.contains(
+                          question.id,
+                        ),
                         onBookmark: () {
-                          unawaited(widget.controller.toggleBookmark(question.id));
+                          unawaited(_toggleBookmark(question.id));
                         },
                       );
                     },
@@ -174,6 +178,37 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggleBookmark(String questionId) async {
+    final AppLocalizations strings = AppLocalizations.of(context);
+    try {
+      await widget.controller.toggleBookmark(questionId);
+    } on Object catch (error) {
+      widget.controller.logger.error(
+        'bookmark.persist.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.actionFailed)));
+      }
+    }
+  }
+
+  static String _difficultyLabel(
+    AppLocalizations strings,
+    Difficulty difficulty,
+  ) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return strings.easy;
+      case Difficulty.medium:
+        return strings.medium;
+      case Difficulty.hard:
+        return strings.hard;
+    }
   }
 }
 
@@ -190,6 +225,7 @@ final class _QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -206,9 +242,13 @@ final class _QuestionCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: bookmarked ? 'Remove bookmark' : 'Bookmark question',
+                  tooltip: bookmarked
+                      ? strings.removeBookmark
+                      : strings.bookmarkQuestion,
                   onPressed: onBookmark,
-                  icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
+                  icon: Icon(
+                    bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  ),
                 ),
               ],
             ),
@@ -218,9 +258,12 @@ final class _QuestionCard extends StatelessWidget {
               runSpacing: AppSpacing.sm,
               children: <Widget>[
                 Chip(label: Text(question.category)),
-                Chip(label: Text(question.difficulty.name)),
-                Chip(label: Text(question.type.name)),
-                for (final String tag in question.tags) Chip(label: Text('#$tag')),
+                Chip(
+                  label: Text(_difficultyLabel(strings, question.difficulty)),
+                ),
+                Chip(label: Text(_questionTypeLabel(strings, question.type))),
+                for (final String tag in question.tags)
+                  Chip(label: Text('#$tag')),
               ],
             ),
             if (question.explanation.isNotEmpty) ...<Widget>[
@@ -236,6 +279,36 @@ final class _QuestionCard extends StatelessWidget {
       ),
     );
   }
+
+  static String _difficultyLabel(
+    AppLocalizations strings,
+    Difficulty difficulty,
+  ) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return strings.easy;
+      case Difficulty.medium:
+        return strings.medium;
+      case Difficulty.hard:
+        return strings.hard;
+    }
+  }
+
+  static String _questionTypeLabel(
+    AppLocalizations strings,
+    QuestionType type,
+  ) {
+    switch (type) {
+      case QuestionType.multipleChoice:
+        return strings.multipleChoice;
+      case QuestionType.trueFalse:
+        return strings.trueFalse;
+      case QuestionType.multiSelect:
+        return strings.multiSelect;
+      case QuestionType.shortAnswer:
+        return strings.shortAnswer;
+    }
+  }
 }
 
 final class _EmptyBank extends StatelessWidget {
@@ -243,6 +316,7 @@ final class _EmptyBank extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -251,9 +325,12 @@ final class _EmptyBank extends StatelessWidget {
           children: <Widget>[
             const Icon(Icons.search_off, size: 48),
             const SizedBox(height: AppSpacing.md),
-            Text('No questions match', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              strings.noQuestionsMatch,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.sm),
-            const Text('Adjust the search or filters and try again.'),
+            Text(strings.adjustSearchFilters),
           ],
         ),
       ),

@@ -36,10 +36,7 @@ abstract interface class PrivateRoomTransport {
     required List<Question> questions,
   });
 
-  Future<void> joinRoom({
-    required String roomCode,
-    required RoomPlayer player,
-  });
+  Future<void> joinRoom({required String roomCode, required RoomPlayer player});
 
   Future<void> submitAnswer({
     required String roomCode,
@@ -48,10 +45,7 @@ abstract interface class PrivateRoomTransport {
     required Set<String> answers,
   });
 
-  Future<void> leaveRoom({
-    required String roomCode,
-    required String playerId,
-  });
+  Future<void> leaveRoom({required String roomCode, required String playerId});
 }
 
 /// Intentionally local-only until an explicit, privacy-reviewed transport is
@@ -60,29 +54,26 @@ final class DisabledPrivateRoomTransport implements PrivateRoomTransport {
   const DisabledPrivateRoomTransport();
 
   static UnsupportedError _disabled() => UnsupportedError(
-        'Private-room networking is not enabled in this offline build.',
-      );
+    'Private-room networking is not enabled in this offline build.',
+  );
 
   @override
   Future<PrivateRoomSnapshot> createRoom({
     required RoomPlayer host,
     required List<Question> questions,
-  }) async =>
-      throw _disabled();
+  }) async => throw _disabled();
 
   @override
   Future<void> joinRoom({
     required String roomCode,
     required RoomPlayer player,
-  }) async =>
-      throw _disabled();
+  }) async => throw _disabled();
 
   @override
   Future<void> leaveRoom({
     required String roomCode,
     required String playerId,
-  }) async =>
-      throw _disabled();
+  }) async => throw _disabled();
 
   @override
   Future<void> submitAnswer({
@@ -90,8 +81,7 @@ final class DisabledPrivateRoomTransport implements PrivateRoomTransport {
     required String playerId,
     required String questionId,
     required Set<String> answers,
-  }) async =>
-      throw _disabled();
+  }) async => throw _disabled();
 
   @override
   Stream<PrivateRoomSnapshot> watchRoom(String roomCode) =>

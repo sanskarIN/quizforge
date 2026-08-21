@@ -27,7 +27,7 @@ void main() {
 
   test('random malformed CSV never escapes parser exceptions', () {
     final Random random = Random(19082026);
-    const String alphabet = 'abc123,\"[]{}\n\r\\ ';
+    const String alphabet = 'abc123,"[]{}\n\r\\ ';
 
     for (int sample = 0; sample < 500; sample += 1) {
       final int length = random.nextInt(220);
