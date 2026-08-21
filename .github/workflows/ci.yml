@@ -13,6 +13,48 @@ permissions:
   contents: read
 
 jobs:
+  format-fix:
+    name: One-shot release-candidate formatter
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'final/consolidated-release-audit-20260819'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out pull-request branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Flutter toolchain
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Apply canonical Dart formatting
+        run: dart format lib test tool
+
+      - name: Commit tracked formatting changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- lib test tool; then
+            echo "Tracked Dart sources are already formatted."
+            exit 0
+          fi
+
+          git config user.name "Sanskar"
+          git config user.email "sanskarin@outlook.in"
+          git add -u -- lib test tool
+          git commit -m "style: apply canonical Dart formatting"
+          git push origin HEAD:${{ github.head_ref }}
+
   quality:
     name: Flutter quality gate
     runs-on: ubuntu-latest
