@@ -107,7 +107,7 @@ final class StatsPage extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: controller.categoryProgress.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (BuildContext context, int index) {
                   final CategoryProgress item =
                       controller.categoryProgress[index];
@@ -149,7 +149,7 @@ final class StatsPage extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: controller.leaderboard.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (BuildContext context, int index) {
                   final LeaderboardEntry entry = controller.leaderboard[index];
                   final bool active =
@@ -228,65 +228,70 @@ final class _RecentAttemptsPanelState extends State<_RecentAttemptsPanel> {
         const SizedBox(height: AppSpacing.md),
         FutureBuilder<List<AttemptSummary>>(
           future: _attempts,
-          builder: (BuildContext context, AsyncSnapshot<List<AttemptSummary>> snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.lg),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              );
-            }
-            if (snapshot.hasError) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Text(strings.actionFailed),
-                ),
-              );
-            }
-            final List<AttemptSummary> attempts =
-                snapshot.data ?? const <AttemptSummary>[];
-            if (attempts.isEmpty) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Text(strings.completeQuizForLeaderboard),
-                ),
-              );
-            }
-            return Card(
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: attempts.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (BuildContext context, int index) {
-                  final AttemptSummary attempt = attempts[index];
-                  final String date = MaterialLocalizations.of(context)
-                      .formatShortDate(attempt.completedAt);
-                  final String time = TimeOfDay.fromDateTime(
-                    attempt.completedAt,
-                  ).format(context);
-                  return ListTile(
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.history_outlined),
-                    ),
-                    title: Text('$date · $time'),
-                    subtitle: Text(
-                      '${strings.correct}: ${attempt.correctCount}/${attempt.questionCount} · '
-                      '${strings.bestStreak}: ${attempt.bestStreak} · '
-                      '${strings.time}: ${StatsPage._formatDuration(attempt.duration)}',
-                    ),
-                    trailing: Text(
-                      '${attempt.accuracy.toStringAsFixed(0)}%',
-                      style: Theme.of(context).textTheme.titleMedium,
+          builder:
+              (
+                BuildContext context,
+                AsyncSnapshot<List<AttemptSummary>> snapshot,
+              ) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSpacing.lg),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
                   );
-                },
-              ),
-            );
-          },
+                }
+                if (snapshot.hasError) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(strings.actionFailed),
+                    ),
+                  );
+                }
+                final List<AttemptSummary> attempts =
+                    snapshot.data ?? const <AttemptSummary>[];
+                if (attempts.isEmpty) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(strings.completeQuizForLeaderboard),
+                    ),
+                  );
+                }
+                return Card(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: attempts.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (BuildContext context, int index) {
+                      final AttemptSummary attempt = attempts[index];
+                      final String date = MaterialLocalizations.of(
+                        context,
+                      ).formatShortDate(attempt.completedAt);
+                      final String time = TimeOfDay.fromDateTime(
+                        attempt.completedAt,
+                      ).format(context);
+                      return ListTile(
+                        leading: const CircleAvatar(
+                          child: Icon(Icons.history_outlined),
+                        ),
+                        title: Text('$date · $time'),
+                        subtitle: Text(
+                          '${strings.correct}: ${attempt.correctCount}/${attempt.questionCount} · '
+                          '${strings.bestStreak}: ${attempt.bestStreak} · '
+                          '${strings.time}: ${StatsPage._formatDuration(attempt.duration)}',
+                        ),
+                        trailing: Text(
+                          '${attempt.accuracy.toStringAsFixed(0)}%',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
         ),
       ],
     );

@@ -8,7 +8,7 @@ import '../domain/question.dart';
 import '../domain/quiz_result.dart';
 
 final class AppDatabase extends GeneratedDatabase {
-  AppDatabase(QueryExecutor executor) : super(executor);
+  AppDatabase(super.executor);
 
   AppDatabase.defaults()
     : super(

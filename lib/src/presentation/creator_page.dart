@@ -282,8 +282,9 @@ final class _CreatorPageState extends State<CreatorPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(strings.questionAdded)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.questionAdded)));
       _clearForm();
     } on ArgumentError {
       if (mounted) {
@@ -320,9 +321,9 @@ final class _CreatorPageState extends State<CreatorPage> {
   }
 
   String _generatedId() {
-    final String category = normalizeAnswer(_category.text)
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'^-+|-+$'), '');
+    final String category = normalizeAnswer(
+      _category.text,
+    ).replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
     final String prefix = category.isEmpty ? 'question' : category;
     return '$prefix-${DateTime.now().microsecondsSinceEpoch}';
   }

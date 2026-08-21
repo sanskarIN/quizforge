@@ -19,9 +19,9 @@ void main() {
     );
 
     expect(messages, hasLength(1));
-    final Map<String, Object?> payload = (jsonDecode(
-      messages.single,
-    ) as Map<Object?, Object?>).cast<String, Object?>();
+    final Map<String, Object?> payload =
+        (jsonDecode(messages.single) as Map<Object?, Object?>)
+            .cast<String, Object?>();
     final Map<String, Object?> fields =
         (payload['fields'] as Map<Object?, Object?>).cast<String, Object?>();
 
@@ -44,9 +44,9 @@ void main() {
       },
     );
 
-    final Map<String, Object?> payload = (jsonDecode(
-      messages.single,
-    ) as Map<Object?, Object?>).cast<String, Object?>();
+    final Map<String, Object?> payload =
+        (jsonDecode(messages.single) as Map<Object?, Object?>)
+            .cast<String, Object?>();
     final Map<String, Object?> fields =
         (payload['fields'] as Map<Object?, Object?>).cast<String, Object?>();
     expect(fields['reason'], '[REDACTED]');

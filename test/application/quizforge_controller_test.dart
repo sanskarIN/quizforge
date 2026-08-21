@@ -202,8 +202,7 @@ void main() {
 }
 
 final class _FakeProfilePreferences implements ActiveProfilePreferences {
-  _FakeProfilePreferences({String? activeProfileId})
-    : activeProfileId = activeProfileId;
+  _FakeProfilePreferences({this.activeProfileId});
 
   String? activeProfileId;
   bool failSaves = false;

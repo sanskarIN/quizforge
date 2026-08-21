@@ -555,8 +555,9 @@ final class SettingsPage extends StatelessWidget {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
@@ -570,8 +571,9 @@ final class SettingsPage extends StatelessWidget {
     try {
       await action();
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(successMessage)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(successMessage)));
       }
     } on Object catch (error) {
       controller.logger.error(
@@ -579,8 +581,9 @@ final class SettingsPage extends StatelessWidget {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }

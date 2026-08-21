@@ -32,7 +32,8 @@ List<Question> buildDemoQuestions() => <Question>[
     category: 'Science',
     difficulty: Difficulty.easy,
     tags: const <String>['physics', 'basics'],
-    explanation: 'Solid, liquid, and gas are the three classical states introduced in basic science.',
+    explanation:
+        'Solid, liquid, and gas are the three classical states introduced in basic science.',
   ),
   Question(
     id: 'science-red-planet',
@@ -121,7 +122,8 @@ List<Question> buildDemoQuestions() => <Question>[
   Question(
     id: 'math-pi-symbol',
     type: QuestionType.shortAnswer,
-    prompt: 'Which Greek letter represents the circle constant approximately equal to 3.14159?',
+    prompt:
+        'Which Greek letter represents the circle constant approximately equal to 3.14159?',
     correctAnswers: const <String>{'pi', 'π'},
     category: 'Mathematics',
     difficulty: Difficulty.easy,

@@ -159,7 +159,7 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                       AppSpacing.lg,
                     ),
                     itemCount: results.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const SizedBox(height: AppSpacing.md),
                     itemBuilder: (BuildContext context, int index) {
                       final Question question = results[index];
@@ -190,8 +190,9 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }

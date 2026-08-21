@@ -74,8 +74,9 @@ final class ReviewPage extends StatelessWidget {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
