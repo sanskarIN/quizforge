@@ -13,10 +13,7 @@ void main() {
     });
 
     test('rejects blank ids and out-of-range display names', () {
-      const PlayerProfile profile = PlayerProfile(
-        id: ' ',
-        displayName: 'A',
-      );
+      const PlayerProfile profile = PlayerProfile(id: ' ', displayName: 'A');
 
       expect(profile.validate(), hasLength(2));
     });

@@ -8,10 +8,7 @@ import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
 
 final class CreatorPage extends StatefulWidget {
-  const CreatorPage({
-    required this.controller,
-    super.key,
-  });
+  const CreatorPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -236,7 +233,8 @@ final class _CreatorPageState extends State<CreatorPage> {
       id: _generatedId(),
       type: _type,
       prompt: _prompt.text.trim(),
-      choices: _type == QuestionType.multipleChoice ||
+      choices:
+          _type == QuestionType.multipleChoice ||
               _type == QuestionType.multiSelect
           ? _lines(_choices.text)
           : const <String>[],
@@ -284,9 +282,8 @@ final class _CreatorPageState extends State<CreatorPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.questionAdded)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(strings.questionAdded)));
       _clearForm();
     } on ArgumentError {
       if (mounted) {
@@ -365,10 +362,7 @@ final class _CreatorPageState extends State<CreatorPage> {
 }
 
 final class _PreviewPanel extends StatelessWidget {
-  const _PreviewPanel({
-    required this.question,
-    required this.errors,
-  });
+  const _PreviewPanel({required this.question, required this.errors});
 
   final Question question;
   final List<String> errors;
@@ -382,7 +376,10 @@ final class _PreviewPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(strings.preview, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              strings.preview,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               question.prompt.isEmpty

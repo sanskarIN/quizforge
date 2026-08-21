@@ -10,7 +10,7 @@ abstract interface class OnboardingStore {
 
 final class OnboardingRepository implements OnboardingStore {
   OnboardingRepository({SharedPreferencesAsync? preferences})
-      : _preferences = preferences ?? SharedPreferencesAsync();
+    : _preferences = preferences ?? SharedPreferencesAsync();
 
   final SharedPreferencesAsync _preferences;
 

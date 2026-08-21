@@ -13,10 +13,9 @@ extension AppDatabaseMaintenance on AppDatabase {
 
   Future<void> deleteProfile(String profileId) async {
     await transaction(() async {
-      await customStatement(
-        'DELETE FROM profiles WHERE id = ?',
-        <Object?>[profileId],
-      );
+      await customStatement('DELETE FROM profiles WHERE id = ?', <Object?>[
+        profileId,
+      ]);
     });
   }
 

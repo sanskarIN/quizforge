@@ -89,21 +89,27 @@ final class LocalBackupCodec {
     if (activeProfileId == null) {
       throw const FormatException('Backup active profile is required.');
     }
-    final Map<String, Object?> databaseMap =
-        _expectMap(root['database'], 'database');
+    final Map<String, Object?> databaseMap = _expectMap(
+      root['database'],
+      'database',
+    );
     final DatabaseBackupSnapshot database = DatabaseBackupSnapshot(
-      questions: _expectList(databaseMap['questions'], 'database.questions')
-          .map(_decodeQuestion)
-          .toList(growable: false),
-      profiles: _expectList(databaseMap['profiles'], 'database.profiles')
-          .map(_decodeProfile)
-          .toList(growable: false),
-      attempts: _expectList(databaseMap['attempts'], 'database.attempts')
-          .map(_decodeAttempt)
-          .toList(growable: false),
-      bookmarks: _expectList(databaseMap['bookmarks'], 'database.bookmarks')
-          .map(_decodeBookmark)
-          .toList(growable: false),
+      questions: _expectList(
+        databaseMap['questions'],
+        'database.questions',
+      ).map(_decodeQuestion).toList(growable: false),
+      profiles: _expectList(
+        databaseMap['profiles'],
+        'database.profiles',
+      ).map(_decodeProfile).toList(growable: false),
+      attempts: _expectList(
+        databaseMap['attempts'],
+        'database.attempts',
+      ).map(_decodeAttempt).toList(growable: false),
+      bookmarks: _expectList(
+        databaseMap['bookmarks'],
+        'database.bookmarks',
+      ).map(_decodeBookmark).toList(growable: false),
     );
     final List<String> errors = database.validate();
     if (errors.isNotEmpty) {
@@ -135,8 +141,10 @@ final class LocalBackupCodec {
 
   static AppSettings _decodeSettings(Object? value) {
     final Map<String, Object?> map = _expectMap(value, 'settings');
-    final String themeName =
-        _expectString(map['themeMode'], 'settings.themeMode');
+    final String themeName = _expectString(
+      map['themeMode'],
+      'settings.themeMode',
+    );
     final AppThemeMode themeMode;
     try {
       themeMode = AppThemeMode.values.byName(themeName);
@@ -146,9 +154,14 @@ final class LocalBackupCodec {
     return AppSettings(
       themeMode: themeMode,
       largeText: _expectBool(map['largeText'], 'settings.largeText'),
-      reducedMotion: _expectBool(map['reducedMotion'], 'settings.reducedMotion'),
-      screenReaderHints:
-          _expectBool(map['screenReaderHints'], 'settings.screenReaderHints'),
+      reducedMotion: _expectBool(
+        map['reducedMotion'],
+        'settings.reducedMotion',
+      ),
+      screenReaderHints: _expectBool(
+        map['screenReaderHints'],
+        'settings.screenReaderHints',
+      ),
       confirmBeforeExitQuiz: _expectBool(
         map['confirmBeforeExitQuiz'],
         'settings.confirmBeforeExitQuiz',
@@ -173,8 +186,10 @@ final class LocalBackupCodec {
   static Question _decodeQuestion(Object? value) {
     final Map<String, Object?> map = _expectMap(value, 'question');
     final String typeName = _expectString(map['type'], 'question.type');
-    final String difficultyName =
-        _expectString(map['difficulty'], 'question.difficulty');
+    final String difficultyName = _expectString(
+      map['difficulty'],
+      'question.difficulty',
+    );
     final QuestionType type;
     final Difficulty difficulty;
     try {
@@ -245,19 +260,21 @@ final class LocalBackupCodec {
       questionCount: _expectInt(map['questionCount'], 'attempt.questionCount'),
       bestStreak: _expectInt(map['bestStreak'], 'attempt.bestStreak'),
       earnedScore: _expectDouble(map['earnedScore'], 'attempt.earnedScore'),
-      evaluations: _expectList(map['evaluations'], 'attempt.evaluations')
-          .map(_decodeEvaluation)
-          .toList(growable: false),
+      evaluations: _expectList(
+        map['evaluations'],
+        'attempt.evaluations',
+      ).map(_decodeEvaluation).toList(growable: false),
     );
   }
 
-  static Map<String, Object?> _encodeEvaluation(QuestionEvaluation evaluation) =>
-      <String, Object?>{
-        'questionId': evaluation.questionId,
-        'submittedAnswers': evaluation.submittedAnswers.toList()..sort(),
-        'correct': evaluation.correct,
-        'score': evaluation.score,
-      };
+  static Map<String, Object?> _encodeEvaluation(
+    QuestionEvaluation evaluation,
+  ) => <String, Object?>{
+    'questionId': evaluation.questionId,
+    'submittedAnswers': evaluation.submittedAnswers.toList()..sort(),
+    'correct': evaluation.correct,
+    'score': evaluation.score,
+  };
 
   static QuestionEvaluation _decodeEvaluation(Object? value) {
     final Map<String, Object?> map = _expectMap(value, 'evaluation');

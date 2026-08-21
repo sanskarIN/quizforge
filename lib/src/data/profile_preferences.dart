@@ -10,7 +10,7 @@ abstract interface class ActiveProfilePreferences {
 
 final class ProfilePreferences implements ActiveProfilePreferences {
   ProfilePreferences({SharedPreferencesAsync? preferences})
-      : _preferences = preferences ?? SharedPreferencesAsync();
+    : _preferences = preferences ?? SharedPreferencesAsync();
 
   final SharedPreferencesAsync _preferences;
 

@@ -199,24 +199,26 @@ final class _QuizPageState extends State<QuizPage> {
         return Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
-          children: question.choices.map((String choice) {
-            final bool active = selected.contains(choice);
-            return FilterChip(
-              label: Text(choice),
-              selected: active,
-              onSelected: (bool value) {
-                setState(() {
-                  final Set<String> next = Set<String>.of(selected);
-                  if (value) {
-                    next.add(choice);
-                  } else {
-                    next.remove(choice);
-                  }
-                  _answers[question.id] = next;
-                });
-              },
-            );
-          }).toList(growable: false),
+          children: question.choices
+              .map((String choice) {
+                final bool active = selected.contains(choice);
+                return FilterChip(
+                  label: Text(choice),
+                  selected: active,
+                  onSelected: (bool value) {
+                    setState(() {
+                      final Set<String> next = Set<String>.of(selected);
+                      if (value) {
+                        next.add(choice);
+                      } else {
+                        next.remove(choice);
+                      }
+                      _answers[question.id] = next;
+                    });
+                  },
+                );
+              })
+              .toList(growable: false),
         );
       case QuestionType.shortAnswer:
         return TextField(
@@ -244,16 +246,20 @@ final class _QuizPageState extends State<QuizPage> {
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
-      children: values.map((String value) {
-        final String label = value == 'true' ? strings.trueOption : strings.falseOption;
-        return ChoiceChip(
-          label: Text(label),
-          selected: normalizeAnswer(selected ?? '') == value,
-          onSelected: (_) {
-            setState(() => _answers[question.id] = <String>{value});
-          },
-        );
-      }).toList(growable: false),
+      children: values
+          .map((String value) {
+            final String label = value == 'true'
+                ? strings.trueOption
+                : strings.falseOption;
+            return ChoiceChip(
+              label: Text(label),
+              selected: normalizeAnswer(selected ?? '') == value,
+              onSelected: (_) {
+                setState(() => _answers[question.id] = <String>{value});
+              },
+            );
+          })
+          .toList(growable: false),
     );
   }
 
@@ -262,15 +268,17 @@ final class _QuizPageState extends State<QuizPage> {
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
-      children: choices.map((String choice) {
-        return ChoiceChip(
-          label: Text(choice),
-          selected: selected == choice,
-          onSelected: (_) {
-            setState(() => _answers[question.id] = <String>{choice});
-          },
-        );
-      }).toList(growable: false),
+      children: choices
+          .map((String choice) {
+            return ChoiceChip(
+              label: Text(choice),
+              selected: selected == choice,
+              onSelected: (_) {
+                setState(() => _answers[question.id] = <String>{choice});
+              },
+            );
+          })
+          .toList(growable: false),
     );
   }
 
@@ -279,7 +287,9 @@ final class _QuizPageState extends State<QuizPage> {
       return;
     }
     final Set<String> submitted = _answers[_question.id] ?? <String>{};
-    final bool hasAnswer = submitted.any((String value) => value.trim().isNotEmpty);
+    final bool hasAnswer = submitted.any(
+      (String value) => value.trim().isNotEmpty,
+    );
     if (!forced && !hasAnswer) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).chooseOrSkip)),
@@ -289,7 +299,9 @@ final class _QuizPageState extends State<QuizPage> {
 
     setState(() => _busy = true);
     _timer?.cancel();
-    _evaluations.add(widget.controller.quizEngine.evaluate(_question, submitted));
+    _evaluations.add(
+      widget.controller.quizEngine.evaluate(_question, submitted),
+    );
 
     if (_index < widget.questions.length - 1) {
       setState(() {
@@ -339,7 +351,8 @@ final class _QuizPageState extends State<QuizPage> {
 
   Future<void> _confirmExit() async {
     final AppLocalizations strings = AppLocalizations.of(context);
-    final bool confirmed = await showDialog<bool>(
+    final bool confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (BuildContext dialogContext) {
             return AlertDialog(
@@ -390,10 +403,7 @@ final class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  static String _screenReaderHint(
-    AppLocalizations strings,
-    QuestionType type,
-  ) {
+  static String _screenReaderHint(AppLocalizations strings, QuestionType type) {
     switch (type) {
       case QuestionType.multipleChoice:
         return strings.chooseOneAnswerHint;

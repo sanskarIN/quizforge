@@ -12,10 +12,7 @@ import '../domain/profile.dart';
 import 'about_page.dart';
 
 final class SettingsPage extends StatelessWidget {
-  const SettingsPage({
-    required this.controller,
-    super.key,
-  });
+  const SettingsPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -58,7 +55,8 @@ final class SettingsPage extends StatelessWidget {
                             unawaited(
                               _runSilentAction(
                                 context,
-                                action: () => controller.selectProfile(profile.id),
+                                action: () =>
+                                    controller.selectProfile(profile.id),
                                 failureEvent: 'profile.select.failed',
                               ),
                             );
@@ -86,7 +84,8 @@ final class SettingsPage extends StatelessWidget {
                       label: Text(strings.renameActive),
                     ),
                     OutlinedButton.icon(
-                      onPressed: controller.profiles.length <= 1 ||
+                      onPressed:
+                          controller.profiles.length <= 1 ||
                               controller.activeProfile == null
                           ? null
                           : () {
@@ -238,7 +237,9 @@ final class SettingsPage extends StatelessWidget {
                   ),
                   title: Text(
                     strings.resetAllLocalData,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                   subtitle: Text(strings.resetAllDataDescription),
                   onTap: () {
@@ -341,7 +342,9 @@ final class SettingsPage extends StatelessWidget {
                   uri: Uri(
                     scheme: 'mailto',
                     path: AppConstants.supportEmail,
-                    queryParameters: <String, String>{'subject': 'QuizForge support'},
+                    queryParameters: <String, String>{
+                      'subject': 'QuizForge support',
+                    },
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -403,8 +406,9 @@ final class SettingsPage extends StatelessWidget {
     String initialValue = '',
   }) async {
     final AppLocalizations strings = AppLocalizations.of(context);
-    final TextEditingController nameController =
-        TextEditingController(text: initialValue);
+    final TextEditingController nameController = TextEditingController(
+      text: initialValue,
+    );
     try {
       return await showDialog<String>(
         context: context,
@@ -529,10 +533,7 @@ final class SettingsPage extends StatelessWidget {
         false;
   }
 
-  Future<void> _saveSettings(
-    BuildContext context,
-    AppSettings nextSettings,
-  ) {
+  Future<void> _saveSettings(BuildContext context, AppSettings nextSettings) {
     return _runSilentAction(
       context,
       action: () => controller.updateSettings(nextSettings),
@@ -554,9 +555,8 @@ final class SettingsPage extends StatelessWidget {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.actionFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
@@ -570,9 +570,8 @@ final class SettingsPage extends StatelessWidget {
     try {
       await action();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(successMessage)));
       }
     } on Object catch (error) {
       controller.logger.error(
@@ -580,9 +579,8 @@ final class SettingsPage extends StatelessWidget {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.actionFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }

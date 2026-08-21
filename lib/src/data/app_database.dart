@@ -11,15 +11,15 @@ final class AppDatabase extends GeneratedDatabase {
   AppDatabase(QueryExecutor executor) : super(executor);
 
   AppDatabase.defaults()
-      : super(
-          driftDatabase(
-            name: 'quizforge',
-            web: DriftWebOptions(
-              sqlite3Wasm: Uri.parse('sqlite3.wasm'),
-              driftWorker: Uri.parse('drift_worker.js'),
-            ),
+    : super(
+        driftDatabase(
+          name: 'quizforge',
+          web: DriftWebOptions(
+            sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+            driftWorker: Uri.parse('drift_worker.js'),
           ),
-        );
+        ),
+      );
 
   @override
   int get schemaVersion => 1;
@@ -34,8 +34,8 @@ final class AppDatabase extends GeneratedDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (Migrator migrator) async {
-          await customStatement('''
+    onCreate: (Migrator migrator) async {
+      await customStatement('''
 CREATE TABLE questions (
   id TEXT PRIMARY KEY NOT NULL,
   type TEXT NOT NULL,
@@ -51,20 +51,20 @@ CREATE TABLE questions (
   created_at INTEGER NOT NULL
 )
 ''');
-          await customStatement(
-            'CREATE INDEX idx_questions_category ON questions(category)',
-          );
-          await customStatement(
-            'CREATE INDEX idx_questions_difficulty ON questions(difficulty)',
-          );
-          await customStatement('''
+      await customStatement(
+        'CREATE INDEX idx_questions_category ON questions(category)',
+      );
+      await customStatement(
+        'CREATE INDEX idx_questions_difficulty ON questions(difficulty)',
+      );
+      await customStatement('''
 CREATE TABLE profiles (
   id TEXT PRIMARY KEY NOT NULL,
   display_name TEXT NOT NULL,
   created_at INTEGER NOT NULL
 )
 ''');
-          await customStatement('''
+      await customStatement('''
 CREATE TABLE attempts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   profile_id TEXT NOT NULL,
@@ -77,10 +77,10 @@ CREATE TABLE attempts (
   FOREIGN KEY(profile_id) REFERENCES profiles(id) ON DELETE CASCADE
 )
 ''');
-          await customStatement(
-            'CREATE INDEX idx_attempts_profile ON attempts(profile_id, completed_at)',
-          );
-          await customStatement('''
+      await customStatement(
+        'CREATE INDEX idx_attempts_profile ON attempts(profile_id, completed_at)',
+      );
+      await customStatement('''
 CREATE TABLE attempt_answers (
   attempt_id INTEGER NOT NULL,
   question_id TEXT NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE attempt_answers (
   FOREIGN KEY(question_id) REFERENCES questions(id) ON DELETE CASCADE
 )
 ''');
-          await customStatement('''
+      await customStatement('''
 CREATE TABLE bookmarks (
   profile_id TEXT NOT NULL,
   question_id TEXT NOT NULL,
@@ -102,11 +102,11 @@ CREATE TABLE bookmarks (
   FOREIGN KEY(question_id) REFERENCES questions(id) ON DELETE CASCADE
 )
 ''');
-        },
-        beforeOpen: (OpeningDetails details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
-        },
-      );
+    },
+    beforeOpen: (OpeningDetails details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 
   Future<void> upsertProfile(PlayerProfile profile) async {
     final List<String> errors = profile.validate();
@@ -131,13 +131,17 @@ ON CONFLICT(id) DO UPDATE SET display_name = excluded.display_name
     final List<QueryRow> rows = await customSelect(
       'SELECT id, display_name, created_at FROM profiles ORDER BY created_at ASC',
     ).get();
-    return rows.map((QueryRow row) {
-      return PlayerProfile(
-        id: row.read<String>('id'),
-        displayName: row.read<String>('display_name'),
-        createdAt: DateTime.fromMillisecondsSinceEpoch(row.read<int>('created_at')),
-      );
-    }).toList(growable: false);
+    return rows
+        .map((QueryRow row) {
+          return PlayerProfile(
+            id: row.read<String>('id'),
+            displayName: row.read<String>('display_name'),
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              row.read<int>('created_at'),
+            ),
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<void> upsertQuestions(Iterable<Question> questions) async {
@@ -145,7 +149,9 @@ ON CONFLICT(id) DO UPDATE SET display_name = excluded.display_name
       for (final Question question in questions) {
         final List<String> errors = question.validate();
         if (errors.isNotEmpty) {
-          throw ArgumentError('Invalid question ${question.id}: ${errors.join(' ')}');
+          throw ArgumentError(
+            'Invalid question ${question.id}: ${errors.join(' ')}',
+          );
         }
         await customStatement(
           '''
@@ -185,14 +191,12 @@ ON CONFLICT(id) DO UPDATE SET
   }
 
   Future<List<Question>> loadQuestions() async {
-    final List<QueryRow> rows = await customSelect(
-      '''
+    final List<QueryRow> rows = await customSelect('''
 SELECT id, type, prompt, choices_json, correct_answers_json, category,
        difficulty, tags_json, explanation, time_limit_seconds
 FROM questions
 ORDER BY category COLLATE NOCASE, prompt COLLATE NOCASE
-''',
-    ).get();
+''').get();
     return rows.map(_questionFromRow).toList(growable: false);
   }
 
@@ -261,8 +265,7 @@ WHERE profile_id = ?
   }
 
   Future<List<LeaderboardEntry>> loadLeaderboard() async {
-    final List<QueryRow> rows = await customSelect(
-      '''
+    final List<QueryRow> rows = await customSelect('''
 SELECT
   p.id AS profile_id,
   p.display_name AS display_name,
@@ -278,16 +281,17 @@ FROM profiles p
 LEFT JOIN attempts a ON a.profile_id = p.id
 GROUP BY p.id, p.display_name
 ORDER BY points DESC, accuracy DESC, p.display_name COLLATE NOCASE ASC
-''',
-    ).get();
-    return rows.map((QueryRow row) {
-      return LeaderboardEntry(
-        profileId: row.read<String>('profile_id'),
-        displayName: row.read<String>('display_name'),
-        points: row.read<int>('points'),
-        accuracy: row.read<double>('accuracy'),
-      );
-    }).toList(growable: false);
+''').get();
+    return rows
+        .map((QueryRow row) {
+          return LeaderboardEntry(
+            profileId: row.read<String>('profile_id'),
+            displayName: row.read<String>('display_name'),
+            points: row.read<int>('points'),
+            accuracy: row.read<double>('accuracy'),
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<void> setBookmark({
@@ -301,11 +305,7 @@ ORDER BY points DESC, accuracy DESC, p.display_name COLLATE NOCASE ASC
 INSERT OR IGNORE INTO bookmarks(profile_id, question_id, created_at)
 VALUES(?, ?, ?)
 ''',
-        <Object?>[
-          profileId,
-          questionId,
-          DateTime.now().millisecondsSinceEpoch,
-        ],
+        <Object?>[profileId, questionId, DateTime.now().millisecondsSinceEpoch],
       );
     } else {
       await customStatement(
@@ -329,8 +329,9 @@ VALUES(?, ?, ?)
       type: QuestionType.values.byName(row.read<String>('type')),
       prompt: row.read<String>('prompt'),
       choices: _decodeStringList(row.read<String>('choices_json')),
-      correctAnswers:
-          _decodeStringList(row.read<String>('correct_answers_json')).toSet(),
+      correctAnswers: _decodeStringList(
+        row.read<String>('correct_answers_json'),
+      ).toSet(),
       category: row.read<String>('category'),
       difficulty: Difficulty.values.byName(row.read<String>('difficulty')),
       tags: _decodeStringList(row.read<String>('tags_json')),

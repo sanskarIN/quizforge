@@ -40,8 +40,10 @@ void main() {
       expect(backupField, findsOneWidget);
       await tester.enterText(backupField, archive);
 
-      final Finder restoreButton =
-          find.widgetWithText(FilledButton, 'Restore backup');
+      final Finder restoreButton = find.widgetWithText(
+        FilledButton,
+        'Restore backup',
+      );
       await tester.ensureVisible(restoreButton);
       await tester.tap(restoreButton);
       await tester.pumpAndSettle();

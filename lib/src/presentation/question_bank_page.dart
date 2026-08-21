@@ -9,10 +9,7 @@ import '../domain/question.dart';
 import 'import_export_page.dart';
 
 final class QuestionBankPage extends StatefulWidget {
-  const QuestionBankPage({
-    required this.controller,
-    super.key,
-  });
+  const QuestionBankPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -35,11 +32,12 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context);
-    final List<String> categories = widget.controller.questions
-        .map((Question question) => question.category)
-        .toSet()
-        .toList()
-      ..sort();
+    final List<String> categories =
+        widget.controller.questions
+            .map((Question question) => question.category)
+            .toSet()
+            .toList()
+          ..sort();
     final List<Question> results = widget.controller.searchQuestions(
       _searchController.text,
       category: _category,
@@ -74,9 +72,10 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                         unawaited(
                           Navigator.of(context).push<void>(
                             MaterialPageRoute<void>(
-                              builder: (BuildContext context) => ImportExportPage(
-                                controller: widget.controller,
-                              ),
+                              builder: (BuildContext context) =>
+                                  ImportExportPage(
+                                    controller: widget.controller,
+                                  ),
                             ),
                           ),
                         );
@@ -166,8 +165,9 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
                       final Question question = results[index];
                       return _QuestionCard(
                         question: question,
-                        bookmarked:
-                            widget.controller.bookmarkIds.contains(question.id),
+                        bookmarked: widget.controller.bookmarkIds.contains(
+                          question.id,
+                        ),
                         onBookmark: () {
                           unawaited(_toggleBookmark(question.id));
                         },
@@ -190,9 +190,8 @@ final class _QuestionBankPageState extends State<QuestionBankPage> {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.actionFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
@@ -258,9 +257,12 @@ final class _QuestionCard extends StatelessWidget {
               runSpacing: AppSpacing.sm,
               children: <Widget>[
                 Chip(label: Text(question.category)),
-                Chip(label: Text(_difficultyLabel(strings, question.difficulty))),
+                Chip(
+                  label: Text(_difficultyLabel(strings, question.difficulty)),
+                ),
                 Chip(label: Text(_questionTypeLabel(strings, question.type))),
-                for (final String tag in question.tags) Chip(label: Text('#$tag')),
+                for (final String tag in question.tags)
+                  Chip(label: Text('#$tag')),
               ],
             ),
             if (question.explanation.isNotEmpty) ...<Widget>[

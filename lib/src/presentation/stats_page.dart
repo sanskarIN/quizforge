@@ -7,10 +7,7 @@ import '../core/theme/app_theme.dart';
 import '../domain/profile.dart';
 
 final class StatsPage extends StatelessWidget {
-  const StatsPage({
-    required this.controller,
-    super.key,
-  });
+  const StatsPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -34,8 +31,8 @@ final class StatsPage extends StatelessWidget {
               final int columns = constraints.maxWidth >= 900
                   ? 4
                   : constraints.maxWidth >= 560
-                      ? 2
-                      : 1;
+                  ? 2
+                  : 1;
               final double totalSpacing = AppSpacing.md * (columns - 1);
               final double cardWidth =
                   (constraints.maxWidth - totalSpacing) / columns;
@@ -76,10 +73,8 @@ final class StatsPage extends StatelessWidget {
                 runSpacing: AppSpacing.md,
                 children: cards
                     .map(
-                      (_StatCard card) => SizedBox(
-                        width: cardWidth,
-                        child: card,
-                      ),
+                      (_StatCard card) =>
+                          SizedBox(width: cardWidth, child: card),
                     )
                     .toList(growable: false),
               );
@@ -114,7 +109,8 @@ final class StatsPage extends StatelessWidget {
                 itemCount: controller.categoryProgress.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (BuildContext context, int index) {
-                  final CategoryProgress item = controller.categoryProgress[index];
+                  final CategoryProgress item =
+                      controller.categoryProgress[index];
                   return ListTile(
                     leading: const Icon(Icons.category_outlined),
                     title: Text(item.category),
@@ -232,10 +228,7 @@ final class _RecentAttemptsPanelState extends State<_RecentAttemptsPanel> {
         const SizedBox(height: AppSpacing.md),
         FutureBuilder<List<AttemptSummary>>(
           future: _attempts,
-          builder: (
-            BuildContext context,
-            AsyncSnapshot<List<AttemptSummary>> snapshot,
-          ) {
+          builder: (BuildContext context, AsyncSnapshot<List<AttemptSummary>> snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const Card(
                 child: Padding(
@@ -272,8 +265,9 @@ final class _RecentAttemptsPanelState extends State<_RecentAttemptsPanel> {
                   final AttemptSummary attempt = attempts[index];
                   final String date = MaterialLocalizations.of(context)
                       .formatShortDate(attempt.completedAt);
-                  final String time = TimeOfDay.fromDateTime(attempt.completedAt)
-                      .format(context);
+                  final String time = TimeOfDay.fromDateTime(
+                    attempt.completedAt,
+                  ).format(context);
                   return ListTile(
                     leading: const CircleAvatar(
                       child: Icon(Icons.history_outlined),

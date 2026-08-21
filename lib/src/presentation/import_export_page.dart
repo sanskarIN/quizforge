@@ -9,10 +9,7 @@ import '../core/theme/app_theme.dart';
 import '../data/question_bank_codec.dart';
 
 final class ImportExportPage extends StatefulWidget {
-  const ImportExportPage({
-    required this.controller,
-    super.key,
-  });
+  const ImportExportPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -232,18 +229,16 @@ final class _ImportExportPageState extends State<ImportExportPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.exportCopied)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(strings.exportCopied)));
     } on Object catch (error) {
       widget.controller.logger.warning(
         'question.export.clipboard_write.failed',
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.actionFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
@@ -262,9 +257,8 @@ final class _ImportExportPageState extends State<ImportExportPage> {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.actionFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
@@ -273,9 +267,9 @@ final class _ImportExportPageState extends State<ImportExportPage> {
     final AppLocalizations strings = AppLocalizations.of(context);
     final String source = _importController.text.trim();
     if (source.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.pasteQuestionBankFirst)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.pasteQuestionBankFirst)));
       return;
     }
     setState(() => _importing = true);
@@ -292,9 +286,8 @@ final class _ImportExportPageState extends State<ImportExportPage> {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.importSaveFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.importSaveFailed)));
       }
     } finally {
       if (mounted) {
@@ -309,9 +302,8 @@ final class _ImportExportPageState extends State<ImportExportPage> {
       final String archive = await widget.controller.exportLocalBackup();
       await Clipboard.setData(ClipboardData(text: archive));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.localBackupCopied)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.localBackupCopied)));
       }
     } on Object catch (error) {
       widget.controller.logger.error(
@@ -319,9 +311,8 @@ final class _ImportExportPageState extends State<ImportExportPage> {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.actionFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
@@ -330,16 +321,17 @@ final class _ImportExportPageState extends State<ImportExportPage> {
     final AppLocalizations strings = AppLocalizations.of(context);
     final String source = _backupController.text.trim();
     if (source.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.pasteLocalBackup)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(strings.pasteLocalBackup)));
       return;
     }
-    final bool confirmed = await showDialog<bool>(
+    final bool confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (BuildContext dialogContext) {
-            final AppLocalizations dialogStrings =
-                AppLocalizations.of(dialogContext);
+            final AppLocalizations dialogStrings = AppLocalizations.of(
+              dialogContext,
+            );
             return AlertDialog(
               title: Text(dialogStrings.restoreBackupTitle),
               content: Text(dialogStrings.restoreBackupConfirmation),

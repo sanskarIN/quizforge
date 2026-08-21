@@ -56,7 +56,8 @@ final class QuizForgeController extends ChangeNotifier {
   bool get loading => _loading;
   String? get errorMessage => _errorMessage;
   List<Question> get questions => List<Question>.unmodifiable(_questions);
-  List<PlayerProfile> get profiles => List<PlayerProfile>.unmodifiable(_profiles);
+  List<PlayerProfile> get profiles =>
+      List<PlayerProfile>.unmodifiable(_profiles);
   List<LeaderboardEntry> get leaderboard =>
       List<LeaderboardEntry>.unmodifiable(_leaderboard);
   List<CategoryProgress> get categoryProgress =>
@@ -84,7 +85,8 @@ final class QuizForgeController extends ChangeNotifier {
         await database.upsertProfile(defaultProfile);
         _profiles = <PlayerProfile>[defaultProfile];
       }
-      final String? preferredId = await profilePreferences.loadActiveProfileId();
+      final String? preferredId = await profilePreferences
+          .loadActiveProfileId();
       _activeProfile = _profiles.firstWhere(
         (PlayerProfile profile) => profile.id == preferredId,
         orElse: () => _profiles.first,
@@ -118,24 +120,28 @@ final class QuizForgeController extends ChangeNotifier {
     bool bookmarkedOnly = false,
   }) {
     final String normalizedQuery = normalizeAnswer(query);
-    return _questions.where((Question question) {
-      final bool queryMatches = normalizedQuery.isEmpty ||
-          normalizeAnswer(question.prompt).contains(normalizedQuery) ||
-          normalizeAnswer(question.category).contains(normalizedQuery) ||
-          question.tags.any(
-            (String tag) => normalizeAnswer(tag).contains(normalizedQuery),
-          );
-      final bool categoryMatches = category == null ||
-          normalizeAnswer(question.category) == normalizeAnswer(category);
-      final bool difficultyMatches =
-          difficulty == null || question.difficulty == difficulty;
-      final bool bookmarkMatches =
-          !bookmarkedOnly || _bookmarkIds.contains(question.id);
-      return queryMatches &&
-          categoryMatches &&
-          difficultyMatches &&
-          bookmarkMatches;
-    }).toList(growable: false);
+    return _questions
+        .where((Question question) {
+          final bool queryMatches =
+              normalizedQuery.isEmpty ||
+              normalizeAnswer(question.prompt).contains(normalizedQuery) ||
+              normalizeAnswer(question.category).contains(normalizedQuery) ||
+              question.tags.any(
+                (String tag) => normalizeAnswer(tag).contains(normalizedQuery),
+              );
+          final bool categoryMatches =
+              category == null ||
+              normalizeAnswer(question.category) == normalizeAnswer(category);
+          final bool difficultyMatches =
+              difficulty == null || question.difficulty == difficulty;
+          final bool bookmarkMatches =
+              !bookmarkedOnly || _bookmarkIds.contains(question.id);
+          return queryMatches &&
+              categoryMatches &&
+              difficultyMatches &&
+              bookmarkMatches;
+        })
+        .toList(growable: false);
   }
 
   Future<void> addQuestion(Question question) async {
@@ -147,11 +153,14 @@ final class QuizForgeController extends ChangeNotifier {
       );
       throw ArgumentError(errors.join(' '));
     }
-    final DuplicateReport report =
-        deduplicator.partition(<Question>[question], existing: _questions);
+    final DuplicateReport report = deduplicator.partition(<Question>[
+      question,
+    ], existing: _questions);
     if (report.unique.isEmpty) {
       logger.warning('question.create.duplicate');
-      throw ArgumentError('A question with the same id or content already exists.');
+      throw ArgumentError(
+        'A question with the same id or content already exists.',
+      );
     }
     await questionRepository.saveAll(report.unique);
     _questions = <Question>[..._questions, ...report.unique];
@@ -161,15 +170,19 @@ final class QuizForgeController extends ChangeNotifier {
   }
 
   Future<QuestionBankImportResult> importJson(String source) async {
-    final QuestionBankImportResult result =
-        codec.decodeJson(source, existing: _questions);
+    final QuestionBankImportResult result = codec.decodeJson(
+      source,
+      existing: _questions,
+    );
     await _persistImportResult(result, format: 'json');
     return result;
   }
 
   Future<QuestionBankImportResult> importCsv(String source) async {
-    final QuestionBankImportResult result =
-        codec.decodeCsv(source, existing: _questions);
+    final QuestionBankImportResult result = codec.decodeCsv(
+      source,
+      existing: _questions,
+    );
     await _persistImportResult(result, format: 'csv');
     return result;
   }
@@ -179,7 +192,8 @@ final class QuizForgeController extends ChangeNotifier {
   String exportCsv() => codec.encodeCsv(_questions);
 
   Future<String> exportLocalBackup() async {
-    final DatabaseBackupSnapshot snapshot = await database.exportBackupSnapshot();
+    final DatabaseBackupSnapshot snapshot = await database
+        .exportBackupSnapshot();
     final String archive = backupCodec.encode(
       LocalBackupPayload(
         createdAt: DateTime.now(),
@@ -202,11 +216,11 @@ final class QuizForgeController extends ChangeNotifier {
 
   Future<void> restoreLocalBackup(String source) async {
     final LocalBackupPayload payload = backupCodec.decode(source);
-    final DatabaseBackupSnapshot previousDatabase =
-        await database.exportBackupSnapshot();
+    final DatabaseBackupSnapshot previousDatabase = await database
+        .exportBackupSnapshot();
     final AppSettings previousSettings = await settingsRepository.load();
-    final String? previousProfileId =
-        await profilePreferences.loadActiveProfileId();
+    final String? previousProfileId = await profilePreferences
+        .loadActiveProfileId();
 
     try {
       await database.restoreBackupSnapshot(payload.database);
@@ -270,8 +284,8 @@ final class QuizForgeController extends ChangeNotifier {
     await database.upsertProfile(profile);
     try {
       final _ProfileData profileData = await _loadProfileData(profile.id);
-      final List<LeaderboardEntry> leaderboard =
-          await database.loadLeaderboard();
+      final List<LeaderboardEntry> leaderboard = await database
+          .loadLeaderboard();
       await profilePreferences.saveActiveProfileId(profile.id);
 
       _profiles = <PlayerProfile>[..._profiles, profile];
@@ -319,7 +333,10 @@ final class QuizForgeController extends ChangeNotifier {
       displayName: updated.displayName,
     );
     _profiles = _profiles
-        .map((PlayerProfile profile) => profile.id == current.id ? updated : profile)
+        .map(
+          (PlayerProfile profile) =>
+              profile.id == current.id ? updated : profile,
+        )
         .toList(growable: false);
     _activeProfile = updated;
 
@@ -360,8 +377,9 @@ final class QuizForgeController extends ChangeNotifier {
     final List<PlayerProfile> remainingProfiles = _profiles
         .where((PlayerProfile profile) => profile.id != profileId)
         .toList(growable: false);
-    final PlayerProfile? replacement =
-        deletingActive ? remainingProfiles.first : null;
+    final PlayerProfile? replacement = deletingActive
+        ? remainingProfiles.first
+        : null;
     final _ProfileData? replacementData = replacement == null
         ? null
         : await _loadProfileData(replacement.id);
@@ -534,7 +552,9 @@ final class QuizForgeController extends ChangeNotifier {
       Error.throwWithStackTrace(firstError!, firstStackTrace!);
     }
     if (_errorMessage != null) {
-      throw StateError('QuizForge could not reload after resetting local data.');
+      throw StateError(
+        'QuizForge could not reload after resetting local data.',
+      );
     }
     logger.warning('app.local_data.reset.completed');
   }
@@ -588,8 +608,8 @@ final class QuizForgeController extends ChangeNotifier {
   Future<_ProfileData> _loadProfileData(String profileId) async {
     final Set<String> bookmarkIds = await database.loadBookmarkIds(profileId);
     final ProgressSummary progress = await database.loadProgress(profileId);
-    final List<CategoryProgress> categoryProgress =
-        await database.loadCategoryProgress(profileId);
+    final List<CategoryProgress> categoryProgress = await database
+        .loadCategoryProgress(profileId);
     return _ProfileData(
       bookmarkIds: bookmarkIds,
       progress: progress,

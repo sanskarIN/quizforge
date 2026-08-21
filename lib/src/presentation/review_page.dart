@@ -39,22 +39,23 @@ final class ReviewPage extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                for (int index = 0; index < questions.length; index += 1)
-                  ...<Widget>[
-                    _ReviewCard(
-                      question: questions[index],
-                      evaluation: result.evaluations[index],
-                      bookmarked: controller.bookmarkIds.contains(
-                        questions[index].id,
-                      ),
-                      onBookmark: () {
-                        unawaited(
-                          _toggleBookmark(context, questions[index].id),
-                        );
-                      },
+                for (
+                  int index = 0;
+                  index < questions.length;
+                  index += 1
+                ) ...<Widget>[
+                  _ReviewCard(
+                    question: questions[index],
+                    evaluation: result.evaluations[index],
+                    bookmarked: controller.bookmarkIds.contains(
+                      questions[index].id,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
+                    onBookmark: () {
+                      unawaited(_toggleBookmark(context, questions[index].id));
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
               ],
             ),
           );
@@ -73,9 +74,8 @@ final class ReviewPage extends StatelessWidget {
         fields: <String, Object?>{'errorType': error.runtimeType.toString()},
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.actionFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(strings.actionFailed)));
       }
     }
   }
@@ -106,7 +106,10 @@ final class _SummaryCard extends StatelessWidget {
               value: '${result.correctCount}/${result.totalCount}',
             ),
             _Metric(label: strings.bestStreak, value: '${result.bestStreak}'),
-            _Metric(label: strings.time, value: _formatDuration(result.duration)),
+            _Metric(
+              label: strings.time,
+              value: _formatDuration(result.duration),
+            ),
           ],
         ),
       ),
@@ -159,11 +162,15 @@ final class _ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context);
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final IconData statusIcon =
-        evaluation.correct ? Icons.check_circle : Icons.cancel;
-    final Color statusColor = evaluation.correct ? colors.primary : colors.error;
-    final String statusLabel =
-        evaluation.correct ? strings.correct : strings.incorrect;
+    final IconData statusIcon = evaluation.correct
+        ? Icons.check_circle
+        : Icons.cancel;
+    final Color statusColor = evaluation.correct
+        ? colors.primary
+        : colors.error;
+    final String statusLabel = evaluation.correct
+        ? strings.correct
+        : strings.incorrect;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),

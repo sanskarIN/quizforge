@@ -75,27 +75,30 @@ void main() {
       );
     });
 
-    test('JSON parser rejects duplicate accepted answers before set collapse', () {
-      final Map<String, Object?> json = <String, Object?>{
-        'id': 'duplicate-json-answer',
-        'type': 'shortAnswer',
-        'prompt': 'Provide an answer.',
-        'correctAnswers': <String>['Alpha', ' alpha '],
-        'category': 'Testing',
-        'difficulty': 'easy',
-      };
+    test(
+      'JSON parser rejects duplicate accepted answers before set collapse',
+      () {
+        final Map<String, Object?> json = <String, Object?>{
+          'id': 'duplicate-json-answer',
+          'type': 'shortAnswer',
+          'prompt': 'Provide an answer.',
+          'correctAnswers': <String>['Alpha', ' alpha '],
+          'category': 'Testing',
+          'difficulty': 'easy',
+        };
 
-      expect(
-        () => Question.fromJson(json),
-        throwsA(
-          isA<FormatException>().having(
-            (FormatException error) => error.message,
-            'message',
-            'Correct answers must be non-empty and unique.',
+        expect(
+          () => Question.fromJson(json),
+          throwsA(
+            isA<FormatException>().having(
+              (FormatException error) => error.message,
+              'message',
+              'Correct answers must be non-empty and unique.',
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
     test('rejects duplicate tags after normalization', () {
       final Question question = Question(
@@ -132,8 +135,10 @@ void main() {
     });
 
     test('enforces bounded content and time limits', () {
-      final String longPrompt =
-          List<String>.filled(Question.maxPromptLength + 1, 'x').join();
+      final String longPrompt = List<String>.filled(
+        Question.maxPromptLength + 1,
+        'x',
+      ).join();
       final Question question = Question(
         id: 'bounded-question',
         type: QuestionType.shortAnswer,
@@ -146,7 +151,9 @@ void main() {
 
       expect(
         question.validate(),
-        contains('Prompt must be at most ${Question.maxPromptLength} characters.'),
+        contains(
+          'Prompt must be at most ${Question.maxPromptLength} characters.',
+        ),
       );
       expect(
         question.validate(),

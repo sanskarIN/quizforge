@@ -133,10 +133,10 @@ final class AboutPage extends StatelessWidget {
   }
 
   static Uri _mailUri(String address, String subject) => Uri(
-        scheme: 'mailto',
-        path: address,
-        queryParameters: <String, String>{'subject': subject},
-      );
+    scheme: 'mailto',
+    path: address,
+    queryParameters: <String, String>{'subject': subject},
+  );
 }
 
 final class _AboutLinkTile extends StatelessWidget {

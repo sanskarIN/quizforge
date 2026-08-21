@@ -14,7 +14,7 @@ abstract interface class AppSettingsStore {
 
 final class SettingsRepository implements AppSettingsStore {
   SettingsRepository({SharedPreferencesAsync? preferences})
-      : _preferences = preferences ?? SharedPreferencesAsync();
+    : _preferences = preferences ?? SharedPreferencesAsync();
 
   final SharedPreferencesAsync _preferences;
 
@@ -42,10 +42,8 @@ final class SettingsRepository implements AppSettingsStore {
         if (decoded is Map<Object?, Object?>) {
           return AppSettings.fromJson(
             decoded.map<String, Object?>(
-              (Object? key, Object? value) => MapEntry<String, Object?>(
-                key.toString(),
-                value,
-              ),
+              (Object? key, Object? value) =>
+                  MapEntry<String, Object?>(key.toString(), value),
             ),
           );
         }

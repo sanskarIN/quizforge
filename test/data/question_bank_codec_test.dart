@@ -109,7 +109,10 @@ void main() {
     );
 
     expect(result.isSuccess, isFalse);
-    expect(result.errors.single, contains('Unexpected quote in unquoted field'));
+    expect(
+      result.errors.single,
+      contains('Unexpected quote in unquoted field'),
+    );
   });
 
   test('characters after closing quoted CSV field are rejected', () {
@@ -131,7 +134,10 @@ void main() {
         (QuestionBankCodec.maxSourceCharacters ~/ chunk.length) + 2;
     final String oversized = List<String>.filled(chunkCount, chunk).join();
 
-    expect(oversized.length, greaterThan(QuestionBankCodec.maxSourceCharacters));
+    expect(
+      oversized.length,
+      greaterThan(QuestionBankCodec.maxSourceCharacters),
+    );
     expect(
       codec.decodeJson(oversized).errors.single,
       contains('maximum supported import size'),
@@ -143,8 +149,10 @@ void main() {
   });
 
   test('JSON question count limit is enforced before item parsing', () {
-    final String rows =
-        List<String>.filled(QuestionBankCodec.maxQuestions + 1, '{}').join(',');
+    final String rows = List<String>.filled(
+      QuestionBankCodec.maxQuestions + 1,
+      '{}',
+    ).join(',');
     final String source = '{"questions":[$rows]}';
 
     final QuestionBankImportResult result = codec.decodeJson(source);

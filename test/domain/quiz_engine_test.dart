@@ -16,8 +16,10 @@ void main() {
         answers: const <String>{'Blue'},
       );
 
-      final QuestionEvaluation evaluation =
-          engine.evaluate(question, const <String>['  BLUE ']);
+      final QuestionEvaluation evaluation = engine.evaluate(
+        question,
+        const <String>['  BLUE '],
+      );
 
       expect(evaluation.correct, isTrue);
       expect(evaluation.score, 1);
@@ -33,8 +35,14 @@ void main() {
         difficulty: Difficulty.easy,
       );
 
-      expect(engine.evaluate(question, const <String>[' TRUE ']).correct, isTrue);
-      expect(engine.evaluate(question, const <String>['false']).correct, isFalse);
+      expect(
+        engine.evaluate(question, const <String>[' TRUE ']).correct,
+        isTrue,
+      );
+      expect(
+        engine.evaluate(question, const <String>['false']).correct,
+        isFalse,
+      );
     });
 
     test('multi-select requires exact set', () {
@@ -45,7 +53,10 @@ void main() {
         answers: const <String>{'A', 'B'},
       );
 
-      expect(engine.evaluate(question, const <String>['A', 'B']).correct, isTrue);
+      expect(
+        engine.evaluate(question, const <String>['A', 'B']).correct,
+        isTrue,
+      );
       expect(engine.evaluate(question, const <String>['A']).correct, isFalse);
       expect(
         engine.evaluate(question, const <String>['A', 'B', 'C']).correct,
@@ -64,7 +75,10 @@ void main() {
       );
 
       expect(engine.evaluate(question, const <String>['PI']).correct, isTrue);
-      expect(engine.evaluate(question, const <String>['3.14']).correct, isFalse);
+      expect(
+        engine.evaluate(question, const <String>['3.14']).correct,
+        isFalse,
+      );
     });
   });
 

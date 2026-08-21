@@ -10,10 +10,7 @@ import 'settings_page.dart';
 import 'stats_page.dart';
 
 final class HomePage extends StatefulWidget {
-  const HomePage({
-    required this.controller,
-    super.key,
-  });
+  const HomePage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -36,32 +33,32 @@ final class _HomePageState extends State<HomePage> {
     ];
     final List<NavigationRailDestination> railDestinations =
         <NavigationRailDestination>[
-      NavigationRailDestination(
-        icon: const Icon(Icons.home_outlined),
-        selectedIcon: const Icon(Icons.home),
-        label: Text(strings.home),
-      ),
-      NavigationRailDestination(
-        icon: const Icon(Icons.library_books_outlined),
-        selectedIcon: const Icon(Icons.library_books),
-        label: Text(strings.bank),
-      ),
-      NavigationRailDestination(
-        icon: const Icon(Icons.add_circle_outline),
-        selectedIcon: const Icon(Icons.add_circle),
-        label: Text(strings.create),
-      ),
-      NavigationRailDestination(
-        icon: const Icon(Icons.insights_outlined),
-        selectedIcon: const Icon(Icons.insights),
-        label: Text(strings.stats),
-      ),
-      NavigationRailDestination(
-        icon: const Icon(Icons.settings_outlined),
-        selectedIcon: const Icon(Icons.settings),
-        label: Text(strings.settings),
-      ),
-    ];
+          NavigationRailDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: Text(strings.home),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.library_books_outlined),
+            selectedIcon: const Icon(Icons.library_books),
+            label: Text(strings.bank),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.add_circle_outline),
+            selectedIcon: const Icon(Icons.add_circle),
+            label: Text(strings.create),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights),
+            label: Text(strings.stats),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: Text(strings.settings),
+          ),
+        ];
     final List<NavigationDestination> barDestinations = <NavigationDestination>[
       NavigationDestination(
         icon: const Icon(Icons.home_outlined),
@@ -152,7 +149,8 @@ final class _ProfileChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context);
-    final String label = controller.activeProfile?.displayName ?? strings.noProfile;
+    final String label =
+        controller.activeProfile?.displayName ?? strings.noProfile;
     return Semantics(
       label: '${strings.activeProfile}: $label',
       child: Chip(

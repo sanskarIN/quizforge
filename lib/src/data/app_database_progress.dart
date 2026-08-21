@@ -21,13 +21,15 @@ ORDER BY question_count DESC, q.category COLLATE NOCASE ASC
       variables: <Variable<Object>>[Variable<String>(profileId)],
     ).get();
 
-    return rows.map((QueryRow row) {
-      return CategoryProgress(
-        category: row.read<String>('category'),
-        questionCount: row.read<int>('question_count'),
-        correctCount: row.read<int>('correct_count'),
-      );
-    }).toList(growable: false);
+    return rows
+        .map((QueryRow row) {
+          return CategoryProgress(
+            category: row.read<String>('category'),
+            questionCount: row.read<int>('question_count'),
+            correctCount: row.read<int>('correct_count'),
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<List<AttemptSummary>> loadRecentAttempts(
@@ -58,17 +60,22 @@ LIMIT ?
       ],
     ).get();
 
-    return rows.map((QueryRow row) {
-      return AttemptSummary(
-        id: row.read<int>('id'),
-        startedAt: DateTime.fromMillisecondsSinceEpoch(row.read<int>('started_at')),
-        completedAt:
-            DateTime.fromMillisecondsSinceEpoch(row.read<int>('completed_at')),
-        correctCount: row.read<int>('correct_count'),
-        questionCount: row.read<int>('question_count'),
-        bestStreak: row.read<int>('best_streak'),
-        earnedScore: row.read<double>('earned_score'),
-      );
-    }).toList(growable: false);
+    return rows
+        .map((QueryRow row) {
+          return AttemptSummary(
+            id: row.read<int>('id'),
+            startedAt: DateTime.fromMillisecondsSinceEpoch(
+              row.read<int>('started_at'),
+            ),
+            completedAt: DateTime.fromMillisecondsSinceEpoch(
+              row.read<int>('completed_at'),
+            ),
+            correctCount: row.read<int>('correct_count'),
+            questionCount: row.read<int>('question_count'),
+            bestStreak: row.read<int>('best_streak'),
+            earnedScore: row.read<double>('earned_score'),
+          );
+        })
+        .toList(growable: false);
   }
 }

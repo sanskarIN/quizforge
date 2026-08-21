@@ -1,15 +1,6 @@
-enum QuestionType {
-  multipleChoice,
-  trueFalse,
-  multiSelect,
-  shortAnswer,
-}
+enum QuestionType { multipleChoice, trueFalse, multiSelect, shortAnswer }
 
-enum Difficulty {
-  easy,
-  medium,
-  hard,
-}
+enum Difficulty { easy, medium, hard }
 
 final class Question {
   Question({
@@ -76,7 +67,9 @@ final class Question {
       errors.add('At least one correct answer is required.');
     }
     if (correctAnswers.length > maxCorrectAnswers) {
-      errors.add('A question supports at most $maxCorrectAnswers correct answers.');
+      errors.add(
+        'A question supports at most $maxCorrectAnswers correct answers.',
+      );
     }
     if (choices.length > maxChoices) {
       errors.add('A question supports at most $maxChoices choices.');
@@ -114,8 +107,12 @@ final class Question {
     if (normalizedAnswers.length != correctAnswers.length) {
       errors.add('Correct answers must be non-empty and unique.');
     }
-    if (correctAnswers.any((String answer) => answer.length > maxAnswerLength)) {
-      errors.add('Each correct answer must be at most $maxAnswerLength characters.');
+    if (correctAnswers.any(
+      (String answer) => answer.length > maxAnswerLength,
+    )) {
+      errors.add(
+        'Each correct answer must be at most $maxAnswerLength characters.',
+      );
     }
 
     final Set<String> normalizedTags = tags
@@ -135,7 +132,9 @@ final class Question {
           errors.add('Multiple-choice questions need at least two choices.');
         }
         if (correctAnswers.length != 1) {
-          errors.add('Multiple-choice questions need exactly one correct answer.');
+          errors.add(
+            'Multiple-choice questions need exactly one correct answer.',
+          );
         }
         break;
       case QuestionType.trueFalse:
@@ -155,7 +154,9 @@ final class Question {
           errors.add('Multi-select questions need at least two choices.');
         }
         if (correctAnswers.length < 2) {
-          errors.add('Multi-select questions need at least two correct answers.');
+          errors.add(
+            'Multi-select questions need at least two correct answers.',
+          );
         }
         break;
       case QuestionType.shortAnswer:
@@ -165,7 +166,8 @@ final class Question {
         break;
     }
 
-    if (type == QuestionType.multipleChoice || type == QuestionType.multiSelect) {
+    if (type == QuestionType.multipleChoice ||
+        type == QuestionType.multiSelect) {
       for (final String answer in correctAnswers) {
         if (!normalizedChoices.contains(normalizeAnswer(answer))) {
           errors.add('Correct answer "$answer" is not one of the choices.');
@@ -183,17 +185,17 @@ final class Question {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'type': type.name,
-        'prompt': prompt,
-        'choices': choices,
-        'correctAnswers': correctAnswers.toList()..sort(),
-        'category': category,
-        'difficulty': difficulty.name,
-        'tags': tags,
-        'explanation': explanation,
-        'timeLimitSeconds': timeLimitSeconds,
-      };
+    'id': id,
+    'type': type.name,
+    'prompt': prompt,
+    'choices': choices,
+    'correctAnswers': correctAnswers.toList()..sort(),
+    'category': category,
+    'difficulty': difficulty.name,
+    'tags': tags,
+    'explanation': explanation,
+    'timeLimitSeconds': timeLimitSeconds,
+  };
 
   static Question fromJson(Map<String, Object?> json) {
     final Object? rawChoices = json['choices'];
@@ -238,19 +240,19 @@ final class Question {
     if (value is! List<Object?>) {
       throw const FormatException('Expected a list of strings.');
     }
-    return value.map((Object? item) {
-      if (item is! String) {
-        throw const FormatException('Expected a list of strings.');
-      }
-      return item;
-    }).toList(growable: false);
+    return value
+        .map((Object? item) {
+          if (item is! String) {
+            throw const FormatException('Expected a list of strings.');
+          }
+          return item;
+        })
+        .toList(growable: false);
   }
 }
 
-String normalizeAnswer(String value) => value
-    .trim()
-    .toLowerCase()
-    .replaceAll(RegExp(r'\s+'), ' ');
+String normalizeAnswer(String value) =>
+    value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
 extension _FirstOrNullExtension<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;

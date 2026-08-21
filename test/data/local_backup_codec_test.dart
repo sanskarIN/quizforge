@@ -86,28 +86,28 @@ void main() {
   });
 
   test('rejects unsupported archive versions', () {
-    final String encoded = codec.encode(payload).replaceFirst(
-      '"version": 1',
-      '"version": 99',
-    );
+    final String encoded = codec
+        .encode(payload)
+        .replaceFirst('"version": 1', '"version": 99');
 
     expect(() => codec.decode(encoded), throwsFormatException);
   });
 
   test('rejects an active profile that is not in the archive', () {
-    final String encoded = codec.encode(payload).replaceFirst(
-      '"activeProfileId": "codec-profile"',
-      '"activeProfileId": "missing-profile"',
-    );
+    final String encoded = codec
+        .encode(payload)
+        .replaceFirst(
+          '"activeProfileId": "codec-profile"',
+          '"activeProfileId": "missing-profile"',
+        );
 
     expect(() => codec.decode(encoded), throwsFormatException);
   });
 
   test('rejects inconsistent attempt aggregates from an archive', () {
-    final String encoded = codec.encode(payload).replaceFirst(
-      '"bestStreak": 1',
-      '"bestStreak": 0',
-    );
+    final String encoded = codec
+        .encode(payload)
+        .replaceFirst('"bestStreak": 1', '"bestStreak": 0');
 
     expect(() => codec.decode(encoded), throwsFormatException);
   });

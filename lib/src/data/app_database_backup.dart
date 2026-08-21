@@ -115,7 +115,9 @@ final class DatabaseBackupSnapshot {
             );
           }
           if ((expected.score - evaluation.score).abs() > 0.000001) {
-            errors.add('Quiz attempt answer score is inconsistent with its question.');
+            errors.add(
+              'Quiz attempt answer score is inconsistent with its question.',
+            );
           }
         }
         if (!answeredQuestionIds.add(evaluation.questionId)) {
@@ -166,10 +168,7 @@ final class BackupAttempt {
 }
 
 final class BackupBookmark {
-  const BackupBookmark({
-    required this.profileId,
-    required this.questionId,
-  });
+  const BackupBookmark({required this.profileId, required this.questionId});
 
   final String profileId;
   final String questionId;
@@ -179,14 +178,12 @@ extension AppDatabaseBackup on AppDatabase {
   Future<DatabaseBackupSnapshot> exportBackupSnapshot() async {
     final List<Question> questions = await loadQuestions();
     final List<PlayerProfile> profiles = await loadProfiles();
-    final List<QueryRow> attemptRows = await customSelect(
-      '''
+    final List<QueryRow> attemptRows = await customSelect('''
 SELECT id, profile_id, started_at, completed_at, correct_count, question_count,
        best_streak, earned_score
 FROM attempts
 ORDER BY id ASC
-''',
-    ).get();
+''').get();
     final List<BackupAttempt> attempts = <BackupAttempt>[];
     for (final QueryRow row in attemptRows) {
       final int attemptId = row.read<int>('id');
@@ -228,13 +225,11 @@ ORDER BY question_id COLLATE NOCASE ASC
       );
     }
 
-    final List<QueryRow> bookmarkRows = await customSelect(
-      '''
+    final List<QueryRow> bookmarkRows = await customSelect('''
 SELECT profile_id, question_id
 FROM bookmarks
 ORDER BY profile_id COLLATE NOCASE, question_id COLLATE NOCASE
-''',
-    ).get();
+''').get();
     final List<BackupBookmark> bookmarks = bookmarkRows
         .map(
           (QueryRow row) => BackupBookmark(

@@ -5,28 +5,31 @@ import 'quiz_result.dart';
 final class QuizEngine {
   const QuizEngine();
 
-  List<Question> selectQuestions(
-    Iterable<Question> bank,
-    QuizConfig config,
-  ) {
+  List<Question> selectQuestions(Iterable<Question> bank, QuizConfig config) {
     final List<String> configErrors = config.validate();
     if (configErrors.isNotEmpty) {
       throw ArgumentError(configErrors.join(' '));
     }
 
-    final Set<String> normalizedTags =
-        config.tags.map(normalizeAnswer).toSet();
-    final List<Question> candidates = bank.where((Question question) {
-      final bool categoryMatches = config.category == null ||
-          normalizeAnswer(question.category) == normalizeAnswer(config.category!);
-      final bool difficultyMatches =
-          config.difficulty == null || question.difficulty == config.difficulty;
-      final Set<String> questionTags =
-          question.tags.map(normalizeAnswer).toSet();
-      final bool tagMatches = normalizedTags.isEmpty ||
-          normalizedTags.every(questionTags.contains);
-      return categoryMatches && difficultyMatches && tagMatches;
-    }).toList(growable: false);
+    final Set<String> normalizedTags = config.tags.map(normalizeAnswer).toSet();
+    final List<Question> candidates = bank
+        .where((Question question) {
+          final bool categoryMatches =
+              config.category == null ||
+              normalizeAnswer(question.category) ==
+                  normalizeAnswer(config.category!);
+          final bool difficultyMatches =
+              config.difficulty == null ||
+              question.difficulty == config.difficulty;
+          final Set<String> questionTags = question.tags
+              .map(normalizeAnswer)
+              .toSet();
+          final bool tagMatches =
+              normalizedTags.isEmpty ||
+              normalizedTags.every(questionTags.contains);
+          return categoryMatches && difficultyMatches && tagMatches;
+        })
+        .toList(growable: false);
 
     final _StableRandom random = _StableRandom(config.seed ?? 0);
     final List<Question> shuffled = List<Question>.of(candidates);
@@ -45,7 +48,8 @@ final class QuizEngine {
     DateTime localDay, {
     int questionCount = 10,
   }) {
-    final int daySeed = localDay.year * 10000 + localDay.month * 100 + localDay.day;
+    final int daySeed =
+        localDay.year * 10000 + localDay.month * 100 + localDay.day;
     return selectQuestions(
       bank,
       QuizConfig(questionCount: questionCount, seed: daySeed),
@@ -60,15 +64,17 @@ final class QuizEngine {
         .map(normalizeAnswer)
         .where((String value) => value.isNotEmpty)
         .toSet();
-    final Set<String> expected =
-        question.correctAnswers.map(normalizeAnswer).toSet();
+    final Set<String> expected = question.correctAnswers
+        .map(normalizeAnswer)
+        .toSet();
 
     final bool correct;
     switch (question.type) {
       case QuestionType.multipleChoice:
       case QuestionType.trueFalse:
       case QuestionType.multiSelect:
-        correct = submitted.length == expected.length &&
+        correct =
+            submitted.length == expected.length &&
             submitted.every(expected.contains);
         break;
       case QuestionType.shortAnswer:

@@ -56,8 +56,8 @@ final class _QuizForgeAppState extends State<QuizForgeApp> {
             final double systemScaleAtBody = media.textScaler.scale(14) / 14;
             final TextScaler scaler =
                 settings.largeText && systemScaleAtBody < 1.15
-                    ? const TextScaler.linear(1.15)
-                    : media.textScaler;
+                ? const TextScaler.linear(1.15)
+                : media.textScaler;
             return MediaQuery(
               data: media.copyWith(
                 textScaler: scaler,

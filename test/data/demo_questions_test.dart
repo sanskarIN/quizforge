@@ -37,9 +37,7 @@ void main() {
     expect(categories.length, greaterThanOrEqualTo(4));
     expect(
       categories,
-      containsAll(
-        <String>['Science', 'Computing', 'Mathematics', 'Geography'],
-      ),
+      containsAll(<String>['Science', 'Computing', 'Mathematics', 'Geography']),
     );
   });
 }

@@ -4,7 +4,10 @@ import 'package:quizforge/src/domain/question.dart';
 
 void main() {
   const DisabledPrivateRoomTransport transport = DisabledPrivateRoomTransport();
-  const RoomPlayer player = RoomPlayer(id: 'player-1', displayName: 'Player One');
+  const RoomPlayer player = RoomPlayer(
+    id: 'player-1',
+    displayName: 'Player One',
+  );
 
   test('create room fails closed while networking is disabled', () async {
     final Question question = Question(
@@ -22,21 +25,24 @@ void main() {
     );
   });
 
-  test('joining and submitting fail closed while networking is disabled', () async {
-    await expectLater(
-      transport.joinRoom(roomCode: 'ABC123', player: player),
-      throwsA(isA<UnsupportedError>()),
-    );
-    await expectLater(
-      transport.submitAnswer(
-        roomCode: 'ABC123',
-        playerId: player.id,
-        questionId: 'q1',
-        answers: const <String>{'true'},
-      ),
-      throwsA(isA<UnsupportedError>()),
-    );
-  });
+  test(
+    'joining and submitting fail closed while networking is disabled',
+    () async {
+      await expectLater(
+        transport.joinRoom(roomCode: 'ABC123', player: player),
+        throwsA(isA<UnsupportedError>()),
+      );
+      await expectLater(
+        transport.submitAnswer(
+          roomCode: 'ABC123',
+          playerId: player.id,
+          questionId: 'q1',
+          answers: const <String>{'true'},
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    },
+  );
 
   test('room watcher emits an unsupported error', () async {
     await expectLater(

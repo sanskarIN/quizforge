@@ -10,7 +10,9 @@ import 'package:quizforge/src/presentation/quiz_setup_page.dart';
 import '../test_app.dart';
 
 void main() {
-  testWidgets('disables start when no questions match', (WidgetTester tester) async {
+  testWidgets('disables start when no questions match', (
+    WidgetTester tester,
+  ) async {
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(

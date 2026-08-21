@@ -18,10 +18,7 @@ void main() {
     final _FakeOnboardingStore onboarding = _FakeOnboardingStore();
 
     await tester.pumpWidget(
-      QuizForgeApp(
-        controller: fixture.controller,
-        onboardingStore: onboarding,
-      ),
+      QuizForgeApp(controller: fixture.controller, onboardingStore: onboarding),
     );
     await tester.pumpAndSettle();
 
@@ -37,10 +34,7 @@ void main() {
     final _FakeOnboardingStore onboarding = _FakeOnboardingStore();
 
     await tester.pumpWidget(
-      QuizForgeApp(
-        controller: fixture.controller,
-        onboardingStore: onboarding,
-      ),
+      QuizForgeApp(controller: fixture.controller, onboardingStore: onboarding),
     );
     await tester.pumpAndSettle();
 
@@ -56,13 +50,12 @@ void main() {
   ) async {
     final _ControllerFixture fixture = await _buildController();
     addTearDown(fixture.database.close);
-    final _FakeOnboardingStore onboarding = _FakeOnboardingStore(completed: true);
+    final _FakeOnboardingStore onboarding = _FakeOnboardingStore(
+      completed: true,
+    );
 
     await tester.pumpWidget(
-      QuizForgeApp(
-        controller: fixture.controller,
-        onboardingStore: onboarding,
-      ),
+      QuizForgeApp(controller: fixture.controller, onboardingStore: onboarding),
     );
     await tester.pumpAndSettle();
 
@@ -80,10 +73,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      QuizForgeApp(
-        controller: fixture.controller,
-        onboardingStore: onboarding,
-      ),
+      QuizForgeApp(controller: fixture.controller, onboardingStore: onboarding),
     );
     await tester.pumpAndSettle();
 
@@ -105,20 +95,14 @@ Future<_ControllerFixture> _buildController() async {
 }
 
 final class _ControllerFixture {
-  const _ControllerFixture({
-    required this.database,
-    required this.controller,
-  });
+  const _ControllerFixture({required this.database, required this.controller});
 
   final AppDatabase database;
   final QuizForgeController controller;
 }
 
 final class _FakeOnboardingStore implements OnboardingStore {
-  _FakeOnboardingStore({
-    this.completed = false,
-    this.failLoads = false,
-  });
+  _FakeOnboardingStore({this.completed = false, this.failLoads = false});
 
   bool completed;
   bool failLoads;

@@ -114,8 +114,10 @@ void main() {
       find.widgetWithText(TextField, 'Choices'),
       'Alpha\nBeta',
     );
-    final Finder answerField =
-        find.widgetWithText(TextField, 'Correct answers');
+    final Finder answerField = find.widgetWithText(
+      TextField,
+      'Correct answers',
+    );
     await tester.enterText(answerField, 'Alpha\n alpha ');
     await tester.pump();
 

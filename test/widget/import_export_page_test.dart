@@ -10,7 +10,9 @@ import 'package:quizforge/src/presentation/import_export_page.dart';
 import '../test_app.dart';
 
 void main() {
-  testWidgets('imports a valid JSON question bank', (WidgetTester tester) async {
+  testWidgets('imports a valid JSON question bank', (
+    WidgetTester tester,
+  ) async {
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(

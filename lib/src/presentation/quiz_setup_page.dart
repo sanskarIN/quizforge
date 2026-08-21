@@ -8,10 +8,7 @@ import '../domain/quiz_config.dart';
 import 'quiz_page.dart';
 
 final class QuizSetupPage extends StatefulWidget {
-  const QuizSetupPage({
-    required this.controller,
-    super.key,
-  });
+  const QuizSetupPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -30,18 +27,22 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context);
-    final List<String> categories = widget.controller.questions
-        .map((Question question) => question.category)
-        .toSet()
-        .toList()
-      ..sort();
-    final List<String> tags = widget.controller.questions
-        .expand((Question question) => question.tags)
-        .toSet()
-        .toList()
-      ..sort();
+    final List<String> categories =
+        widget.controller.questions
+            .map((Question question) => question.category)
+            .toSet()
+            .toList()
+          ..sort();
+    final List<String> tags =
+        widget.controller.questions
+            .expand((Question question) => question.tags)
+            .toSet()
+            .toList()
+          ..sort();
     final int available = _matchingQuestions().length;
-    final int maximumCount = available == 0 ? 1 : available.clamp(1, 100).toInt();
+    final int maximumCount = available == 0
+        ? 1
+        : available.clamp(1, 100).toInt();
     final int effectiveCount = _questionCount.clamp(1, maximumCount).toInt();
 
     return Scaffold(
@@ -127,22 +128,24 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                           Wrap(
                             spacing: AppSpacing.sm,
                             runSpacing: AppSpacing.sm,
-                            children: tags.map((String tag) {
-                              return FilterChip(
-                                label: Text('#$tag'),
-                                selected: _tags.contains(tag),
-                                onSelected: (bool selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      _tags.add(tag);
-                                    } else {
-                                      _tags.remove(tag);
-                                    }
-                                    _normalizeCount();
-                                  });
-                                },
-                              );
-                            }).toList(growable: false),
+                            children: tags
+                                .map((String tag) {
+                                  return FilterChip(
+                                    label: Text('#$tag'),
+                                    selected: _tags.contains(tag),
+                                    onSelected: (bool selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _tags.add(tag);
+                                        } else {
+                                          _tags.remove(tag);
+                                        }
+                                        _normalizeCount();
+                                      });
+                                    },
+                                  );
+                                })
+                                .toList(growable: false),
                           ),
                         ],
                         const SizedBox(height: AppSpacing.lg),
@@ -161,12 +164,16 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                           value: effectiveCount.toDouble(),
                           min: 1,
                           max: maximumCount.toDouble(),
-                          divisions: maximumCount <= 1 ? null : maximumCount - 1,
+                          divisions: maximumCount <= 1
+                              ? null
+                              : maximumCount - 1,
                           label: '$effectiveCount',
                           onChanged: available == 0
                               ? null
                               : (double value) {
-                                  setState(() => _questionCount = value.round());
+                                  setState(
+                                    () => _questionCount = value.round(),
+                                  );
                                 },
                         ),
                         const Divider(),
@@ -175,7 +182,8 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                           title: Text(strings.timedMode),
                           subtitle: Text(strings.timedModeDescription),
                           value: _timed,
-                          onChanged: (bool value) => setState(() => _timed = value),
+                          onChanged: (bool value) =>
+                              setState(() => _timed = value),
                         ),
                         if (_timed) ...<Widget>[
                           const SizedBox(height: AppSpacing.sm),
@@ -225,7 +233,9 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
                         children: <Widget>[
                           const Icon(Icons.info_outline),
                           const SizedBox(width: AppSpacing.sm),
-                          Expanded(child: Text(strings.noMatchingSetupQuestions)),
+                          Expanded(
+                            child: Text(strings.noMatchingSetupQuestions),
+                          ),
                         ],
                       ),
                     ),
@@ -243,16 +253,21 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
     final Difficulty? difficulty = _difficulty == 'all'
         ? null
         : Difficulty.values.byName(_difficulty);
-    return widget.controller.questions.where((Question question) {
-      final bool categoryMatches =
-          _category == 'all' || question.category == _category;
-      final bool difficultyMatches =
-          difficulty == null || question.difficulty == difficulty;
-      final Set<String> questionTags = question.tags.map(normalizeAnswer).toSet();
-      final bool tagMatches =
-          _tags.map(normalizeAnswer).every(questionTags.contains);
-      return categoryMatches && difficultyMatches && tagMatches;
-    }).toList(growable: false);
+    return widget.controller.questions
+        .where((Question question) {
+          final bool categoryMatches =
+              _category == 'all' || question.category == _category;
+          final bool difficultyMatches =
+              difficulty == null || question.difficulty == difficulty;
+          final Set<String> questionTags = question.tags
+              .map(normalizeAnswer)
+              .toSet();
+          final bool tagMatches = _tags
+              .map(normalizeAnswer)
+              .every(questionTags.contains);
+          return categoryMatches && difficultyMatches && tagMatches;
+        })
+        .toList(growable: false);
   }
 
   void _normalizeCount() {
@@ -278,8 +293,8 @@ final class _QuizSetupPageState extends State<QuizSetupPage> {
       defaultSecondsPerQuestion: _secondsPerQuestion,
       seed: DateTime.now().microsecondsSinceEpoch,
     );
-    final List<Question> selected =
-        widget.controller.quizEngine.selectQuestions(widget.controller.questions, config);
+    final List<Question> selected = widget.controller.quizEngine
+        .selectQuestions(widget.controller.questions, config);
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (BuildContext context) => QuizPage(

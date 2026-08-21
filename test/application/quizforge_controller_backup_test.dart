@@ -117,40 +117,43 @@ void main() {
     expect(controller.activeProfile?.id, activeProfileId);
   });
 
-  test('failed cross-store restore rolls database and preferences back', () async {
-    final AppDatabase database = AppDatabase(NativeDatabase.memory());
-    addTearDown(database.close);
-    final _FakeSettingsStore settingsStore = _FakeSettingsStore();
-    final _FakeProfilePreferences profilePreferences =
-        _FakeProfilePreferences();
-    final QuizForgeController controller = QuizForgeController(
-      database: database,
-      questionRepository: QuestionRepository(database),
-      settingsRepository: settingsStore,
-      profilePreferences: profilePreferences,
-      logger: AppLogger(sink: (_) {}),
-    );
-    await controller.initialize();
+  test(
+    'failed cross-store restore rolls database and preferences back',
+    () async {
+      final AppDatabase database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final _FakeSettingsStore settingsStore = _FakeSettingsStore();
+      final _FakeProfilePreferences profilePreferences =
+          _FakeProfilePreferences();
+      final QuizForgeController controller = QuizForgeController(
+        database: database,
+        questionRepository: QuestionRepository(database),
+        settingsRepository: settingsStore,
+        profilePreferences: profilePreferences,
+        logger: AppLogger(sink: (_) {}),
+      );
+      await controller.initialize();
 
-    final String olderArchive = await controller.exportLocalBackup();
-    await controller.createProfile('Current Player');
-    final String currentProfileId = controller.activeProfile!.id;
-    await controller.updateSettings(
-      const AppSettings(themeMode: AppThemeMode.dark),
-    );
+      final String olderArchive = await controller.exportLocalBackup();
+      await controller.createProfile('Current Player');
+      final String currentProfileId = controller.activeProfile!.id;
+      await controller.updateSettings(
+        const AppSettings(themeMode: AppThemeMode.dark),
+      );
 
-    settingsStore.failNextSave = true;
-    await expectLater(
-      controller.restoreLocalBackup(olderArchive),
-      throwsA(isA<StateError>()),
-    );
+      settingsStore.failNextSave = true;
+      await expectLater(
+        controller.restoreLocalBackup(olderArchive),
+        throwsA(isA<StateError>()),
+      );
 
-    expect(controller.activeProfile?.id, currentProfileId);
-    expect(controller.activeProfile?.displayName, 'Current Player');
-    expect(controller.profiles, hasLength(2));
-    expect(controller.settings.themeMode, AppThemeMode.dark);
-    expect(profilePreferences.value, currentProfileId);
-  });
+      expect(controller.activeProfile?.id, currentProfileId);
+      expect(controller.activeProfile?.displayName, 'Current Player');
+      expect(controller.profiles, hasLength(2));
+      expect(controller.settings.themeMode, AppThemeMode.dark);
+      expect(profilePreferences.value, currentProfileId);
+    },
+  );
 }
 
 final class _FakeSettingsStore implements AppSettingsStore {

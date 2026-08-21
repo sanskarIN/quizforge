@@ -18,9 +18,7 @@ final class QuestionBankImportResult {
 }
 
 final class QuestionBankCodec {
-  const QuestionBankCodec({
-    this.deduplicator = const QuestionDeduplicator(),
-  });
+  const QuestionBankCodec({this.deduplicator = const QuestionDeduplicator()});
 
   static const int maxSourceCharacters = 5 * 1024 * 1024;
   static const int maxQuestions = 10000;
@@ -53,7 +51,9 @@ final class QuestionBankCodec {
         return _error('JSON field "questions" must be an array.');
       }
       if (rawQuestions.length > maxQuestions) {
-        return _error('Question bank contains more than $maxQuestions questions.');
+        return _error(
+          'Question bank contains more than $maxQuestions questions.',
+        );
       }
       final List<Question> parsed = <Question>[];
       final List<String> errors = <String>[];
@@ -75,8 +75,10 @@ final class QuestionBankCodec {
           errors.add('Question ${index + 1}: $error');
         }
       }
-      final DuplicateReport report =
-          deduplicator.partition(parsed, existing: existing);
+      final DuplicateReport report = deduplicator.partition(
+        parsed,
+        existing: existing,
+      );
       return QuestionBankImportResult(
         questions: report.unique,
         duplicates: report.duplicates,
@@ -136,7 +138,9 @@ final class QuestionBankCodec {
       return _error('CSV is empty.');
     }
     if (rows.length - 1 > maxQuestions) {
-      return _error('Question bank contains more than $maxQuestions questions.');
+      return _error(
+        'Question bank contains more than $maxQuestions questions.',
+      );
     }
 
     const List<String> expectedHeaders = <String>[
@@ -164,7 +168,9 @@ final class QuestionBankCodec {
         continue;
       }
       if (row.length != expectedHeaders.length) {
-        errors.add('Row ${index + 1}: expected ${expectedHeaders.length} columns.');
+        errors.add(
+          'Row ${index + 1}: expected ${expectedHeaders.length} columns.',
+        );
         continue;
       }
       try {
@@ -184,8 +190,9 @@ final class QuestionBankCodec {
           difficulty: Difficulty.values.byName(row[6]),
           tags: _jsonStringList(row[7]),
           explanation: row[8],
-          timeLimitSeconds:
-              row[9].trim().isEmpty ? null : int.parse(row[9].trim()),
+          timeLimitSeconds: row[9].trim().isEmpty
+              ? null
+              : int.parse(row[9].trim()),
         );
         final List<String> validation = question.validate();
         if (validation.isNotEmpty) {
@@ -198,8 +205,10 @@ final class QuestionBankCodec {
       }
     }
 
-    final DuplicateReport report =
-        deduplicator.partition(parsed, existing: existing);
+    final DuplicateReport report = deduplicator.partition(
+      parsed,
+      existing: existing,
+    );
     return QuestionBankImportResult(
       questions: report.unique,
       duplicates: report.duplicates,
@@ -219,12 +228,14 @@ final class QuestionBankCodec {
     if (decoded is! List<Object?>) {
       throw const FormatException('Expected a JSON string array.');
     }
-    return decoded.map((Object? item) {
-      if (item is! String) {
-        throw const FormatException('Expected a JSON string array.');
-      }
-      return item;
-    }).toList(growable: false);
+    return decoded
+        .map((Object? item) {
+          if (item is! String) {
+            throw const FormatException('Expected a JSON string array.');
+          }
+          return item;
+        })
+        .toList(growable: false);
   }
 
   static bool _isNormalizedUniqueNonEmpty(Iterable<String> values) {
@@ -237,7 +248,8 @@ final class QuestionBankCodec {
   }
 
   static String _escapeCsvCell(String value) {
-    final bool needsQuotes = value.contains(',') ||
+    final bool needsQuotes =
+        value.contains(',') ||
         value.contains('"') ||
         value.contains('\n') ||
         value.contains('\r');

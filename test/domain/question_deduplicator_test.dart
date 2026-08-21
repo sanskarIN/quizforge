@@ -9,7 +9,10 @@ void main() {
     final Question first = _question('same', 'First prompt?');
     final Question second = _question('same', 'Second prompt?');
 
-    final DuplicateReport report = deduplicator.partition(<Question>[first, second]);
+    final DuplicateReport report = deduplicator.partition(<Question>[
+      first,
+      second,
+    ]);
 
     expect(report.unique, <Question>[first]);
     expect(report.duplicates, <Question>[second]);
@@ -30,10 +33,10 @@ void main() {
 }
 
 Question _question(String id, String prompt) => Question(
-      id: id,
-      type: QuestionType.shortAnswer,
-      prompt: prompt,
-      correctAnswers: const <String>{'4'},
-      category: 'Math',
-      difficulty: Difficulty.easy,
-    );
+  id: id,
+  type: QuestionType.shortAnswer,
+  prompt: prompt,
+  correctAnswers: const <String>{'4'},
+  category: 'Math',
+  difficulty: Difficulty.easy,
+);

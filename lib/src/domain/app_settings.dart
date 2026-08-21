@@ -1,8 +1,4 @@
-enum AppThemeMode {
-  system,
-  light,
-  dark,
-}
+enum AppThemeMode { system, light, dark }
 
 final class AppSettings {
   const AppSettings({
@@ -37,12 +33,12 @@ final class AppSettings {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'themeMode': themeMode.name,
-        'largeText': largeText,
-        'reducedMotion': reducedMotion,
-        'screenReaderHints': screenReaderHints,
-        'confirmBeforeExitQuiz': confirmBeforeExitQuiz,
-      };
+    'themeMode': themeMode.name,
+    'largeText': largeText,
+    'reducedMotion': reducedMotion,
+    'screenReaderHints': screenReaderHints,
+    'confirmBeforeExitQuiz': confirmBeforeExitQuiz,
+  };
 
   static AppSettings fromJson(Map<String, Object?> json) {
     final Object? rawTheme = json['themeMode'];
@@ -56,10 +52,7 @@ final class AppSettings {
       themeMode: theme,
       largeText: _boolValue(json['largeText'], fallback: false),
       reducedMotion: _boolValue(json['reducedMotion'], fallback: false),
-      screenReaderHints: _boolValue(
-        json['screenReaderHints'],
-        fallback: true,
-      ),
+      screenReaderHints: _boolValue(json['screenReaderHints'], fallback: true),
       confirmBeforeExitQuiz: _boolValue(
         json['confirmBeforeExitQuiz'],
         fallback: true,

@@ -9,21 +9,19 @@ import 'quiz_page.dart';
 import 'quiz_setup_page.dart';
 
 final class DashboardPage extends StatelessWidget {
-  const DashboardPage({
-    required this.controller,
-    super.key,
-  });
+  const DashboardPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations strings = AppLocalizations.of(context);
-    final List<String> categories = controller.questions
-        .map((Question question) => question.category)
-        .toSet()
-        .toList()
-      ..sort();
+    final List<String> categories =
+        controller.questions
+            .map((Question question) => question.category)
+            .toSet()
+            .toList()
+          ..sort();
 
     return SafeArea(
       child: ListView(
@@ -44,8 +42,8 @@ final class DashboardPage extends StatelessWidget {
               final int columns = constraints.maxWidth >= 1000
                   ? 4
                   : constraints.maxWidth >= 700
-                      ? 2
-                      : 1;
+                  ? 2
+                  : 1;
               final double totalSpacing = AppSpacing.md * (columns - 1);
               final double cardWidth =
                   (constraints.maxWidth - totalSpacing) / columns;
@@ -84,10 +82,8 @@ final class DashboardPage extends StatelessWidget {
                 runSpacing: AppSpacing.md,
                 children: cards
                     .map(
-                      (_ActionCard card) => SizedBox(
-                        width: cardWidth,
-                        child: card,
-                      ),
+                      (_ActionCard card) =>
+                          SizedBox(width: cardWidth, child: card),
                     )
                     .toList(growable: false),
               );
@@ -109,7 +105,8 @@ final class DashboardPage extends StatelessWidget {
                   ),
                   _Metric(
                     label: strings.accuracy,
-                    value: '${controller.progress.accuracy.toStringAsFixed(0)}%',
+                    value:
+                        '${controller.progress.accuracy.toStringAsFixed(0)}%',
                   ),
                   _Metric(
                     label: strings.bestStreak,
@@ -124,7 +121,10 @@ final class DashboardPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text(strings.categories, style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            strings.categories,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: AppSpacing.md),
           if (categories.isEmpty)
             Text(strings.noCategories)
@@ -166,8 +166,10 @@ final class DashboardPage extends StatelessWidget {
       questionCount: 10,
       seed: DateTime.now().microsecondsSinceEpoch,
     );
-    final List<Question> questions =
-        controller.quizEngine.selectQuestions(controller.questions, config);
+    final List<Question> questions = controller.quizEngine.selectQuestions(
+      controller.questions,
+      config,
+    );
     await _pushQuiz(
       context,
       title: strings.randomPracticeTitle,
@@ -184,8 +186,10 @@ final class DashboardPage extends StatelessWidget {
       defaultSecondsPerQuestion: 20,
       seed: DateTime.now().microsecondsSinceEpoch,
     );
-    final List<Question> questions =
-        controller.quizEngine.selectQuestions(controller.questions, config);
+    final List<Question> questions = controller.quizEngine.selectQuestions(
+      controller.questions,
+      config,
+    );
     await _pushQuiz(
       context,
       title: strings.timedSprintTitle,
@@ -197,7 +201,8 @@ final class DashboardPage extends StatelessWidget {
   Future<void> _openBuilder(BuildContext context) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (BuildContext context) => QuizSetupPage(controller: controller),
+        builder: (BuildContext context) =>
+            QuizSetupPage(controller: controller),
       ),
     );
   }
@@ -210,7 +215,9 @@ final class DashboardPage extends StatelessWidget {
   }) async {
     if (questions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).noQuestionsForQuiz)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noQuestionsForQuiz),
+        ),
       );
       return;
     }
