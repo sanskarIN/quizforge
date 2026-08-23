@@ -6,6 +6,15 @@ The project follows Semantic Versioning where practical.
 
 ## [Unreleased]
 
+### Added
+
+- Added deterministic standard-library QuizForge platform branding generation for Android launcher/splash assets, iOS AppIcon/launch images, Web icons, Windows ICO, macOS AppIcon assets, and a Linux packaging icon resource.
+
+### Changed
+
+- Android/Web, Linux/Windows/macOS/iOS, and tagged-release workflows now apply and structurally verify QuizForge branding after generated Flutter runners are materialized.
+- Platform build jobs now enforce the committed application lockfile and reject unexpected resolver drift.
+
 ### Fixed
 
 - Deferred `SharedPreferencesAsync` acquisition in settings and active-profile preference repositories so constructing repositories does not require an installed platform backend before persistence is actually used.
@@ -14,10 +23,11 @@ The project follows Semantic Versioning where practical.
 ### Tests
 
 - Added regression coverage proving preference repositories can be constructed without initializing the shared-preferences platform plugin.
+- Added deterministic platform-branding regression coverage for PNG modes/dimensions, complete target output layout, Windows ICO structure, missing-asset detection, and non-mutating verification.
 
 ### Documentation
 
-- Synchronized the 2.7.4 roadmap and continuation ledger with the committed lockfile, six-platform release workflow, exact CI evidence, and remaining release blockers.
+- Synchronized the 2.7.4 roadmap, platform-support guide, release notes, verification evidence, and continuation ledger with the committed lockfile, six-platform release workflow, exact CI evidence, branding generation, and remaining release blockers.
 
 ## [2.7.4] - 2026-08-19
 
@@ -132,10 +142,11 @@ The project follows Semantic Versioning where practical.
 
 ### Verification status
 
-- Version 2.7.4 is the declared six-platform release candidate, but release verification remains open until exact-final-head GitHub Actions checks, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
+- Version 2.7.4 is the declared six-platform release candidate, but release verification remains open until exact-final-head GitHub Actions checks, platform/database/backup checks, branding/accessibility review, and real screenshots are complete.
 - The committed application lockfile has been accepted by Flutter 3.47.1 using `flutter pub get --enforce-lockfile` with no resulting lockfile diff on exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`; it remains enforced on every final-head gate.
 - Exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97` passed Android/Web builds, Linux/Windows/macOS/iOS compile/build checks, Dependency Review, OSV, Secret Scan, repository validators, localization generation, formatting, and analysis; its main CI then reported 86 passing and 13 failing widget tests.
 - Eleven of those failures shared eager `SharedPreferencesAsync` plugin initialization as their root cause; two were lazy-`ListView` test-viewport assumptions. Focused fixes and regression coverage were committed on 2026-08-23, but a newer exact head must pass before those fixes are counted as verified.
+- Deterministic platform branding is now generated and structurally validated by repository tooling/build workflows; representative visual verification remains pending.
 - Local backup has source-level regression coverage, but release-host clipboard/persistence restore smoke checks remain required before 2.7.4 is described as release-verified.
 - Web packaging verifies required database runtime files, but a real-browser persistence/refresh/backup smoke test remains required.
 - A queued, cancelled because of a newer commit, or pending workflow is not treated as a successful verification result.
