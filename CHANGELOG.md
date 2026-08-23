@@ -6,7 +6,18 @@ The project follows Semantic Versioning where practical.
 
 ## [Unreleased]
 
-No changes have been recorded after the 2.7.4 release-candidate cut yet.
+### Fixed
+
+- Deferred `SharedPreferencesAsync` acquisition in settings and active-profile preference repositories so constructing repositories does not require an installed platform backend before persistence is actually used.
+- Stabilized recent-attempt and local-backup widget regressions by scrolling lazy `ListView` controls into the built viewport before asserting or interacting with them.
+
+### Tests
+
+- Added regression coverage proving preference repositories can be constructed without initializing the shared-preferences platform plugin.
+
+### Documentation
+
+- Synchronized the 2.7.4 roadmap and continuation ledger with the committed lockfile, six-platform release workflow, exact CI evidence, and remaining release blockers.
 
 ## [2.7.4] - 2026-08-19
 
@@ -121,10 +132,10 @@ No changes have been recorded after the 2.7.4 release-candidate cut yet.
 
 ### Verification status
 
-- Version 2.7.4 is the declared six-platform release candidate, but release verification remains open until exact-head GitHub Actions checks, the reviewed application lockfile, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
-- An earlier 2.7.4 candidate head passed Android/Web builds, Linux/Windows/macOS/iOS compile/build checks, Dependency Review, OSV, and Secret Scan; those results are historical after the newer cross-platform Web-runtime changes and must not be transferred to the final head.
-- That earlier head's main CI exposed a real Markdown-validator implementation/test mismatch, which has since been fixed; the corrected final-head CI still must pass.
-- Repository-local Markdown, ARB, release-metadata, and Web-runtime-tool validation are automated gates, but none is counted as passed until it completes on the final 2.7.4 release-candidate head.
+- Version 2.7.4 is the declared six-platform release candidate, but release verification remains open until exact-final-head GitHub Actions checks, platform/database/backup checks, manual accessibility review, and real screenshots are complete.
+- The committed application lockfile has been accepted by Flutter 3.47.1 using `flutter pub get --enforce-lockfile` with no resulting lockfile diff on exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`; it remains enforced on every final-head gate.
+- Exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97` passed Android/Web builds, Linux/Windows/macOS/iOS compile/build checks, Dependency Review, OSV, Secret Scan, repository validators, localization generation, formatting, and analysis; its main CI then reported 86 passing and 13 failing widget tests.
+- Eleven of those failures shared eager `SharedPreferencesAsync` plugin initialization as their root cause; two were lazy-`ListView` test-viewport assumptions. Focused fixes and regression coverage were committed on 2026-08-23, but a newer exact head must pass before those fixes are counted as verified.
 - Local backup has source-level regression coverage, but release-host clipboard/persistence restore smoke checks remain required before 2.7.4 is described as release-verified.
 - Web packaging verifies required database runtime files, but a real-browser persistence/refresh/backup smoke test remains required.
 - A queued, cancelled because of a newer commit, or pending workflow is not treated as a successful verification result.
