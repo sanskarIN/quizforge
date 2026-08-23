@@ -9,6 +9,8 @@ on:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'l10n.yaml'
+      - 'tool/generate_platform_branding.py'
+      - 'tool/test_generate_platform_branding.py'
       - 'linux/**'
       - 'windows/**'
       - 'macos/**'
@@ -21,6 +23,8 @@ on:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'l10n.yaml'
+      - 'tool/generate_platform_branding.py'
+      - 'tool/test_generate_platform_branding.py'
       - 'linux/**'
       - 'windows/**'
       - 'macos/**'
@@ -55,9 +59,14 @@ jobs:
         run: |
           flutter config --enable-linux-desktop
           flutter create . --platforms=linux
-      - name: Resolve dependencies and localizations
+      - name: Apply QuizForge Linux branding
         run: |
-          flutter pub get
+          python3 tool/generate_platform_branding.py --platforms=linux
+          python3 tool/generate_platform_branding.py --platforms=linux --check
+      - name: Resolve locked dependencies and localizations
+        run: |
+          flutter pub get --enforce-lockfile
+          git diff --exit-code -- pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Build Linux release bundle
         run: flutter build linux --release
@@ -79,10 +88,16 @@ jobs:
         run: |
           flutter config --enable-windows-desktop
           flutter create . --platforms=windows
-      - name: Resolve dependencies and localizations
+      - name: Apply QuizForge Windows branding
         shell: pwsh
         run: |
-          flutter pub get
+          python tool/generate_platform_branding.py --platforms=windows
+          python tool/generate_platform_branding.py --platforms=windows --check
+      - name: Resolve locked dependencies and localizations
+        shell: pwsh
+        run: |
+          flutter pub get --enforce-lockfile
+          git diff --exit-code -- pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Build Windows release bundle
         shell: pwsh
@@ -104,9 +119,14 @@ jobs:
         run: |
           flutter config --enable-macos-desktop
           flutter create . --platforms=macos
-      - name: Resolve dependencies and localizations
+      - name: Apply QuizForge macOS branding
         run: |
-          flutter pub get
+          python3 tool/generate_platform_branding.py --platforms=macos
+          python3 tool/generate_platform_branding.py --platforms=macos --check
+      - name: Resolve locked dependencies and localizations
+        run: |
+          flutter pub get --enforce-lockfile
+          git diff --exit-code -- pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Build macOS release app
         run: flutter build macos --release
@@ -125,9 +145,14 @@ jobs:
           cache: true
       - name: Materialize iOS runner
         run: flutter create . --platforms=ios
-      - name: Resolve dependencies and localizations
+      - name: Apply QuizForge iOS branding
         run: |
-          flutter pub get
+          python3 tool/generate_platform_branding.py --platforms=ios
+          python3 tool/generate_platform_branding.py --platforms=ios --check
+      - name: Resolve locked dependencies and localizations
+        run: |
+          flutter pub get --enforce-lockfile
+          git diff --exit-code -- pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Compile iOS release app without signing
         run: flutter build ios --release --no-codesign
