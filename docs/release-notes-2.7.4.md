@@ -10,7 +10,7 @@ Status: **six-platform release candidate — not yet release-verified**
 
 ## Overview
 
-QuizForge 2.7.4 consolidates the maintained offline-first quiz application, authoring tools, local persistence, progress/history features, complete local backup/restore, accessibility-oriented settings, deterministic repository validation, and hardened cross-platform release automation into one release-candidate line.
+QuizForge 2.7.4 consolidates the maintained offline-first quiz application, authoring tools, local persistence, progress/history features, complete local backup/restore, accessibility-oriented settings, deterministic repository validation, deterministic platform branding, and hardened cross-platform release automation into one release-candidate line.
 
 The supported target set is **Android, iOS, Web, Windows, macOS, and Linux**. The version number identifies the candidate; it does not replace exact-head verification.
 
@@ -31,9 +31,24 @@ Standard platform runners are reproducibly materialized with:
 flutter create . --platforms=android,ios,web,windows,macos,linux
 ```
 
-Web additionally prepares compatible database runtime assets with `tool/prepare_web_assets.py`.
+Generated runners are then given QuizForge-specific platform branding with `tool/generate_platform_branding.py`. Web additionally prepares compatible database runtime assets with `tool/prepare_web_assets.py`.
 
 See [`platform-support.md`](platform-support.md).
+
+## Deterministic platform branding
+
+Generated Flutter runners no longer have to inherit default Flutter launcher artwork. The maintained standard-library branding generator creates and validates:
+
+- Android launcher density icons and launch-background artwork;
+- iOS AppIcon sizes and launch-image artwork;
+- Web favicon, standard icons, and maskable icons;
+- Windows application ICO;
+- macOS AppIcon sizes;
+- Linux packaging icon resource.
+
+The generator uses the QuizForge brand palette and shield/question-mark/spark mark, writes opaque RGB application icons, keeps RGBA transparency for launch artwork, and supports a non-mutating `--check` mode. A dedicated regression suite checks deterministic rendering, PNG dimensions/modes, platform output layout, missing-asset detection, and Windows ICO structure.
+
+Android/Web build CI, the Linux/Windows/macOS/iOS host matrix, local quality scripts, and the tagged release pipeline now exercise or apply the branding tooling. Visual inspection on representative platforms remains required because successful generation/compilation alone cannot prove launcher-mask, splash-scale, or store-presentation quality.
 
 ## User-facing capabilities
 
@@ -93,6 +108,8 @@ The maintained controller favors persistence-first state changes:
 - rollback-aware operations preserve original stack traces;
 - reset/restore flows reload durable state rather than leaving stale in-memory state after a partial failure.
 
+Preference repositories now also defer acquisition of the `SharedPreferencesAsync` plugin-backed default until actual persistence is used. This removes constructor-time platform side effects while retaining normal production storage behavior.
+
 ## Import and validation hardening
 
 Question-bank parsing/validation includes bounded input size and question counts, strict quote handling for CSV, normalized duplicate protection, bounded question fields, and deterministic malformed-input regression coverage.
@@ -110,30 +127,30 @@ Version 2.7.4 adds/maintains deterministic standard-library tooling for:
 - local Markdown links/reference targets and repository-boundary validation;
 - ARB localization structure/key consistency;
 - package/in-app/changelog/versioning release metadata;
-- Drift Web database-runtime asset validation.
+- Drift Web database-runtime asset validation;
+- platform icon/splash generation and structural validation.
 
 The maintained local quality sequence and pull-request CI run tool/validator tests before Flutter setup.
 
-The tag workflow is now a gated six-platform release pipeline. It verifies source quality once, then independently packages Android, Web, Linux, Windows, macOS, and an explicitly unsigned iOS compile using host-appropriate runners. Publication waits for every platform job to succeed, downloads all produced artifacts, generates SHA-256 checksums, and only then creates the GitHub release.
+The tag workflow is a gated six-platform release pipeline. It verifies source quality once, then independently packages branded Android, Web, Linux, Windows, macOS, and an explicitly unsigned iOS compile using host-appropriate runners. Publication waits for every platform job to succeed, downloads all produced artifacts, generates SHA-256 checksums, and only then creates the GitHub release.
 
 The iOS artifact is compile evidence only. It is deliberately named as unsigned and is not represented as an App Store/device-signed package.
 
-## Cross-platform build evidence observed during the audit
+## Cross-platform build and CI evidence observed during the audit
 
-An earlier 2.7.4 candidate head, `306bee785cbebbf5b5d6bea875f8d5b4988ea175`, successfully completed:
+At earlier exact head `306bee785cbebbf5b5d6bea875f8d5b4988ea175`, Android/Web Build Gate, Linux/Windows/macOS/iOS build matrix, Dependency Review, OSV, and Secret Scan all succeeded. Its main CI exposed a Markdown-validator regression-contract defect that was subsequently fixed.
 
-- Android/Web Build Gate;
-- Linux release build;
-- Windows release build;
-- macOS release build;
-- iOS no-codesign release compile;
-- Dependency Review;
-- OSV Vulnerability Scan;
-- Secret Scan.
+At later exact head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`, Build Gate, Platform Build Matrix, Dependency Review, OSV, and Secret Scan all succeeded. Main CI additionally proved the repository-tool regressions, Markdown/ARB/release metadata validators, committed lockfile enforcement, localization generation, formatting, and analyzer before reaching tests. The test step reported 86 passed and 13 failed.
 
-The main CI job on that head failed before Flutter setup because the Markdown checker implementation had drifted from its regression-test contract. That concrete problem was fixed.
+Eleven failures shared eager `SharedPreferencesAsync` construction as their root cause. Two were lazy-`ListView` test assumptions for recent-attempt history and local-backup controls. Focused fixes now defer preference-plugin acquisition, add constructor regression coverage, and scroll the two low lazy-list targets into view before assertion/interaction.
 
-Those successful platform/security runs demonstrate that the previous source line compiled across all six targets, but they do **not** automatically verify the newer Web-persistence/cross-platform-release changes. The exact current head must pass again.
+Those successful historical results and source fixes do **not** automatically verify the newer branding/fix head. The exact final head must pass again.
+
+## Dependency lockfile
+
+The application `pubspec.lock` is committed. Flutter 3.47.1 accepted it with `flutter pub get --enforce-lockfile` and left it unchanged on exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`.
+
+Build/release workflows continue to enforce the committed lockfile and check for unexpected resolver drift. The lockfile is no longer a missing-source blocker, but it remains part of final-head verification.
 
 ## Security and privacy
 
@@ -144,6 +161,7 @@ Those successful platform/security runs demonstrate that the previous source lin
 - Structured logging redacts secret/authentication fields and avoids raw user-authored/import/backup content.
 - Imported question banks and pasted backup archives are treated as untrusted input.
 - Web runtime preparation validates downloaded asset structure and uses atomic replacement rather than blindly trusting partial content.
+- Deterministic branding generation uses only local standard-library code and does not download artwork or execute external image converters.
 
 ## Compatibility notes
 
@@ -160,11 +178,11 @@ Those successful platform/security runs demonstrate that the previous source lin
 
 The following are deliberately not converted into passing claims until evidence exists on the exact final 2.7.4 head:
 
-- final-head GitHub Actions quality/build/security checks;
-- generated, reviewed, committed `pubspec.lock` plus enforced locked resolution;
+- final-head GitHub Actions quality/build/security checks, including the branding regression suite;
 - real-browser Web database create/write/read/refresh/reload and complete-backup restore checks;
 - Android complete-backup/persistence smoke restore checks;
 - applicable native-desktop backup/persistence smoke checks;
+- platform-specific branded launcher/icon/splash visual review;
 - manual keyboard/focus, screen-reader, large-text, reduced-motion, and contrast review;
 - verified screenshots captured from actual built artifacts using fictional/demo data;
 - Android/iOS/macOS distribution signing/provisioning/notarization where a release channel requires it.
