@@ -1,8 +1,8 @@
 # QuizForge — What Changed / Version 2.7.4 Cross-Platform Final Continuation Ledger
 
-Last updated: 2026-08-20 (Asia/Kolkata)
+Last updated: 2026-08-23 (Asia/Kolkata)
 
-This file is the primary detailed cross-chat handoff for the QuizForge repository. It records the maintained release path, implemented product/data hardening, version 2.7.4 work, six-platform support work, observed GitHub Actions evidence, and the remaining release blockers.
+This file is the primary detailed cross-chat handoff for the QuizForge repository. It records the maintained release path, implemented product/data hardening, version 2.7.4 work, six-platform support work, observed GitHub Actions evidence, the 2026-08-23 CI regression repair, and the remaining release blockers.
 
 Do **not** convert a queued, pending, cancelled, superseded, skipped-but-applicable, unobserved, or merely planned check into a passing claim.
 
@@ -21,11 +21,13 @@ Do **not** convert a queued, pending, cancelled, superseded, skipped-but-applica
 - Required product credit: **Made by the Sanskar**
 - Requested maintainer commit email: `sanskarin@outlook.in`
 - Final consolidation branch: `final/consolidated-release-audit-20260819`
-- Maintained pull request: **PR #12 — `release: prepare QuizForge 2.7.4 final candidate`**
+- Maintained pull request: **PR #12 — `release: prepare QuizForge 2.7.4 cross-platform candidate`**
 - PR #12 base: `main`
 - Original `main` base SHA: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
 - Earlier fully observed six-platform build-evidence head: `306bee785cbebbf5b5d6bea875f8d5b4988ea175`
-- Status: **six-platform implementation/release engineering is present, but exact-final-head verification and manual release-host evidence remain incomplete.**
+- Later exact CI diagnostic head: `3cd7511b48c07f9dacc1b901b63d93b486c0df97`
+- Latest pre-ledger source/docs head: `2401e3c44b66d72a4482207080025c9653058183`
+- Status: **six-platform implementation/release engineering is present; the known 3cd751 CI widget regressions have focused source/test fixes, but exact-final-head verification and manual release-host evidence remain incomplete.**
 
 The version declaration and supported-target declaration are source/release contracts. Neither is, by itself, evidence that the exact current head is already a production-verified release.
 
@@ -452,6 +454,90 @@ The successful Build Gate established Android/Web build evidence for that head.
 
 These successes are valuable historical proof that the source line compiled across all six targets. They are **not** transferred to the newer Web-runtime/cross-platform-release head; affected jobs must pass again.
 
+## Exact CI diagnostic evidence — 2026-08-21
+
+At exact PR head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`, the non-CI workflows were green:
+
+- Build Gate — **SUCCESS**;
+- Platform Build Matrix — **SUCCESS**;
+- Dependency Review — **SUCCESS**;
+- OSV Vulnerability Scan — **SUCCESS**;
+- Secret Scan — **SUCCESS**.
+
+Main CI run `32435888584` failed only at `flutter test --coverage` after substantial exact-head evidence had already passed:
+
+- Markdown validator regression tests: 5/5 pass;
+- ARB validator regression tests: 5/5 pass;
+- release-metadata validator regression tests: 11/11 pass;
+- Web runtime asset regression tests: 6/6 pass;
+- repository Markdown validation: pass;
+- ARB catalog validation: pass;
+- release metadata validation: pass;
+- Flutter `3.47.1` / Dart `3.13.1`: installed successfully;
+- `flutter pub get --enforce-lockfile`: pass;
+- `git diff --exit-code -- pubspec.lock analysis_options.yaml`: pass;
+- `flutter gen-l10n`: pass;
+- Dart formatter: 76 files, 0 changes;
+- `flutter analyze`: no issues.
+
+The test step reported **86 passed, 13 failed**.
+
+Eleven failures shared one root cause: `SettingsRepository()` eagerly constructed `SharedPreferencesAsync`, which requires an installed `SharedPreferencesAsyncPlatform` backend even when a widget test merely constructs a controller and never uses persistent settings. This made otherwise isolated widgets fail before rendering.
+
+The other two failures were lazy-list test assumptions rather than product data defects:
+
+- recent-attempt history asserted a low `ListView` child before scrolling it into the built viewport;
+- local-backup restore asserted a low restore field before scrolling the corresponding controls into the built viewport.
+
+## Focused CI regression repair — 2026-08-23
+
+The 13 failures above were repaired without weakening production validation or replacing production stores with test-only behavior.
+
+### Preference construction hardening
+
+`SettingsRepository` now stores an optional injected `SharedPreferencesAsync` instance and lazily acquires the default plugin-backed instance only when a store operation actually occurs.
+
+Commit:
+
+- `6f05c68b6a17fed41832aba79f2c07e000e05277` — `fix: defer settings preferences initialization`
+
+`ProfilePreferences` now follows the same side-effect-free construction rule.
+
+Commit:
+
+- `94d283e4c3400918ff05bb36e4c4ab8dada37886` — `fix: defer active profile preferences initialization`
+
+A dedicated constructor regression test protects both repository boundaries from future eager-plugin regressions.
+
+Commit:
+
+- `7d9b640ba9a61e84afcebb7a36a1f97736ac799b` — `test: cover preference repository lazy initialization`
+
+### Lazy `ListView` regression tests
+
+Recent-attempt statistics now scrolls the history target into view before asserting the icon/content.
+
+Commit:
+
+- `9717b93f2341235a184772d822d387e6d5149009` — `test: scroll recent attempt history into view`
+
+Local-backup widget coverage now scrolls the Restore backup controls into view before locating the backup field, entering the archive, confirming replacement, and asserting successful restore.
+
+Commit:
+
+- `4df73edecc58fda4ea3ab9853001f4619b50225d` — `test: scroll local backup controls into view`
+
+### Release-roadmap synchronization
+
+The roadmap had two stale statements after later release work:
+
+- Phase 5 still described the tagged release workflow as Android/Web even though it is now gated across all six maintained targets;
+- Phase 7 still listed generation/review/commit of `pubspec.lock` as unfinished.
+
+Both were synchronized in:
+
+- `2401e3c44b66d72a4482207080025c9653058183` — `docs: synchronize 2.7.4 roadmap blockers`
+
 ## Gated six-platform tag release pipeline
 
 The old tag workflow only packaged Android/Web.
@@ -518,9 +604,10 @@ Synchronized:
 - `docs/release-notes-2.7.4.md`
 - `docs/verification.md`
 - `CHANGELOG.md`
+- `ROADMAP.md`
 - this ledger.
 
-The docs now explicitly distinguish:
+The docs distinguish:
 
 - supported source target;
 - compile/build evidence;
@@ -554,27 +641,52 @@ Implemented/buildable through Flutter macOS release workflow. Final distribution
 
 Implemented/buildable through Flutter Linux release workflow. Final distribution still needs representative persistence/interaction testing and packaging validation for intended distribution format.
 
-## Application lockfile remains a deliberate release blocker
+## Application lockfile status
 
-`pubspec.lock` is not hand-authored.
+`pubspec.lock` is committed on the maintained application branch and is no longer a missing-source release blocker.
 
-The maintained PR CI resolves dependencies and uploads the generated lockfile as short-lived evidence when it reaches that step. The exact generated contents should be reviewed and committed before tagging.
+At exact head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`, Flutter `3.47.1` successfully executed:
 
-The tag workflow refuses to package a release without a committed lockfile and enforces it in both shared verification and platform packaging jobs.
+```text
+flutter pub get --enforce-lockfile
+```
 
-Do not weaken this rule simply to make the release appear complete.
+The immediately following check:
+
+```text
+git diff --exit-code -- pubspec.lock analysis_options.yaml
+```
+
+also passed. This is direct evidence that the supported Flutter resolver accepted the committed lockfile and did not rewrite it on that head.
+
+The lockfile remains part of every final-head quality/release gate. Any later dependency/configuration change must still pass enforced resolution with no unexpected lockfile drift.
+
+The tag workflow refuses to package a release without a committed non-empty lockfile and enforces it in both shared verification and platform packaging jobs.
+
+## Automated evidence still required on the exact final head
+
+Before calling the newest commit verified, read the exact PR #12 head and require completion of all applicable checks for that SHA:
+
+- repository-tool regression suites;
+- Markdown/ARB/release-metadata validators;
+- enforced Flutter lockfile resolution with no lockfile rewrite;
+- localization generation;
+- formatting;
+- analyzer;
+- all Flutter tests;
+- Android/Web Build Gate;
+- Linux/Windows/macOS/iOS Platform Build Matrix;
+- Dependency Review;
+- OSV Vulnerability Scan;
+- Secret Scan.
+
+The `3cd751...` green formatter/analyzer/security/build evidence is historical after the 2026-08-23 source/test fixes. The new final head must pass again.
 
 ## Manual/release-host evidence still required
 
 Before calling 2.7.4 fully release-verified:
 
 - clean checkout setup;
-- exact-final-head repository validators;
-- exact-final-head Flutter dependency/localization/format/analyzer/tests;
-- exact-final-head Android/Web build gate;
-- exact-final-head Linux/Windows/macOS/iOS matrix;
-- exact-final-head Dependency Review/OSV/Secret Scan;
-- generated/reviewed/committed lockfile;
 - Android database persistence + backup restore smoke test;
 - Web WASM/worker loading + database persistence + refresh/reload + backup restore smoke test;
 - representative Windows/Linux/macOS local persistence/core-flow smoke tests;
@@ -592,6 +704,8 @@ Before calling 2.7.4 fully release-verified:
 The connected editing environment can inspect and modify GitHub source/configuration but does not provide the authoritative local Flutter/Dart build toolchain for six-platform execution.
 
 Therefore no local Flutter build/test claim is invented. GitHub Actions exact-head results and real platform smoke tests remain the evidence source.
+
+The GitHub contents connector also does not expose a per-commit author-email override. The repository records the requested maintainer email for local Git use, but connector-generated commits must not be represented as having an unverified author email.
 
 ## Important cross-platform continuation commits
 
@@ -618,11 +732,20 @@ Therefore no local Flutter build/test claim is invented. GitHub Actions exact-he
 - `675858cdf7e6edc1fa96771c2f734bc58907f913` — record six-platform verification evidence
 - `a885353861b8b09e41a2ceb76198bf1179d73c30` — document cross-platform persistence architecture
 
-The commit that writes this ledger creates a newer exact PR head. Use the PR's current head SHA after this commit for all final workflow decisions.
+## Important 2026-08-23 continuation commits
+
+- `6f05c68b6a17fed41832aba79f2c07e000e05277` — `fix: defer settings preferences initialization`
+- `94d283e4c3400918ff05bb36e4c4ab8dada37886` — `fix: defer active profile preferences initialization`
+- `7d9b640ba9a61e84afcebb7a36a1f97736ac799b` — `test: cover preference repository lazy initialization`
+- `9717b93f2341235a184772d822d387e6d5149009` — `test: scroll recent attempt history into view`
+- `4df73edecc58fda4ea3ab9853001f4619b50225d` — `test: scroll local backup controls into view`
+- `2401e3c44b66d72a4482207080025c9653058183` — `docs: synchronize 2.7.4 roadmap blockers`
+
+The commit that writes this ledger creates a newer exact PR head. Use the PR's current head SHA after this commit for every final workflow decision; do not reuse the queued/cancelled state from `2401e3...` as final evidence.
 
 ## Current release decision
 
-QuizForge 2.7.4 is now a **six-platform implementation/release candidate** in the maintained branch:
+QuizForge 2.7.4 is a **six-platform implementation/release candidate** in the maintained branch:
 
 - Android
 - iOS
@@ -631,7 +754,7 @@ QuizForge 2.7.4 is now a **six-platform implementation/release candidate** in th
 - macOS
 - Linux
 
-Do **not** yet claim that the exact current head is fully production/release verified on all six platforms. The remaining work is evidence collection and focused repair of any failures revealed by exact-head automation/manual platform tests.
+Do **not** yet claim that the exact current head is fully production/release verified on all six platforms. The known widget-test failure causes from `3cd751...` have focused fixes, but those fixes require exact-new-head automation before they become verified passes.
 
 Do not create/promote `v2.7.4` until the applicable blockers in `docs/verification.md` are cleared.
 
@@ -643,10 +766,10 @@ If work continues after this file:
 2. fetch workflow runs for that exact SHA;
 3. inspect any completed failure at job/log level;
 4. make focused fixes only for real failures;
-5. after a source commit, discard older check states as final evidence and read the new exact head again;
-6. when CI generates `pubspec.lock`, review and commit the exact generated resolver output instead of hand-authoring it;
+5. after a source/docs commit, discard older check states as final evidence and read the new exact head again;
+6. require `flutter pub get --enforce-lockfile` plus a zero lockfile diff rather than regenerating the already-committed lockfile without cause;
 7. perform the required real-platform persistence/backup/accessibility/screenshot checks;
-8. update `docs/verification.md`, release notes, and this ledger with exact evidence;
+8. update `docs/verification.md`, release notes, roadmap, and this ledger with exact evidence;
 9. only then create/promote `v2.7.4` through the gated six-platform release workflow.
 
 **Made by the Sanskar**
