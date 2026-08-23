@@ -40,6 +40,7 @@ jobs:
           python3 tool/test_check_arb_catalogs.py
           python3 tool/test_check_release_metadata.py
           python3 tool/test_prepare_web_assets.py
+          python3 tool/test_generate_platform_branding.py
 
       - name: Validate repository inputs
         run: |
@@ -86,6 +87,10 @@ jobs:
           cache: true
       - name: Generate Android and Web runners
         run: flutter create . --platforms=android,web
+      - name: Apply QuizForge Android and Web branding
+        run: |
+          python3 tool/generate_platform_branding.py --platforms=android,web
+          python3 tool/generate_platform_branding.py --platforms=android,web --check
       - name: Prepare Drift Web runtime assets
         run: python3 tool/prepare_web_assets.py --destination web
       - name: Install locked dependencies and localizations
@@ -138,6 +143,10 @@ jobs:
         run: |
           flutter config --enable-linux-desktop
           flutter create . --platforms=linux
+      - name: Apply QuizForge Linux branding
+        run: |
+          python3 tool/generate_platform_branding.py --platforms=linux
+          python3 tool/generate_platform_branding.py --platforms=linux --check
       - name: Install locked dependencies and localizations
         run: |
           flutter pub get --enforce-lockfile
@@ -175,6 +184,11 @@ jobs:
         run: |
           flutter config --enable-windows-desktop
           flutter create . --platforms=windows
+      - name: Apply QuizForge Windows branding
+        shell: pwsh
+        run: |
+          python tool/generate_platform_branding.py --platforms=windows
+          python tool/generate_platform_branding.py --platforms=windows --check
       - name: Install locked dependencies and localizations
         shell: pwsh
         run: |
@@ -214,6 +228,10 @@ jobs:
         run: |
           flutter config --enable-macos-desktop
           flutter create . --platforms=macos
+      - name: Apply QuizForge macOS branding
+        run: |
+          python3 tool/generate_platform_branding.py --platforms=macos
+          python3 tool/generate_platform_branding.py --platforms=macos --check
       - name: Install locked dependencies and localizations
         run: |
           flutter pub get --enforce-lockfile
@@ -248,6 +266,10 @@ jobs:
           cache: true
       - name: Generate iOS runner
         run: flutter create . --platforms=ios
+      - name: Apply QuizForge iOS branding
+        run: |
+          python3 tool/generate_platform_branding.py --platforms=ios
+          python3 tool/generate_platform_branding.py --platforms=ios --check
       - name: Install locked dependencies and localizations
         run: |
           flutter pub get --enforce-lockfile
