@@ -15,6 +15,7 @@ This document records evidence for the consolidated QuizForge **2.7.4** release 
 - Base branch: `main`
 - Original consolidation base commit: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
 - Earlier fully observed build-evidence head: `306bee785cbebbf5b5d6bea875f8d5b4988ea175`
+- Later exact CI diagnostic head: `3cd7511b48c07f9dacc1b901b63d93b486c0df97`
 - Maintainer commit-email target: `sanskarin@outlook.in`
 - Release-candidate status: **BLOCKED — final exact-head verification is not complete**
 
@@ -32,6 +33,7 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 - [x] Stable 2.x compatibility policy replaced stale pre-1.0 wording.
 - [x] Release metadata validation covers package syntax/build, in-app version equality, changelog version/order/date, stable-major policy, and version/tag documentation.
 - [x] Release metadata rejects leading-zero SemVer components and impossible calendar dates.
+- [x] A Flutter-generated application `pubspec.lock` is committed and accepted by enforced resolution evidence.
 
 ### Product/data hardening retained
 
@@ -101,17 +103,57 @@ The CI failure occurred in `Test repository validation tooling` before Flutter s
 
 That failure was treated as a real source/tooling defect, not runner noise. The checker was fixed in commit `8120a2605671894dbc99e2a502f472c0eb8f3cb4` to implement the tested APIs, reasons, and repository-boundary validation.
 
+### Head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`
+
+Observed completed workflow results:
+
+- [x] Build Gate — **SUCCESS**.
+- [x] Platform Build Matrix — **SUCCESS**.
+- [x] Dependency Review — **SUCCESS**.
+- [x] OSV Vulnerability Scan — **SUCCESS**.
+- [x] Secret Scan — **SUCCESS**.
+- [ ] CI — **FAILURE** (`32435888584`).
+
+Before the test step failed, this exact CI run proved:
+
+- [x] Markdown-validator regression tests succeeded.
+- [x] ARB-validator regression tests succeeded.
+- [x] Release-metadata-validator regression tests succeeded.
+- [x] Web-runtime-asset regression tests succeeded.
+- [x] Repository-local Markdown validation succeeded.
+- [x] ARB localization-catalog validation succeeded.
+- [x] Release metadata validation succeeded.
+- [x] Flutter `3.47.1` / Dart `3.13.1` setup succeeded.
+- [x] `flutter pub get --enforce-lockfile` succeeded.
+- [x] Dependency resolution left `pubspec.lock` and `analysis_options.yaml` unchanged.
+- [x] Flutter localization generation succeeded.
+- [x] Dart formatting checked 76 files with zero changes.
+- [x] Flutter analyzer reported no issues.
+
+The test step reported **86 passed, 13 failed**.
+
+Eleven failures shared the same root cause: constructing `SettingsRepository()` eagerly constructed `SharedPreferencesAsync`, which requires a configured platform backend even for widget tests that only need a controller object and never touch persistent settings.
+
+The remaining two failures were stale lazy-list assumptions:
+
+- recent-attempt history was asserted before its low `ListView` child had been built;
+- local-backup restore controls were asserted before their low `ListView` child had been built.
+
+Focused fixes were committed on 2026-08-23:
+
+- `6f05c68b6a17fed41832aba79f2c07e000e05277` — defer settings preference-plugin acquisition;
+- `94d283e4c3400918ff05bb36e4c4ab8dada37886` — defer active-profile preference-plugin acquisition;
+- `7d9b640ba9a61e84afcebb7a36a1f97736ac799b` — constructor regression coverage for both preference repositories;
+- `9717b93f2341235a184772d822d387e6d5149009` — scroll recent-attempt history into view in widget coverage;
+- `4df73edecc58fda4ea3ab9853001f4619b50225d` — scroll local-backup restore controls into view in widget coverage.
+
+These are source/test fixes, not final pass evidence. The newer exact head must complete the affected workflows successfully.
+
 ### Interpretation
 
-The successful build matrix on `306bee...` is strong historical evidence that the pre-Web-hardening codebase compiled across **all six supported targets**. It is not final release evidence for the newer head because later commits changed:
+The successful build matrix on `306bee...` is strong historical evidence that the pre-Web-hardening codebase compiled across all six supported targets. The later `3cd751...` head additionally proved the committed lockfile, repository validators, localization generation, formatter, analyzer, and all non-CI security/build workflows were healthy before the widget-test regressions were reached.
 
-- Web database connection configuration;
-- Web runtime asset preparation/validation;
-- Android/Web release-mode build verification;
-- tagged cross-platform packaging;
-- repository tooling and documentation.
-
-All affected workflows therefore need to pass again on the final frozen head.
+Neither historical head is final release evidence for a newer candidate head. All affected workflows therefore need to pass again on the final frozen head.
 
 ## Required automated gates for the final head
 
@@ -124,8 +166,8 @@ These remain unchecked until the **exact final PR #12 head** completes successfu
 - [ ] Repository-local Markdown validation succeeds.
 - [ ] ARB localization-catalog validation succeeds.
 - [ ] Release metadata validation succeeds.
-- [ ] Flutter dependency resolution succeeds.
-- [ ] A `pubspec.lock` evidence artifact is generated by CI.
+- [ ] `flutter pub get --enforce-lockfile` succeeds against the committed lockfile.
+- [ ] Dependency resolution leaves `pubspec.lock` unchanged.
 - [ ] Flutter localization generation succeeds.
 - [ ] Dart formatting succeeds for `lib`, `test`, and `tool`.
 - [ ] Flutter analyzer succeeds.
@@ -143,13 +185,15 @@ These remain unchecked until the **exact final PR #12 head** completes successfu
 
 A queued, pending, cancelled, superseded, skipped-but-applicable, or unobserved check is not a pass.
 
-## Dependency lockfile blocker
+## Dependency lockfile status
 
-- [ ] `pubspec.lock` is generated, reviewed, and committed from a supported Flutter resolver.
+- [x] `pubspec.lock` is generated and committed from a supported Flutter resolver.
+- [x] Exact-head CI at `3cd751...` accepted it with `flutter pub get --enforce-lockfile`.
+- [x] Exact-head CI at `3cd751...` left the committed lockfile unchanged after dependency resolution.
 
-The repository does not hand-author the lockfile. The PR CI job resolves dependencies and uploads the generated application lockfile as short-lived evidence when it reaches that step. A release commit may include the lockfile only after the exact generated contents are reviewed.
+The lockfile is no longer a missing-source blocker. It remains part of every final-head verification because a later dependency/configuration change must not silently rewrite it.
 
-The tagged release workflow intentionally refuses to proceed without a committed non-empty lockfile and uses `flutter pub get --enforce-lockfile` in the source-verification and platform packaging jobs.
+The tagged release workflow intentionally refuses to proceed without a committed non-empty lockfile and uses `flutter pub get --enforce-lockfile` in source verification and platform packaging jobs.
 
 ## Database and backup release-host verification
 
@@ -193,7 +237,7 @@ No signing keys, profiles, passwords, service-account credentials, or private ce
 
 ## Tooling limitation of the editing environment
 
-The repository-editing environment used during this audit did not provide a local Flutter/Dart toolchain and could not perform the authoritative local six-platform build sequence. GitHub-hosted Actions therefore provides the automated build evidence.
+The repository-editing environment used during this audit does not provide a local Flutter/Dart toolchain and cannot perform the authoritative local six-platform build sequence. GitHub-hosted Actions therefore provides the automated build evidence.
 
 Source/configuration review and deterministic Python-tool logic can be audited while editing, but no source review is converted into an unobserved Flutter pass.
 
@@ -216,9 +260,12 @@ Source/configuration review and deterministic Python-tool logic can be audited w
 | 2026-08-20 | Pinned Drift Web runtime preparation/tool tests | PASS (source/config audit) | `tool/prepare_web_assets.py` + tests |
 | 2026-08-20 | Android/Web release-mode + packaged runtime gate | PASS (config audit) | maintained `build.yml`; final execution still pending |
 | 2026-08-20 | Six-platform tagged release packaging | PASS (config audit) | maintained `release.yml`; tag execution not yet applicable |
-| 2026-08-20 | Final-head automated verification | PENDING | must read newest PR #12 exact-head workflows |
-| 2026-08-20 | Reviewed committed application lockfile | BLOCKED | awaits CI-generated resolver evidence |
-| 2026-08-20 | Manual platform/accessibility/screenshots | PENDING | requires representative built applications |
+| 2026-08-21 | Committed application lockfile | PASS | Flutter 3.47.1 accepted `--enforce-lockfile` with zero resolver diff at `3cd751...` |
+| 2026-08-21 | Exact diagnostic CI quality job | FAIL | run `32435888584`; 86 tests passed, 13 widget tests failed |
+| 2026-08-23 | Preference/plugin construction repair | PASS (source fix) | commits `6f05c68`, `94d283e`, `7d9b640`; exact-head rerun required |
+| 2026-08-23 | Lazy-list widget regression repair | PASS (source fix) | commits `9717b93`, `4df73ed`; exact-head rerun required |
+| 2026-08-23 | Final-head automated verification | PENDING | read the newest PR #12 exact-head workflows after the documentation freeze |
+| 2026-08-23 | Manual platform/accessibility/screenshots | PENDING | requires representative built applications |
 
 ## Release decision rule
 
