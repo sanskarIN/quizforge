@@ -82,7 +82,7 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Setup/development/testing/release/troubleshooting/accessibility/performance documentation
 - [x] Local backup/restore format, privacy, compatibility, and verification documentation
 - [x] CI, dependency review, vulnerability scan, secret scan, and platform build workflows
-- [x] Tagged Android/Web release workflow with checksums and generated notes
+- [x] Gated six-platform tagged release workflow with checksums and generated notes
 - [x] Release workflow lockfile enforcement and deterministic local-link validation
 - [x] Deterministic ARB localization-catalog validation before Flutter localization generation
 - [x] Deterministic package/changelog/versioning release-metadata validation before Flutter setup
@@ -128,7 +128,7 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Wire release-metadata tests/validation into tag release packaging
 - [x] Add 2.7.4 README identity, release guide, release notes, CI/testing/setup/development/contribution/maintenance documentation, verification ledger, and continuation handoff
 - [x] Update PR #12 title/body as the maintained 2.7.4 final candidate
-- [ ] Generate, review, and commit the application `pubspec.lock` from verified Flutter-generated evidence
+- [x] Generate, review, and commit the application `pubspec.lock` from supported Flutter resolver evidence
 - [ ] Build from a clean checkout
 - [ ] Pass Markdown/ARB/release-metadata validator tests and validators on the final head
 - [ ] Pass formatting, localization generation, analysis, and all automated tests on the final head
