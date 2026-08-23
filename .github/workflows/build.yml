@@ -23,8 +23,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Test Web runtime asset tooling
-        run: python3 tool/test_prepare_web_assets.py
+      - name: Test release support tooling
+        run: |
+          python3 tool/test_prepare_web_assets.py
+          python3 tool/test_generate_platform_branding.py
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
@@ -35,11 +37,19 @@ jobs:
       - name: Materialize Android and Web runners
         run: flutter create . --platforms=android,web
 
+      - name: Apply QuizForge Android and Web branding
+        run: |
+          python3 tool/generate_platform_branding.py --platforms=android,web
+          python3 tool/generate_platform_branding.py --platforms=android,web --check
+
       - name: Prepare Drift Web runtime assets
         run: python3 tool/prepare_web_assets.py --destination web
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
+
+      - name: Verify resolver files stay clean
+        run: git diff --exit-code -- pubspec.lock analysis_options.yaml
 
       - name: Generate localizations
         run: flutter gen-l10n
