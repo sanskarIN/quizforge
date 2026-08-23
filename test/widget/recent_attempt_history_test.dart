@@ -46,7 +46,15 @@ void main() {
     await tester.pumpWidget(buildTestApp(StatsPage(controller: controller)));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.history_outlined), findsOneWidget);
+    final Finder historyIcon = find.byIcon(Icons.history_outlined);
+    await tester.scrollUntilVisible(
+      historyIcon,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(historyIcon, findsOneWidget);
     expect(find.textContaining('1/1'), findsOneWidget);
     expect(find.textContaining('100%'), findsWidgets);
     expect(find.textContaining('18s'), findsOneWidget);
