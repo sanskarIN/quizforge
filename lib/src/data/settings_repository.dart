@@ -14,9 +14,12 @@ abstract interface class AppSettingsStore {
 
 final class SettingsRepository implements AppSettingsStore {
   SettingsRepository({SharedPreferencesAsync? preferences})
-    : _preferences = preferences ?? SharedPreferencesAsync();
+    : _preferences = preferences;
 
-  final SharedPreferencesAsync _preferences;
+  SharedPreferencesAsync? _preferences;
+
+  SharedPreferencesAsync get _store =>
+      _preferences ??= SharedPreferencesAsync();
 
   static const String _settingsKey = 'settings.v1';
   static const String _themeKey = 'settings.themeMode';
@@ -35,7 +38,7 @@ final class SettingsRepository implements AppSettingsStore {
 
   @override
   Future<AppSettings> load() async {
-    final String? payload = await _preferences.getString(_settingsKey);
+    final String? payload = await _store.getString(_settingsKey);
     if (payload != null) {
       try {
         final Object? decoded = jsonDecode(payload);
@@ -57,31 +60,31 @@ final class SettingsRepository implements AppSettingsStore {
   @override
   Future<void> save(AppSettings settings) async {
     final String payload = jsonEncode(settings.toJson());
-    await _preferences.setString(_settingsKey, payload);
+    await _store.setString(_settingsKey, payload);
   }
 
   @override
   Future<void> reset() async {
-    await _preferences.remove(_settingsKey);
+    await _store.remove(_settingsKey);
     for (final String key in _legacyKeys) {
-      await _preferences.remove(key);
+      await _store.remove(key);
     }
   }
 
   Future<AppSettings> _loadLegacy() async {
-    final String? themeName = await _preferences.getString(_themeKey);
+    final String? themeName = await _store.getString(_themeKey);
     final AppThemeMode themeMode = AppThemeMode.values.firstWhere(
       (AppThemeMode value) => value.name == themeName,
       orElse: () => AppThemeMode.system,
     );
     return AppSettings(
       themeMode: themeMode,
-      largeText: await _preferences.getBool(_largeTextKey) ?? false,
-      reducedMotion: await _preferences.getBool(_reducedMotionKey) ?? false,
+      largeText: await _store.getBool(_largeTextKey) ?? false,
+      reducedMotion: await _store.getBool(_reducedMotionKey) ?? false,
       screenReaderHints:
-          await _preferences.getBool(_screenReaderHintsKey) ?? true,
+          await _store.getBool(_screenReaderHintsKey) ?? true,
       confirmBeforeExitQuiz:
-          await _preferences.getBool(_confirmExitKey) ?? true,
+          await _store.getBool(_confirmExitKey) ?? true,
     );
   }
 }
