@@ -48,8 +48,9 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Private-room multiplayer transport abstraction, disabled by default
 - [x] Structured logging with sensitive-field/content redaction
 - [x] Reproducible generated platform-runner strategy and host build matrix
+- [x] Deterministic platform icon/splash generation integrated into generated runners and release workflows
+- [ ] Complete platform-specific branding visual verification on representative targets
 - [ ] Implement and security-review an optional private-room transport
-- [ ] Complete platform-specific production icon/splash generation and visual verification
 - [ ] Add file-picker based question-bank/backup import-export where supported and justified
 - [ ] Validate web database worker/WASM packaging in a verified release build
 - [ ] Profile very large banks on representative hardware and add pagination/virtualization only when measured thresholds justify it
@@ -73,6 +74,7 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Repository Markdown-validator regression tests
 - [x] Localization ARB-validator regression tests
 - [x] Release-metadata-validator regression tests, including historical zero-major release parsing
+- [x] Deterministic platform-branding generator regression tests
 - [ ] Expand full-app restart/platform-adapter end-to-end journeys after stable test adapters are available
 - [ ] Record representative performance measurements and budgets from documented hardware/toolchains
 
@@ -86,6 +88,7 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Release workflow lockfile enforcement and deterministic local-link validation
 - [x] Deterministic ARB localization-catalog validation before Flutter localization generation
 - [x] Deterministic package/changelog/versioning release-metadata validation before Flutter setup
+- [x] Deterministic QuizForge branding generation/validation in build and release workflows
 - [x] Verified-screenshot capture policy and gallery placeholders
 - [x] Dedicated 2.7.4 release notes and stable-version compatibility policy
 - [ ] Replace screenshot placeholders with real captures from the verified 2.7.4 release candidate
@@ -129,15 +132,16 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Add 2.7.4 README identity, release guide, release notes, CI/testing/setup/development/contribution/maintenance documentation, verification ledger, and continuation handoff
 - [x] Update PR #12 title/body as the maintained 2.7.4 final candidate
 - [x] Generate, review, and commit the application `pubspec.lock` from supported Flutter resolver evidence
+- [x] Add deterministic QuizForge icon/splash generation to generated runner builds
 - [ ] Build from a clean checkout
-- [ ] Pass Markdown/ARB/release-metadata validator tests and validators on the final head
+- [ ] Pass Markdown/ARB/release-metadata/branding validator tests and validators on the final head
 - [ ] Pass formatting, localization generation, analysis, and all automated tests on the final head
 - [ ] Pass dependency review, OSV scan, and secret scan on the final head
 - [ ] Validate database creation and local backup/restore on release builds; add migration verification when schema version first changes
-- [ ] Verify Android release build
-- [ ] Verify Web release build and Drift persistence/reload behavior
-- [ ] Verify supported desktop builds on their host operating systems
-- [ ] Verify iOS no-codesign compile and complete signing/device validation outside the public repository
+- [ ] Verify Android release build and branded launcher/splash presentation
+- [ ] Verify Web release build, branding, and Drift persistence/reload behavior
+- [ ] Verify supported desktop builds and branding on their host operating systems
+- [ ] Verify iOS no-codesign compile, icon/splash appearance, and complete signing/device validation outside the public repository
 - [ ] Manually review keyboard navigation, screen-reader semantics, scalable text, contrast, and reduced motion
 - [ ] Capture verified real screenshots using fictional data
 - [ ] Confirm the exact final release-candidate history contains no credentials or private user data
