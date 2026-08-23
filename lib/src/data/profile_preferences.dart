@@ -10,20 +10,22 @@ abstract interface class ActiveProfilePreferences {
 
 final class ProfilePreferences implements ActiveProfilePreferences {
   ProfilePreferences({SharedPreferencesAsync? preferences})
-    : _preferences = preferences ?? SharedPreferencesAsync();
+    : _preferences = preferences;
 
-  final SharedPreferencesAsync _preferences;
+  SharedPreferencesAsync? _preferences;
+
+  SharedPreferencesAsync get _store =>
+      _preferences ??= SharedPreferencesAsync();
 
   static const String _activeProfileKey = 'profiles.activeId';
 
   @override
-  Future<String?> loadActiveProfileId() =>
-      _preferences.getString(_activeProfileKey);
+  Future<String?> loadActiveProfileId() => _store.getString(_activeProfileKey);
 
   @override
   Future<void> saveActiveProfileId(String profileId) =>
-      _preferences.setString(_activeProfileKey, profileId);
+      _store.setString(_activeProfileKey, profileId);
 
   @override
-  Future<void> clearActiveProfileId() => _preferences.remove(_activeProfileKey);
+  Future<void> clearActiveProfileId() => _store.remove(_activeProfileKey);
 }
