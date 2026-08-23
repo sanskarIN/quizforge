@@ -1,6 +1,6 @@
 # QuizForge 2.7.4 Release-Candidate Verification Evidence
 
-This document records evidence for the consolidated QuizForge **2.7.4** release candidate. It is intentionally evidence-driven: an item is marked complete only after a corresponding command, GitHub Actions result, or documented manual review has actually succeeded on the applicable candidate.
+This document records evidence for the consolidated QuizForge **2.7.4** release candidate. It is intentionally evidence-driven: an item is marked complete only after a corresponding command, GitHub Actions result, source audit, or documented manual review has actually succeeded at the stated evidence level.
 
 ## Candidate identity
 
@@ -16,8 +16,9 @@ This document records evidence for the consolidated QuizForge **2.7.4** release 
 - Original consolidation base commit: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
 - Earlier fully observed build-evidence head: `306bee785cbebbf5b5d6bea875f8d5b4988ea175`
 - Later exact CI diagnostic head: `3cd7511b48c07f9dacc1b901b63d93b486c0df97`
+- Pre-verification-ledger branding/documentation head: `598ba4d22594fff1359395f9405bfb3fc8c51f61`
 - Maintainer commit-email target: `sanskarin@outlook.in`
-- Release-candidate status: **BLOCKED — final exact-head verification is not complete**
+- Release-candidate status: **BLOCKED — final exact-head verification and required manual release-host evidence are not complete**
 
 PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and #11 were deliberately consolidated rather than blindly merged so the strongest persistence/import/security implementation could be retained while unique recent-history, backup, validation, and documentation work was integrated.
 
@@ -50,6 +51,7 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 - [x] Submitted-answer correctness/score rows are re-evaluated using `QuizEngine` before trust.
 - [x] Bookmark duplicate identity uses exact `(profileId, questionId)` pairs.
 - [x] Schema-v1 answer-order limitation is respected: stored `bestStreak` is preserved and only order-independent invariants are validated.
+- [x] Settings/profile preference repositories can be constructed without eagerly initializing the platform plugin; actual persistence still uses `SharedPreferencesAsync`.
 
 ### Cross-platform implementation
 
@@ -66,12 +68,31 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 - [x] Web runtime asset writes are atomic.
 - [x] `tool/test_prepare_web_assets.py` covers local validation without network access.
 - [x] Android/Web PR build gate prepares Web runtime assets and verifies them in `build/web`.
-- [x] Android/Web PR build gate now builds Android in release mode.
+- [x] Android/Web PR build gate builds Android in release mode.
 - [x] Linux, Windows, macOS, and iOS no-codesign host build matrix remains maintained.
 - [x] Tagged release workflow is gated across Android, Web, Linux, Windows, macOS, and unsigned iOS compile output.
 - [x] Tagged release publication waits for every platform packaging job and generates SHA-256 checksums.
 - [x] Only the final release publication job receives `contents: write` permission.
 - [x] iOS release artifact is explicitly described/named as unsigned compile evidence rather than a signed distribution package.
+
+### Deterministic platform branding
+
+- [x] `tool/generate_platform_branding.py` uses only Python standard-library code and does not require an image-conversion dependency or remote artwork download.
+- [x] Android launcher-density icons and branded launch-background artwork are generated after runner materialization.
+- [x] iOS AppIcon sizes and launch-image assets are generated after runner materialization.
+- [x] Web favicon, 192/512 icons, and maskable icons are generated after runner materialization.
+- [x] Windows application ICO is generated deterministically.
+- [x] macOS AppIcon sizes are generated deterministically.
+- [x] Linux receives a deterministic 256px packaging/icon resource; final desktop packaging integration remains distribution-format dependent.
+- [x] Opaque icon PNGs use RGB while splash/launch artwork may use RGBA transparency.
+- [x] The generator has a non-mutating `--check` mode for expected assets, PNG dimensions, Android splash references, and Windows ICO structure.
+- [x] `tool/test_generate_platform_branding.py` covers deterministic rendering, PNG mode/dimensions, all target layouts, missing-asset detection, platform parsing, and ICO structure.
+- [x] Local standard-library test execution completed 4/4 branding-generator tests successfully before CI integration.
+- [x] Main CI and local shell/PowerShell quality scripts run the branding regression suite.
+- [x] Android/Web Build Gate applies and checks branding after `flutter create`.
+- [x] Linux/Windows/macOS/iOS build matrix applies and checks branding after `flutter create`.
+- [x] Tagged platform packaging applies and checks branding before building release artifacts.
+- [ ] Representative platform visual inspection confirms launcher-mask/crop, splash scaling, icon clarity, and distribution presentation.
 
 ### Repository tooling
 
@@ -80,7 +101,9 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 - [x] ARB validation protects locale/message/metadata/key parity.
 - [x] Release-metadata validation protects package/in-app/changelog/versioning identity.
 - [x] Web runtime asset validation is covered by deterministic tests.
-- [x] Local shell/PowerShell checks, PR CI, Android/Web build CI, and tagged release automation are aligned with their applicable tool contracts.
+- [x] Platform-branding generation/validation is covered by deterministic tests.
+- [x] Local shell/PowerShell checks, PR CI, Android/Web build CI, host build matrix, and tagged release automation are aligned with their applicable tool contracts.
+- [x] Platform host/build workflows now use `flutter pub get --enforce-lockfile` and reject unexpected resolver drift.
 
 ## Historical exact-head GitHub Actions evidence
 
@@ -153,7 +176,7 @@ These are source/test fixes, not final pass evidence. The newer exact head must 
 
 The successful build matrix on `306bee...` is strong historical evidence that the pre-Web-hardening codebase compiled across all six supported targets. The later `3cd751...` head additionally proved the committed lockfile, repository validators, localization generation, formatter, analyzer, and all non-CI security/build workflows were healthy before the widget-test regressions were reached.
 
-Neither historical head is final release evidence for a newer candidate head. All affected workflows therefore need to pass again on the final frozen head.
+Neither historical head is final release evidence for a newer candidate head. Branding/build-workflow changes also materially affect later heads, so all applicable workflows must pass again on the final frozen head.
 
 ## Required automated gates for the final head
 
@@ -163,6 +186,7 @@ These remain unchecked until the **exact final PR #12 head** completes successfu
 - [ ] ARB-validator regression tests succeed.
 - [ ] Release-metadata-validator regression tests succeed.
 - [ ] Web-runtime-asset regression tests succeed.
+- [ ] Platform-branding regression tests succeed.
 - [ ] Repository-local Markdown validation succeeds.
 - [ ] ARB localization-catalog validation succeeds.
 - [ ] Release metadata validation succeeds.
@@ -172,12 +196,18 @@ These remain unchecked until the **exact final PR #12 head** completes successfu
 - [ ] Dart formatting succeeds for `lib`, `test`, and `tool`.
 - [ ] Flutter analyzer succeeds.
 - [ ] Unit/widget/integration/application tests succeed.
+- [ ] Android generated branding structural check succeeds.
 - [ ] Android release APK build succeeds.
+- [ ] Web generated branding structural check succeeds.
 - [ ] Web release build succeeds.
 - [ ] Packaged Web WASM/worker validation succeeds.
+- [ ] Linux generated branding structural check succeeds.
 - [ ] Linux release build succeeds.
+- [ ] Windows generated branding structural check succeeds.
 - [ ] Windows release build succeeds.
+- [ ] macOS generated branding structural check succeeds.
 - [ ] macOS release build succeeds.
+- [ ] iOS generated branding structural check succeeds.
 - [ ] iOS no-codesign release compile succeeds.
 - [ ] Dependency Review succeeds.
 - [ ] OSV Vulnerability Scan succeeds.
@@ -190,10 +220,10 @@ A queued, pending, cancelled, superseded, skipped-but-applicable, or unobserved 
 - [x] `pubspec.lock` is generated and committed from a supported Flutter resolver.
 - [x] Exact-head CI at `3cd751...` accepted it with `flutter pub get --enforce-lockfile`.
 - [x] Exact-head CI at `3cd751...` left the committed lockfile unchanged after dependency resolution.
+- [x] Android/Web and Linux/Windows/macOS/iOS build-workflow definitions now enforce the committed lockfile and check resolver cleanliness.
+- [x] Tagged release packaging enforces the committed lockfile.
 
 The lockfile is no longer a missing-source blocker. It remains part of every final-head verification because a later dependency/configuration change must not silently rewrite it.
-
-The tagged release workflow intentionally refuses to proceed without a committed non-empty lockfile and uses `flutter pub get --enforce-lockfile` in source verification and platform packaging jobs.
 
 ## Database and backup release-host verification
 
@@ -213,17 +243,23 @@ Source-controlled coverage is present for database operations and logical backup
 
 Historical schema migration testing is **not applicable while schemaVersion remains 1**. The first schema increment must add a real old-version-to-new-version migration test.
 
-## Manual accessibility/UI checks
+## Manual branding, accessibility, and UI checks
 
 Before calling 2.7.4 release-verified:
 
-- [ ] keyboard navigation and visible focus checked on desktop/Web;
-- [ ] representative screen-reader checks completed;
-- [ ] large-text behavior checked with app + OS/browser scaling;
-- [ ] reduced-motion behavior reviewed;
-- [ ] light/dark contrast and non-color-only result cues reviewed;
-- [ ] touch interaction reviewed on Android/iOS where distributed;
-- [ ] installed About page shows version `2.7.4`;
+- [ ] Android launcher icon is recognizable under representative adaptive masks/crops and branded launch artwork is centered/scaled correctly.
+- [ ] iOS application icon and launch artwork are visually correct on representative simulator/device presentation.
+- [ ] Web favicon/app icons are visually correct and maskable icons retain safe content inside common masks.
+- [ ] Windows application icon is visible/recognizable in representative shell/taskbar/window surfaces.
+- [ ] macOS application icon is visible/recognizable at representative Dock/Finder sizes.
+- [ ] Linux packaging/icon integration is completed for the intended distribution format and visually checked.
+- [ ] keyboard navigation and visible focus checked on desktop/Web.
+- [ ] representative screen-reader checks completed.
+- [ ] large-text behavior checked with app + OS/browser scaling.
+- [ ] reduced-motion behavior reviewed.
+- [ ] light/dark contrast and non-color-only result cues reviewed.
+- [ ] touch interaction reviewed on Android/iOS where distributed.
+- [ ] installed About page shows version `2.7.4`.
 - [ ] verified screenshots captured from actual release builds using fictional/demo data.
 
 ## Signing/distribution boundaries
@@ -237,9 +273,11 @@ No signing keys, profiles, passwords, service-account credentials, or private ce
 
 ## Tooling limitation of the editing environment
 
-The repository-editing environment used during this audit does not provide a local Flutter/Dart toolchain and cannot perform the authoritative local six-platform build sequence. GitHub-hosted Actions therefore provides the automated build evidence.
+The repository-editing environment used during this audit does not provide a local Flutter/Dart toolchain and cannot perform the authoritative local six-platform build sequence. GitHub-hosted Actions therefore provides the automated Flutter/platform build evidence.
 
-Source/configuration review and deterministic Python-tool logic can be audited while editing, but no source review is converted into an unobserved Flutter pass.
+Deterministic Python tooling can be executed independently for source-level regression confidence, but no source review or Python-only test is converted into an unobserved Flutter/platform pass.
+
+The connected GitHub contents API also does not expose a per-commit author-email override. The requested maintainer email is documented for local Git use, but connector-generated commits are not represented as carrying an author email that was not verified.
 
 ## Evidence log
 
@@ -258,14 +296,17 @@ Source/configuration review and deterministic Python-tool logic can be audited w
 | 2026-08-20 | Markdown checker contract/repository-escape fix | PASS (source fix) | commit `8120a2605671894dbc99e2a502f472c0eb8f3cb4` |
 | 2026-08-20 | Explicit Drift Web database configuration | PASS (source/config audit) | `AppDatabase.defaults()` Web options |
 | 2026-08-20 | Pinned Drift Web runtime preparation/tool tests | PASS (source/config audit) | `tool/prepare_web_assets.py` + tests |
-| 2026-08-20 | Android/Web release-mode + packaged runtime gate | PASS (config audit) | maintained `build.yml`; final execution still pending |
+| 2026-08-20 | Android/Web release-mode + packaged runtime gate | PASS (config audit) | maintained `build.yml`; final exact-head execution required |
 | 2026-08-20 | Six-platform tagged release packaging | PASS (config audit) | maintained `release.yml`; tag execution not yet applicable |
 | 2026-08-21 | Committed application lockfile | PASS | Flutter 3.47.1 accepted `--enforce-lockfile` with zero resolver diff at `3cd751...` |
 | 2026-08-21 | Exact diagnostic CI quality job | FAIL | run `32435888584`; 86 tests passed, 13 widget tests failed |
 | 2026-08-23 | Preference/plugin construction repair | PASS (source fix) | commits `6f05c68`, `94d283e`, `7d9b640`; exact-head rerun required |
 | 2026-08-23 | Lazy-list widget regression repair | PASS (source fix) | commits `9717b93`, `4df73ed`; exact-head rerun required |
-| 2026-08-23 | Final-head automated verification | PENDING | read the newest PR #12 exact-head workflows after the documentation freeze |
-| 2026-08-23 | Manual platform/accessibility/screenshots | PENDING | requires representative built applications |
+| 2026-08-23 | Deterministic platform-branding generator | PASS (source/local tooling) | commits `703cb6d`, `8b53c2a`; local standard-library tests 4/4 |
+| 2026-08-23 | Branding integrated into CI/build/release paths | PASS (source/config audit) | commits `08a8041`, `b328420`, `87106d3`, `4148eda`, `9c59f0f`, `1fce8f0` |
+| 2026-08-23 | Branding docs/roadmap/release notes/changelog | PASS (documentation audit) | commits `df1d3f8`, `3eca500`, `ea27f80`, `598ba4d` |
+| 2026-08-23 | Final-head automated verification | PENDING | read the newest PR #12 exact-head workflows after the final continuation-ledger commit |
+| 2026-08-23 | Manual platform/branding/accessibility/screenshots | PENDING | requires representative built applications and distribution contexts |
 
 ## Release decision rule
 
