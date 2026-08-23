@@ -43,6 +43,32 @@ These assets are required for persistent Drift Web database startup. `tool/prepa
 
 The Android/Web build gate and tagged release workflow verify that the Web assets are present in the final `build/web` output, preventing a Web build from passing merely because Dart compilation succeeded while runtime database assets were absent.
 
+## Deterministic platform branding
+
+`assets/branding/quizforge_logo.svg` and `assets/branding/quizforge_splash.svg` remain the editable brand references. Generated Flutter runner shells must not ship the default Flutter launcher artwork.
+
+`tool/generate_platform_branding.py` uses only the Python standard library to render deterministic QuizForge raster artwork and place it into the generated runner layout. It currently covers:
+
+- Android launcher density assets plus branded launch-background artwork;
+- iOS AppIcon sizes plus launch-image assets;
+- Web favicon, 192/512 icons, and maskable icons;
+- Windows `.ico` application icon;
+- macOS AppIcon sizes;
+- a Linux 256px packaging/icon resource.
+
+Opaque icon PNGs are encoded as RGB, including the iOS 1024px App Store icon, while splash artwork uses RGBA transparency. The generator also supports a non-mutating `--check` mode that validates expected file presence, PNG dimensions, Android splash references, and Windows ICO structure.
+
+After materializing runners, generate branding for all targets:
+
+```bash
+python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,macos,linux
+python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,macos,linux --check
+```
+
+On Windows, use `python` if that is the configured launcher.
+
+The Android/Web build gate, desktop/iOS build matrix, local validation scripts, and tagged release workflow test or apply this branding tooling as appropriate. Platform-specific visual inspection is still required before release sign-off; deterministic generation is not a substitute for checking launcher masks, splash scaling, store presentation, or OS-specific appearance on representative devices.
+
 ## Materialize all Flutter runners
 
 QuizForge keeps standard platform runners reproducible instead of hand-editing generated shells. From the repository root:
@@ -51,15 +77,20 @@ QuizForge keeps standard platform runners reproducible instead of hand-editing g
 flutter create . --platforms=android,ios,web,windows,macos,linux
 ```
 
-For Web, then prepare the database runtime assets:
+Then apply QuizForge branding:
+
+```bash
+python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,macos,linux
+python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,macos,linux --check
+```
+
+For Web, also prepare the database runtime assets:
 
 ```bash
 python3 tool/prepare_web_assets.py --destination web
 ```
 
-On Windows, use `python` if that is the configured Python launcher.
-
-The preparation command is idempotent for already-valid files. To verify without downloading:
+The Web preparation command is idempotent for already-valid files. To verify without downloading:
 
 ```bash
 python3 tool/prepare_web_assets.py --destination web --check
@@ -70,6 +101,7 @@ python3 tool/prepare_web_assets.py --destination web --check
 ### Android
 
 ```bash
+python3 tool/generate_platform_branding.py --platforms=android
 flutter build apk --release
 flutter build appbundle --release
 ```
@@ -81,6 +113,7 @@ Store distribution signing remains separate from the public repository. Do not c
 Requires macOS/Xcode:
 
 ```bash
+python3 tool/generate_platform_branding.py --platforms=ios
 flutter build ios --release --no-codesign
 ```
 
@@ -89,6 +122,7 @@ Distribution builds require the maintainer's own signing/provisioning configurat
 ### Web
 
 ```bash
+python3 tool/generate_platform_branding.py --platforms=web
 python3 tool/prepare_web_assets.py --destination web
 flutter build web --release
 python3 tool/prepare_web_assets.py --destination build/web --check
@@ -102,6 +136,7 @@ Requires a Windows Flutter desktop toolchain:
 
 ```powershell
 flutter config --enable-windows-desktop
+python tool/generate_platform_branding.py --platforms=windows
 flutter build windows --release
 ```
 
@@ -111,6 +146,7 @@ Requires macOS/Xcode:
 
 ```bash
 flutter config --enable-macos-desktop
+python3 tool/generate_platform_branding.py --platforms=macos
 flutter build macos --release
 ```
 
@@ -120,24 +156,31 @@ Requires the normal Flutter Linux desktop build dependencies:
 
 ```bash
 flutter config --enable-linux-desktop
+python3 tool/generate_platform_branding.py --platforms=linux
 flutter build linux --release
 ```
+
+Linux desktop environments generally consume application icons through packaging metadata rather than a Flutter runner resource alone. The generated `linux/runner/resources/quizforge.png` is therefore a deterministic packaging source; final `.desktop`/distribution-package integration depends on the chosen Linux distribution format.
 
 ## Automated build coverage
 
 The maintained GitHub Actions paths are intentionally split:
 
-- `.github/workflows/build.yml` — Android release + Web release, including Web database runtime assets;
-- `.github/workflows/platform-builds.yml` — Linux, Windows, macOS, and iOS no-codesign release builds;
-- `.github/workflows/ci.yml` — repository validators, Flutter dependency/localization/format/analyzer/tests;
+- `.github/workflows/build.yml` — Android release + Web release, including generated QuizForge branding and Web database runtime assets;
+- `.github/workflows/platform-builds.yml` — branded Linux, Windows, macOS, and iOS no-codesign release builds with enforced lockfile resolution;
+- `.github/workflows/ci.yml` — repository validators, branding-tool regression tests, Flutter dependency/localization/format/analyzer/tests;
 - dependency review, OSV, and secret scanning remain separate focused gates.
 
-An earlier 2.7.4 candidate head successfully completed the Android/Web build gate and Linux/Windows/macOS/iOS build matrix. Because the cross-platform hardening changes create a newer head, those older green runs are historical evidence only; the newer head must pass again before release verification is updated.
+The tagged release workflow applies the same branding generator to every platform runner before packaging.
+
+An earlier 2.7.4 candidate head successfully completed the Android/Web build gate and Linux/Windows/macOS/iOS build matrix. Because later cross-platform, test, and branding changes create a newer head, those older green runs are historical evidence only; the newer head must pass again before release verification is updated.
 
 ## Manual cross-platform release checks
 
 Compilation is necessary but not sufficient. Before describing a 2.7.4 target as release-verified, exercise the applicable target with fictional data and verify:
 
+- branded launcher/app icon uses the expected mask/crop and remains recognizable;
+- splash/launch artwork is centered and scales without clipping;
 - app startup and local database creation;
 - starter questions and profile creation;
 - quiz play, scoring, completion, review, and recent history;
