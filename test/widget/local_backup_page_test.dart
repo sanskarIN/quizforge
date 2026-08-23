@@ -32,6 +32,17 @@ void main() {
         buildTestApp(ImportExportPage(controller: controller)),
       );
 
+      final Finder restoreButton = find.widgetWithText(
+        FilledButton,
+        'Restore backup',
+      );
+      await tester.scrollUntilVisible(
+        restoreButton,
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
       final Finder backupField = find.byWidgetPredicate(
         (Widget widget) =>
             widget is TextField &&
@@ -40,11 +51,6 @@ void main() {
       expect(backupField, findsOneWidget);
       await tester.enterText(backupField, archive);
 
-      final Finder restoreButton = find.widgetWithText(
-        FilledButton,
-        'Restore backup',
-      );
-      await tester.ensureVisible(restoreButton);
       await tester.tap(restoreButton);
       await tester.pumpAndSettle();
 
