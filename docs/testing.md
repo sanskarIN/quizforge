@@ -12,11 +12,13 @@ python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
 python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
@@ -25,11 +27,13 @@ flutter test --coverage
 
 On Windows, use `python` in place of `python3` when that is the configured launcher. `tool/check.sh` and `tool/check.ps1` run the maintained quality sequence for their host shells.
 
-The repository-local Markdown, ARB, release-metadata, Web-runtime-asset, and platform-branding tools use Python's standard library and do not require third-party Python dependencies. Their regression tests run before Flutter setup in CI so a broken repository tool cannot silently become the gatekeeper for the rest of the project.
+The repository-local Markdown, ARB, release-metadata, Web-runtime-asset, platform-branding, and generated-runner-contract tools use Python's standard library and do not require third-party Python dependencies. Their regression tests run before Flutter setup in CI so a broken repository tool cannot silently become the gatekeeper for the rest of the project.
 
 CI runs the maintained source-quality checks for every pull request and on pushes to `main`; dedicated workflows add Android/Web release builds and Linux/Windows/macOS/iOS host build gates plus dependency and secret scanning. Path-filtered workflows still run only when their relevant files change.
 
-Locked resolution is part of testing, not only release packaging: normal verification must accept the committed `pubspec.lock` with `--enforce-lockfile` and leave the reviewed resolver files unchanged. Intentional dependency upgrades are a separate maintenance operation that may regenerate the lockfile before review.
+Locked resolution is part of testing, not only release packaging: normal verification must accept the committed `pubspec.lock` with `--enforce-lockfile` and leave `pubspec.yaml`, `pubspec.lock`, and `analysis_options.yaml` unchanged. Intentional dependency upgrades are a separate maintenance operation that may regenerate the lockfile before review.
+
+Generated-runner verification is also part of testing. Maintained runner workflows must use organization `io.github.sanskarin`, yielding canonical application/bundle identity `io.github.sanskarin.quizforge` where applicable; use `--no-pub`; restore reviewed package/lock/analyzer metadata after scaffolding; and then perform explicit enforced dependency resolution.
 
 ## Current coverage areas
 
@@ -151,7 +155,15 @@ Its regression suite includes both mismatched and non-semantic in-app version co
 
 `tool/generate_platform_branding.py` produces deterministic generated platform artwork and `tool/test_generate_platform_branding.py` protects expected PNG dimensions/modes, platform layout generation, missing-asset detection, platform argument parsing, and Windows ICO structure without relying on external image libraries.
 
-The Android/Web build workflow performs the networked Web-runtime preparation step and then verifies the same asset contract in `build/web` after `flutter build web --release`. Build/platform workflows materialize runners with `--no-pub`, apply/check branding, and only then perform explicit locked resolution. This catches both missing Web persistence assets and dependency drift caused by uncontrolled runner-generation package resolution.
+`tool/check_platform_runner_contract.py` validates maintained generated-runner workflows without requiring Flutter. `tool/test_check_platform_runner_contract.py` protects:
+
+- rejection of Flutter's default `com.example` identity;
+- required organization `io.github.sanskarin`;
+- required `--no-pub` scaffolding;
+- immediate restoration of reviewed `pubspec.yaml`, `pubspec.lock`, and `analysis_options.yaml` after each runner-generation command;
+- required `flutter pub get --enforce-lockfile` resolution.
+
+The Android/Web build workflow performs the networked Web-runtime preparation step and then verifies the same asset contract in `build/web` after `flutter build web --release`. Build/platform workflows materialize runners with canonical organization and `--no-pub`, restore reviewed dependency metadata, apply/check branding, and only then perform explicit locked resolution. This catches missing Web persistence assets, default application identity, project-recreation metadata resets, and uncontrolled runner-generation package resolution.
 
 ## Cross-platform build evidence
 
@@ -180,7 +192,7 @@ See [`platform-support.md`](platform-support.md) for platform-specific runtime e
 - Version changes must update `pubspec.yaml`, `AppConstants.version`, `CHANGELOG.md`, and the maintained package/tag identity in `docs/versioning.md`, then pass `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py`.
 - New localization catalogs/messages must pass the ARB validator and localization generation.
 - Web database/runtime changes must keep `AppDatabase.defaults()` Web options, the pinned worker/WASM preparation contract, packaging verification, and real-browser persistence smoke requirements aligned.
-- Generated-runner workflow changes must preserve `--no-pub` scaffolding followed by explicit locked resolution unless an intentionally reviewed dependency-regeneration operation is being performed.
+- Generated-runner workflow changes must preserve canonical organization `io.github.sanskarin`, `--no-pub` scaffolding, immediate reviewed-metadata restoration, runner-contract validation, and explicit locked resolution unless an intentionally reviewed compatibility/dependency-regeneration operation redesigns those contracts.
 - New network transports must include failure, timeout, malformed-message, authorization, and privacy-sensitive cases.
 - Platform clipboard/file-adapter changes should test success and failure paths with platform-channel fakes where practical.
 
