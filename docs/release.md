@@ -17,7 +17,7 @@ Before creating or promoting a release candidate:
 - repository/tool regression tests pass;
 - repository-local Markdown links pass `tool/check_markdown_links.py`;
 - localization catalogs pass `tool/check_arb_catalogs.py` and `flutter gen-l10n`;
-- all six Flutter platform runners can be generated from documented commands;
+- all six Flutter platform runners can be generated from documented lockfile-safe commands;
 - the Web runner contains compatible Drift SQLite WASM/worker assets;
 - no credentials, signing secrets, real backup archives, or private user data are tracked;
 - CI is green on the exact final head;
@@ -31,16 +31,18 @@ See [`platform-support.md`](platform-support.md) for the six-platform runtime co
 From a fresh clone:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux
+flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
 python3 tool/prepare_web_assets.py --destination web
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
+python3 tool/test_generate_platform_branding.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
 flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
@@ -49,7 +51,7 @@ flutter test --coverage
 
 On Windows, use `python` instead of `python3` when that is the configured launcher.
 
-The release workflow intentionally fails when `pubspec.lock` is missing, empty, incompatible with `pubspec.yaml`, or rewritten by locked dependency resolution. A queued, pending, cancelled, or superseded remote check is not evidence of a passing release candidate.
+`flutter create` intentionally uses `--no-pub` in release verification. Runner generation is scaffolding and must not perform an uncontrolled dependency-resolution pass before the reviewed application lockfile is checked. The release workflow fails when `pubspec.lock` is missing, empty, incompatible with `pubspec.yaml`, or rewritten by locked dependency resolution. A queued, pending, cancelled, or superseded remote check is not evidence of a passing release candidate.
 
 ## Release metadata gate
 
@@ -194,7 +196,7 @@ Before any platform packaging starts, the workflow:
 
 ### 2. Build/package all supported targets
 
-After verification, host-specific jobs produce:
+After verification, host-specific jobs first materialize their generated runners with `--no-pub`, apply deterministic QuizForge branding, and then perform explicit `flutter pub get --enforce-lockfile` resolution. They produce:
 
 - Android APK;
 - Android AAB;
@@ -204,7 +206,7 @@ After verification, host-specific jobs produce:
 - macOS release output;
 - unsigned iOS release compile output.
 
-Each job independently uses `flutter pub get --enforce-lockfile` and verifies that dependency resolution does not rewrite `pubspec.lock`.
+Each job independently verifies that dependency resolution does not rewrite `pubspec.lock`.
 
 ### 3. Publish only after all platform jobs pass
 
