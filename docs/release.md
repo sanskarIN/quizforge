@@ -2,7 +2,7 @@
 
 QuizForge releases must be reproducible, tested, and based on a clean repository state.
 
-The maintained release candidate is **2.7.4+1** and its public Git tag, after verification, is **`v2.7.4`**. The in-app public version displayed by `AppConstants.version` is **2.7.4**.
+The maintained release candidate is **2.7.4+1** and its public Git tag, after verification, is **`v2.7.4`**. The in-app public version displayed by `AppConstants.version` is **2.7.4**. Generated application/bundle identity is **`io.github.sanskarin.quizforge`** where the platform uses a reverse-DNS identifier.
 
 ## Release prerequisites
 
@@ -12,12 +12,13 @@ Before creating or promoting a release candidate:
 - the version in `pubspec.yaml` is intentional;
 - `AppConstants.version` matches the public package version shown to users;
 - `tool/check_release_metadata.py` confirms that package, in-app, changelog, and versioning metadata agree;
+- `tool/check_platform_runner_contract.py` confirms canonical organization `io.github.sanskarin`, lockfile-safe scaffolding, reviewed-metadata restoration, and enforced dependency resolution in maintained runner workflows;
 - the reviewed application `pubspec.lock` is tracked and matches `pubspec.yaml` after locked dependency resolution;
 - `CHANGELOG.md`, `ROADMAP.md`, and `what_changed.md` are current;
 - repository/tool regression tests pass;
 - repository-local Markdown links pass `tool/check_markdown_links.py`;
 - localization catalogs pass `tool/check_arb_catalogs.py` and `flutter gen-l10n`;
-- all six Flutter platform runners can be generated from documented lockfile-safe commands;
+- all six Flutter platform runners can be generated from documented identity/lockfile-safe commands;
 - the Web runner contains compatible Drift SQLite WASM/worker assets;
 - no credentials, signing secrets, real backup archives, or private user data are tracked;
 - CI is green on the exact final head;
@@ -31,18 +32,21 @@ See [`platform-support.md`](platform-support.md) for the six-platform runtime co
 From a fresh clone:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
 python3 tool/prepare_web_assets.py --destination web
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
 python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
@@ -51,7 +55,7 @@ flutter test --coverage
 
 On Windows, use `python` instead of `python3` when that is the configured launcher.
 
-`flutter create` intentionally uses `--no-pub` in release verification. Runner generation is scaffolding and must not perform an uncontrolled dependency-resolution pass before the reviewed application lockfile is checked. The release workflow fails when `pubspec.lock` is missing, empty, incompatible with `pubspec.yaml`, or rewritten by locked dependency resolution. A queued, pending, cancelled, or superseded remote check is not evidence of a passing release candidate.
+`flutter create` intentionally uses canonical organization `io.github.sanskarin` and `--no-pub` in release verification. Runner generation is scaffolding and must not perform an uncontrolled dependency-resolution pass. Project recreation can still remove/reset reviewed package metadata, so the package manifest, lockfile, and analyzer configuration are restored from `HEAD` immediately afterward. The release workflow then fails when the reviewed lockfile is missing, empty, incompatible with `pubspec.yaml`, or rewritten by locked dependency resolution. A queued, pending, cancelled, or superseded remote check is not evidence of a passing release candidate.
 
 ## Release metadata gate
 
@@ -66,6 +70,18 @@ On Windows, use `python` instead of `python3` when that is the configured launch
 - maintained package identity `2.7.4+1` and tag identity `v2.7.4` in `docs/versioning.md`.
 
 Its regression suite is `tool/test_check_release_metadata.py`.
+
+## Generated runner contract gate
+
+`tool/check_platform_runner_contract.py` is the early, Flutter-independent runner contract gate. It verifies maintained build/release workflows:
+
+- never use Flutter's default `com.example` organization;
+- use canonical organization `io.github.sanskarin`;
+- use `--no-pub` for runner scaffolding;
+- restore `pubspec.yaml`, `pubspec.lock`, and `analysis_options.yaml` from the reviewed commit immediately after scaffolding;
+- resolve dependencies with `flutter pub get --enforce-lockfile`.
+
+Its regression suite is `tool/test_check_platform_runner_contract.py`. A public release must not silently change the canonical application/bundle identifier after distribution without treating that as a compatibility/migration decision.
 
 ## Cross-platform database/runtime preparation
 
@@ -121,7 +137,7 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
-The tagged workflow publishes both APK and AAB artifacts after the shared verification job passes.
+The tagged workflow publishes both APK and AAB artifacts after the shared verification job passes. Verify the generated Android application ID is `io.github.sanskarin.quizforge` before store publication.
 
 A store release requires separate signing configuration. Never commit keystores, passwords, service-account credentials, or `key.properties` values containing secrets.
 
@@ -166,7 +182,7 @@ flutter config --enable-macos-desktop
 flutter build macos --release
 ```
 
-The tagged workflow packages the generated release output. Distribution signing/notarization remains a separate maintainer activity and must not expose credentials in the public repository.
+The tagged workflow packages the generated release output. Distribution signing/notarization remains a separate maintainer activity and must not expose credentials in the public repository. Verify the generated bundle identity matches the canonical QuizForge identity before signing/distribution.
 
 ## iOS
 
@@ -176,7 +192,7 @@ On macOS/Xcode, compile verification without signing uses:
 flutter build ios --release --no-codesign
 ```
 
-The tagged workflow can publish an artifact explicitly named `ios-unsigned` as compile evidence. **That artifact is not represented as an App Store/device-signed distribution build.** Real iOS distribution requires certificates/profiles and signing outside the public repository.
+The tagged workflow can publish an artifact explicitly named `ios-unsigned` as compile evidence. **That artifact is not represented as an App Store/device-signed distribution build.** Real iOS distribution requires certificates/profiles and signing outside the public repository. Verify the generated bundle identifier is `io.github.sanskarin.quizforge` before provisioning/signing.
 
 ## Tagged cross-platform release pipeline
 
@@ -188,7 +204,7 @@ Before any platform packaging starts, the workflow:
 
 - verifies the Git tag matches the public package version;
 - requires the committed application lockfile;
-- runs all repository/tool regression tests and validators;
+- runs all repository/tool regression tests and validators, including the generated-runner contract;
 - enforces locked dependency resolution;
 - generates localizations;
 - checks formatting;
@@ -196,7 +212,7 @@ Before any platform packaging starts, the workflow:
 
 ### 2. Build/package all supported targets
 
-After verification, host-specific jobs first materialize their generated runners with `--no-pub`, apply deterministic QuizForge branding, and then perform explicit `flutter pub get --enforce-lockfile` resolution. They produce:
+After verification, host-specific jobs first materialize their generated runners with `--org io.github.sanskarin --no-pub`, restore reviewed package/lock/analyzer metadata from `HEAD`, apply deterministic QuizForge branding, and then perform explicit `flutter pub get --enforce-lockfile` resolution. They produce:
 
 - Android APK;
 - Android AAB;
@@ -206,7 +222,7 @@ After verification, host-specific jobs first materialize their generated runners
 - macOS release output;
 - unsigned iOS release compile output.
 
-Each job independently verifies that dependency resolution does not rewrite `pubspec.lock`.
+Each job independently verifies that dependency resolution does not rewrite the reviewed resolver metadata.
 
 ### 3. Publish only after all platform jobs pass
 
@@ -250,6 +266,7 @@ Release notes should include:
 - migration or data-format notes;
 - local-backup compatibility notes when applicable;
 - verified platforms and exact build scope;
+- canonical application/bundle identity;
 - signing/provisioning state for mobile/desktop artifacts where relevant.
 
 The maintained 2.7.4 notes are in [`release-notes-2.7.4.md`](release-notes-2.7.4.md).
@@ -263,7 +280,8 @@ After publication:
 1. verify downloadable artifacts/checksums where provided;
 2. ensure `CHANGELOG.md` reflects the published release version/date and has a fresh Unreleased section;
 3. confirm the installed/About version still matches the published public version;
-4. update `what_changed.md` and `docs/verification.md` with the exact tag and release commit;
-5. record actual verified platform scope and any remaining limitations in the release notes;
-6. complete distribution signing/notarization/provisioning separately where required;
-7. record any store/distribution-specific follow-up separately from open-source source control.
+4. confirm packaged application/bundle identifiers match `io.github.sanskarin.quizforge` where applicable;
+5. update `what_changed.md` and `docs/verification.md` with the exact tag and release commit;
+6. record actual verified platform scope and any remaining limitations in the release notes;
+7. complete distribution signing/notarization/provisioning separately where required;
+8. record any store/distribution-specific follow-up separately from open-source source control.
