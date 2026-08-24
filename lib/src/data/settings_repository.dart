@@ -14,7 +14,7 @@ abstract interface class AppSettingsStore {
 
 final class SettingsRepository implements AppSettingsStore {
   SettingsRepository({SharedPreferencesAsync? preferences})
-    : _preferences = preferences;
+      : _preferences = preferences;
 
   SharedPreferencesAsync? _preferences;
 
