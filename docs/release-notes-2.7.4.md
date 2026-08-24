@@ -6,11 +6,13 @@ Package version: `2.7.4+1`
 
 Intended public tag after verification: `v2.7.4`
 
+Canonical generated application/bundle identity: `io.github.sanskarin.quizforge`
+
 Status: **six-platform release candidate — not yet release-verified**
 
 ## Overview
 
-QuizForge 2.7.4 consolidates the maintained offline-first quiz application, authoring tools, local persistence, progress/history features, complete local backup/restore, accessibility-oriented settings, deterministic repository validation, deterministic platform branding, and hardened cross-platform release automation into one release-candidate line.
+QuizForge 2.7.4 consolidates the maintained offline-first quiz application, authoring tools, local persistence, progress/history features, complete local backup/restore, accessibility-oriented settings, deterministic repository validation, deterministic platform branding, canonical generated application identity, and hardened cross-platform release automation into one release-candidate line.
 
 The supported target set is **Android, iOS, Web, Windows, macOS, and Linux**. The version number identifies the candidate; it does not replace exact-head verification.
 
@@ -25,11 +27,16 @@ The application keeps quiz/domain/controller behavior in shared Dart code and us
 - macOS: Flutter desktop + native Drift/SQLite persistence.
 - Linux: Flutter desktop + native Drift/SQLite persistence.
 
-Standard platform runners are reproducibly materialized with:
+Standard platform runners are reproducibly materialized with canonical organization `io.github.sanskarin`:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
 ```
+
+Where a platform uses a reverse-DNS application/bundle identifier, this produces `io.github.sanskarin.quizforge` instead of Flutter's development default `com.example.quizforge`. The organization is tied to the public GitHub repository owner rather than an unrelated domain.
+
+`--no-pub` avoids an implicit resolver pass, while the immediate metadata restore is still required because project recreation can remove/reset reviewed package metadata even without running pub. `tool/check_platform_runner_contract.py` and its regression suite protect the canonical organization, `--no-pub`, metadata-restoration, and enforced-lockfile contract in maintained workflows.
 
 Generated runners are then given QuizForge-specific platform branding with `tool/generate_platform_branding.py`. Web additionally prepares compatible database runtime assets with `tool/prepare_web_assets.py`.
 
@@ -128,7 +135,10 @@ Version 2.7.4 adds/maintains deterministic standard-library tooling for:
 - ARB localization structure/key consistency;
 - package/in-app/changelog/versioning release metadata;
 - Drift Web database-runtime asset validation;
-- platform icon/splash generation and structural validation.
+- platform icon/splash generation and structural validation;
+- generated-runner canonical identity and dependency-safety validation.
+
+The generated-runner validator rejects `com.example`, requires organization `io.github.sanskarin`, requires `--no-pub`, requires immediate restoration of `pubspec.yaml`, `pubspec.lock`, and `analysis_options.yaml` after scaffolding, and requires `flutter pub get --enforce-lockfile` in each maintained build/release runner workflow.
 
 The maintained local quality sequence and pull-request CI run tool/validator tests before Flutter setup.
 
@@ -144,13 +154,17 @@ At later exact head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`, Build Gate, Plat
 
 Eleven failures shared eager `SharedPreferencesAsync` construction as their root cause. Two were lazy-`ListView` test assumptions for recent-attempt history and local-backup controls. Focused fixes now defer preference-plugin acquisition, add constructor regression coverage, and scroll the two low lazy-list targets into view before assertion/interaction.
 
-Those successful historical results and source fixes do **not** automatically verify the newer branding/fix head. The exact final head must pass again.
+At exact head `b6bbf222a56164f7377c50a8030d2b558fdfc5c5`, Dependency Review, OSV, and Secret Scan succeeded. Main CI reached formatting and exposed one Dart 3.13.1 constructor-format mismatch. Android/Web and host build workflows exposed generated-runner dependency drift. A subsequent diagnostic proved that `flutter create --no-pub` can still remove/reset reviewed package metadata during project recreation, so the maintained workflow now restores the reviewed metadata from `HEAD` before locked resolution.
+
+The constructor formatting was corrected to the exact Dart 3.13.1 formatter shape. The new runner-contract validator now prevents future maintained workflows from silently dropping the canonical organization, `--no-pub`, metadata restoration, or enforced-lockfile step.
+
+Those successful historical results and source/configuration fixes do **not** automatically verify the newer identity/runner-contract head. The exact final head must pass again.
 
 ## Dependency lockfile
 
 The application `pubspec.lock` is committed. Flutter 3.47.1 accepted it with `flutter pub get --enforce-lockfile` and left it unchanged on exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`.
 
-Build/release workflows continue to enforce the committed lockfile and check for unexpected resolver drift. The lockfile is no longer a missing-source blocker, but it remains part of final-head verification.
+The main CI at the later 2026-08-24 diagnostic also accepted the reviewed lockfile before reaching its formatting gate. Build/release workflows now restore the reviewed package/lock/analyzer metadata immediately after generated-runner scaffolding, then enforce the committed lockfile and check for unexpected resolver drift. The lockfile is no longer a missing-source blocker, but it remains part of final-head verification.
 
 ## Security and privacy
 
@@ -162,27 +176,32 @@ Build/release workflows continue to enforce the committed lockfile and check for
 - Imported question banks and pasted backup archives are treated as untrusted input.
 - Web runtime preparation validates downloaded asset structure and uses atomic replacement rather than blindly trusting partial content.
 - Deterministic branding generation uses only local standard-library code and does not download artwork or execute external image converters.
+- The canonical application organization is derived from the public GitHub owner rather than an unrelated domain.
 
 ## Compatibility notes
 
 - Application/package version: `2.7.4+1`.
 - Public Git release tag: `v2.7.4` once verified.
 - In-app public version: `2.7.4`.
+- Canonical generated organization: `io.github.sanskarin`.
+- Canonical generated application/bundle identity where applicable: `io.github.sanskarin.quizforge`.
 - Database schema version: 1; this release-number change does not itself change the SQLite schema.
 - Local-backup format version: 1.
 - Web runtime assets are tied to the maintained Drift compatibility line and must not be arbitrarily replaced with newer incompatible SQLite WASM assets.
 - Question type/difficulty serialized identifiers remain stable domain identifiers rather than translated UI strings.
 - The private-room multiplayer transport remains disabled by default and is not presented as an enabled network feature.
 
+Once 2.7.4 is distributed, changing the application/bundle identifier can affect installed-app and local-storage identity and must be treated as a compatibility/migration decision rather than routine scaffolding cleanup.
+
 ## Known release blockers
 
 The following are deliberately not converted into passing claims until evidence exists on the exact final 2.7.4 head:
 
-- final-head GitHub Actions quality/build/security checks, including the branding regression suite;
+- final-head GitHub Actions quality/build/security checks, including the branding and generated-runner-contract regression suites;
 - real-browser Web database create/write/read/refresh/reload and complete-backup restore checks;
 - Android complete-backup/persistence smoke restore checks;
 - applicable native-desktop backup/persistence smoke checks;
-- platform-specific branded launcher/icon/splash visual review;
+- platform-specific generated identifier, branded launcher/icon/splash visual review;
 - manual keyboard/focus, screen-reader, large-text, reduced-motion, and contrast review;
 - verified screenshots captured from actual built artifacts using fictional/demo data;
 - Android/iOS/macOS distribution signing/provisioning/notarization where a release channel requires it.
