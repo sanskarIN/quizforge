@@ -71,10 +71,10 @@ The Android/Web build gate, desktop/iOS build matrix, local validation scripts, 
 
 ## Materialize all Flutter runners
 
-QuizForge keeps standard platform runners reproducible instead of hand-editing generated shells. From the repository root:
+QuizForge keeps standard platform runners reproducible instead of hand-editing generated shells. From the repository root, generate runner files without invoking an implicit package-resolution pass:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux
+flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
 ```
 
 Then apply QuizForge branding:
@@ -83,6 +83,15 @@ Then apply QuizForge branding:
 python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,macos,linux
 python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,macos,linux --check
 ```
+
+Resolve the reviewed application dependency graph explicitly after runner materialization:
+
+```bash
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.lock analysis_options.yaml
+```
+
+The `--no-pub` step is intentional. Runner generation is scaffolding; it must not silently replace the reviewed application lockfile before the explicit locked-resolution gate runs.
 
 For Web, also prepare the database runtime assets:
 
@@ -166,14 +175,14 @@ Linux desktop environments generally consume application icons through packaging
 
 The maintained GitHub Actions paths are intentionally split:
 
-- `.github/workflows/build.yml` — Android release + Web release, including generated QuizForge branding and Web database runtime assets;
-- `.github/workflows/platform-builds.yml` — branded Linux, Windows, macOS, and iOS no-codesign release builds with enforced lockfile resolution;
+- `.github/workflows/build.yml` — Android release + Web release, including lockfile-safe runner materialization, generated QuizForge branding, and Web database runtime assets;
+- `.github/workflows/platform-builds.yml` — branded Linux, Windows, macOS, and iOS no-codesign release builds with lockfile-safe runner materialization and enforced lockfile resolution;
 - `.github/workflows/ci.yml` — repository validators, branding-tool regression tests, Flutter dependency/localization/format/analyzer/tests;
 - dependency review, OSV, and secret scanning remain separate focused gates.
 
-The tagged release workflow applies the same branding generator to every platform runner before packaging.
+The tagged release workflow uses the same `--no-pub` runner strategy, applies the branding generator to every platform runner, and performs explicit locked resolution before packaging.
 
-An earlier 2.7.4 candidate head successfully completed the Android/Web build gate and Linux/Windows/macOS/iOS build matrix. Because later cross-platform, test, and branding changes create a newer head, those older green runs are historical evidence only; the newer head must pass again before release verification is updated.
+An earlier 2.7.4 candidate head successfully completed the Android/Web build gate and Linux/Windows/macOS/iOS build matrix. Because later cross-platform, test, branding, and runner-generation changes create a newer head, those older green runs are historical evidence only; the newer head must pass again before release verification is updated.
 
 ## Manual cross-platform release checks
 
