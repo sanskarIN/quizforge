@@ -63,7 +63,13 @@ jobs:
         run: flutter gen-l10n
 
       - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed lib test tool
+        run: |
+          if ! dart format --output=none --set-exit-if-changed lib test tool; then
+            echo '::group::Dart formatter diff'
+            git diff -- lib test tool
+            echo '::endgroup::'
+            exit 1
+          fi
 
       - name: Analyze
         run: flutter analyze
