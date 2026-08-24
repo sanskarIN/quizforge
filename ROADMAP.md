@@ -157,10 +157,29 @@ Canonical generated application/bundle identity where applicable: **`io.github.s
 - [ ] Confirm the exact final release-candidate history contains no credentials or private user data
 - [ ] Create/promote `v2.7.4` only after all applicable blockers above are cleared
 
+## Phase 8 — Version 2.18.12 preparation
+
+Planning documents:
+
+- [`docs/next-version-2.18.12.md`](docs/next-version-2.18.12.md) — entry criteria, compatibility contract, themes, and implementation order.
+- [`docs/version-2.18.12-workstreams.md`](docs/version-2.18.12-workstreams.md) — decomposed engineering workstreams and exit criteria.
+- [`docs/version-2.18.12-release-checklist.md`](docs/version-2.18.12-release-checklist.md) — future exact-head, platform, data, security, accessibility, and release gate.
+
+Preparation status:
+
+- [x] Create a separate stacked planning branch so 2.18.12 preparation cannot cancel or contaminate 2.7.4 verification.
+- [x] Define version-transition rules without changing the current `2.7.4+1` identity.
+- [x] Define file-adapter, quiz-pack, statistics, localization, E2E, performance, transport, and distribution workstreams.
+- [x] Define a future six-platform 2.18.12 release checklist.
+- [ ] Close the 2.7.4 release path and merge its verified state to `main`.
+- [ ] Rebase/start 2.18.12 implementation from the verified 2.7.4 release state.
+- [ ] Select the first implementation workstream based on measured/user value and dependency/security review.
+- [ ] Change package/application metadata to 2.18.12 only when an actual 2.18.12 release candidate is intentionally cut.
+
 ## Future ideas after 2.7.4 is verified
 
 Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer longitudinal statistics beyond the implemented recent-attempt list, optional cloud-independent LAN rooms, additional localization packs, educator-oriented batch authoring, and optional file-picker adapters for the already-versioned local backup format.
 
-A future version such as `2.18.12` must be planned only after the verified 2.7.4 release path is closed. It should start from a fresh changelog/release-notes/metadata/test milestone rather than renaming an unverified 2.7.4 candidate.
+Version `2.18.12` is now prepared as a separate planning milestone, but implementation remains gated on closing the verified 2.7.4 release path. It must start from a fresh changelog/release-notes/metadata/test milestone rather than renaming an unverified 2.7.4 candidate.
 
 **Made by the Sanskar**
