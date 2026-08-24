@@ -27,6 +27,10 @@ jobs:
         run: |
           python3 tool/test_prepare_web_assets.py
           python3 tool/test_generate_platform_branding.py
+          python3 tool/test_check_platform_runner_contract.py
+
+      - name: Validate generated platform runner contract
+        run: python3 tool/check_platform_runner_contract.py
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
