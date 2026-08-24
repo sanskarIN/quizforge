@@ -10,12 +10,12 @@ Push-triggered verification remains scoped to `main` where configured. Path-filt
 
 `.github/workflows/ci.yml` verifies, in order:
 
-- regression tests for the repository-local Markdown, ARB, release-metadata, and Web-runtime-asset tooling;
+- regression tests for the repository-local Markdown, ARB, release-metadata, Web-runtime-asset, and platform-branding tooling;
 - repository-local Markdown links and image targets with `tool/check_markdown_links.py`;
 - ARB localization-catalog structure/key consistency with `tool/check_arb_catalogs.py`;
 - package/in-app/changelog/versioning consistency with `tool/check_release_metadata.py`;
-- Flutter toolchain setup and dependency resolution;
-- capture of the resolved `pubspec.lock` as short-lived review evidence;
+- Flutter toolchain setup and locked dependency resolution;
+- verification that dependency resolution leaves `pubspec.lock` and `analysis_options.yaml` unchanged;
 - Flutter localization generation;
 - Dart formatting across `lib/`, `test/`, and `tool/`;
 - Flutter static analysis;
@@ -27,29 +27,31 @@ The ARB checker is stdlib-only. It rejects duplicate JSON keys, missing/non-empt
 
 The release-metadata checker is stdlib-only as well. For the maintained 2.7.4 line it checks `pubspec.yaml`, the in-app `AppConstants.version`, dated/ordered changelog release metadata, stable-major versioning policy, and matching package/tag documentation.
 
-The Web runtime tool regression tests are also network-independent. The actual download of pinned Drift Web assets is isolated to Web build/release jobs rather than making the general quality job depend on an external download.
+The Web runtime and platform-branding regression tests are also network-independent. The actual download of pinned Drift Web assets is isolated to Web build/release jobs rather than making the general quality job depend on an external download.
 
-The same maintained source-quality sequence is available locally through `tool/check.sh` and `tool/check.ps1`.
+The same maintained source-quality sequence is available locally through `tool/check.sh` and `tool/check.ps1`; both use `flutter pub get --enforce-lockfile` and then verify the reviewed resolver files remain unchanged.
 
 ## Android/Web build gate
 
 `.github/workflows/build.yml` provides the primary Android/Web release-build compatibility gate. It:
 
-1. tests the Web runtime asset tooling;
-2. materializes reproducible Android/Web runners;
-3. prepares the pinned Drift Web SQLite runtime assets;
-4. resolves Flutter dependencies and generates localizations;
-5. builds an **Android release APK**;
-6. builds a Web release bundle;
-7. verifies `sqlite3.wasm` and `drift_worker.js` exist and pass validation in `build/web`.
+1. tests the Web runtime and platform-branding support tooling;
+2. materializes reproducible Android/Web runners with `--no-pub` so runner generation cannot perform an uncontrolled dependency-resolution pass;
+3. applies and structurally checks QuizForge Android/Web branding;
+4. prepares the pinned Drift Web SQLite runtime assets;
+5. resolves Flutter dependencies with `--enforce-lockfile` and verifies the resolver files remain unchanged;
+6. generates localizations;
+7. builds an **Android release APK**;
+8. builds a Web release bundle;
+9. verifies `sqlite3.wasm` and `drift_worker.js` exist and pass validation in `build/web`.
 
-This closes the earlier gap where Web Dart compilation could pass even though the persistent Drift runtime assets were absent.
+This closes two earlier gaps: Web Dart compilation could pass even when the persistent Drift runtime assets were absent, and generated runner setup could rewrite the reviewed application lockfile before the explicit locked-resolution check.
 
 The build job is still not a substitute for Android signing/store validation or a real-browser Web persistence/reload smoke test.
 
 ## Platform build matrix
 
-`.github/workflows/platform-builds.yml` provides host-appropriate release compile/build checks for Linux, Windows, macOS, and iOS. It materializes the relevant generated runner in each ephemeral checkout. iOS uses a no-codesign release compile because CI does not contain distribution signing credentials.
+`.github/workflows/platform-builds.yml` provides host-appropriate release compile/build checks for Linux, Windows, macOS, and iOS. It materializes the relevant generated runner in each ephemeral checkout using `--no-pub`, applies/checks QuizForge branding, then performs one explicit locked dependency-resolution pass. iOS uses a no-codesign release compile because CI does not contain distribution signing credentials.
 
 The platform workflow retains path filters, so documentation-only PRs do not consume all host runners. A relevant code/platform change in a stacked feature PR can still trigger the matrix even when that PR targets an audit/release branch rather than `main`.
 
@@ -106,7 +108,7 @@ The first job:
 
 - validates tag/public package-version agreement;
 - requires a committed non-empty application lockfile;
-- runs Markdown/ARB/release-metadata/Web-tool regression tests;
+- runs Markdown/ARB/release-metadata/Web-runtime/platform-branding regression tests;
 - runs all repository structural/metadata validators;
 - uses `flutter pub get --enforce-lockfile` and verifies the lockfile is unchanged;
 - generates localizations;
@@ -117,7 +119,7 @@ No platform packaging job begins until this verification succeeds.
 
 ### Platform packaging
 
-After source verification, independent host jobs build/package:
+After source verification, independent host jobs generate their platform runners with `--no-pub`, apply deterministic QuizForge branding, enforce the committed lockfile, and build/package:
 
 - Android release APK and AAB;
 - Web release bundle with validated Drift WASM/worker assets;
@@ -149,10 +151,12 @@ python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
+python3 tool/test_generate_platform_branding.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
-flutter pub get
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
@@ -164,9 +168,12 @@ Use `python` instead of `python3` on Windows when that is the configured launche
 For Android/Web release-build reproduction on a compatible host:
 
 ```bash
-flutter create . --platforms=android,web
+flutter create . --platforms=android,web --no-pub
+python3 tool/generate_platform_branding.py --platforms=android,web
+python3 tool/generate_platform_branding.py --platforms=android,web --check
 python3 tool/prepare_web_assets.py --destination web
-flutter pub get
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.lock analysis_options.yaml
 flutter gen-l10n
 flutter build apk --release
 flutter build web --release
