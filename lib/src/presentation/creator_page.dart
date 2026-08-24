@@ -2,15 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../application/quizforge_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../domain/question.dart';
 
 final class CreatorPage extends StatefulWidget {
-  const CreatorPage({
-    required this.controller,
-    super.key,
-  });
+  const CreatorPage({required this.controller, super.key});
 
   final QuizForgeController controller;
 
@@ -46,14 +44,21 @@ final class _CreatorPageState extends State<CreatorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final Question preview = _buildQuestion();
+    final List<String> previewErrors = _validationErrors.isNotEmpty
+        ? _validationErrors
+        : _validateDraft(preview);
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: <Widget>[
-          Text('Create a question', style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            strings.createQuestion,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: AppSpacing.sm),
-          const Text('Build, validate, and preview questions before adding them to the local bank.'),
+          Text(strings.createQuestionDescription),
           const SizedBox(height: AppSpacing.xl),
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
@@ -61,7 +66,7 @@ final class _CreatorPageState extends State<CreatorPage> {
               final Widget form = _buildForm(context);
               final Widget previewPanel = _PreviewPanel(
                 question: preview,
-                errors: _validationErrors,
+                errors: previewErrors,
               );
               if (wide) {
                 return Row(
@@ -89,6 +94,7 @@ final class _CreatorPageState extends State<CreatorPage> {
   }
 
   Widget _buildForm(BuildContext context) {
+    final AppLocalizations strings = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -97,19 +103,22 @@ final class _CreatorPageState extends State<CreatorPage> {
           children: <Widget>[
             DropdownMenu<QuestionType>(
               initialSelection: _type,
-              label: const Text('Question type'),
+              label: Text(strings.questionType),
               expandedInsets: EdgeInsets.zero,
               dropdownMenuEntries: QuestionType.values
                   .map(
                     (QuestionType type) => DropdownMenuEntry<QuestionType>(
                       value: type,
-                      label: _typeLabel(type),
+                      label: _typeLabel(strings, type),
                     ),
                   )
                   .toList(growable: false),
               onSelected: (QuestionType? value) {
                 if (value != null) {
-                  setState(() => _type = value);
+                  setState(() {
+                    _type = value;
+                    _validationErrors = const <String>[];
+                  });
                 }
               },
             ),
@@ -117,31 +126,34 @@ final class _CreatorPageState extends State<CreatorPage> {
             TextField(
               controller: _prompt,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Prompt'),
-              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(labelText: strings.prompt),
+              onChanged: (_) => _onDraftChanged(),
             ),
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _category,
-              decoration: const InputDecoration(labelText: 'Category'),
-              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(labelText: strings.category),
+              onChanged: (_) => _onDraftChanged(),
             ),
             const SizedBox(height: AppSpacing.md),
             DropdownMenu<Difficulty>(
               initialSelection: _difficulty,
-              label: const Text('Difficulty'),
+              label: Text(strings.difficulty),
               expandedInsets: EdgeInsets.zero,
               dropdownMenuEntries: Difficulty.values
                   .map(
                     (Difficulty value) => DropdownMenuEntry<Difficulty>(
                       value: value,
-                      label: value.name,
+                      label: _difficultyLabel(strings, value),
                     ),
                   )
                   .toList(growable: false),
               onSelected: (Difficulty? value) {
                 if (value != null) {
-                  setState(() => _difficulty = value);
+                  setState(() {
+                    _difficulty = value;
+                    _validationErrors = const <String>[];
+                  });
                 }
               },
             ),
@@ -152,11 +164,11 @@ final class _CreatorPageState extends State<CreatorPage> {
                 controller: _choices,
                 minLines: 3,
                 maxLines: 6,
-                decoration: const InputDecoration(
-                  labelText: 'Choices',
-                  helperText: 'Enter one choice per line.',
+                decoration: InputDecoration(
+                  labelText: strings.choices,
+                  helperText: strings.choicesHelper,
                 ),
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) => _onDraftChanged(),
               ),
             ],
             const SizedBox(height: AppSpacing.md),
@@ -165,38 +177,36 @@ final class _CreatorPageState extends State<CreatorPage> {
               minLines: 2,
               maxLines: 5,
               decoration: InputDecoration(
-                labelText: 'Correct answer${_type == QuestionType.multiSelect ? 's' : ''}',
+                labelText: strings.correctAnswers,
                 helperText: _type == QuestionType.trueFalse
-                    ? 'Enter true or false.'
-                    : 'Enter one accepted answer per line.',
+                    ? strings.trueFalseAnswerHelper
+                    : strings.acceptedAnswersHelper,
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => _onDraftChanged(),
             ),
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _tags,
-              decoration: const InputDecoration(
-                labelText: 'Tags',
-                helperText: 'Comma separated, for example: science, basics',
+              decoration: InputDecoration(
+                labelText: strings.tags,
+                helperText: strings.tagsHelper,
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => _onDraftChanged(),
             ),
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _explanation,
               minLines: 2,
               maxLines: 5,
-              decoration: const InputDecoration(labelText: 'Explanation'),
-              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(labelText: strings.explanation),
+              onChanged: (_) => _onDraftChanged(),
             ),
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _timeLimit,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Optional time limit (seconds)',
-              ),
-              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(labelText: strings.optionalTimeLimit),
+              onChanged: (_) => _onDraftChanged(),
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
@@ -206,7 +216,7 @@ final class _CreatorPageState extends State<CreatorPage> {
                       unawaited(_save());
                     },
               icon: const Icon(Icons.add),
-              label: Text(_saving ? 'Adding…' : 'Add to question bank'),
+              label: Text(_saving ? strings.adding : strings.addToQuestionBank),
             ),
           ],
         ),
@@ -215,11 +225,16 @@ final class _CreatorPageState extends State<CreatorPage> {
   }
 
   Question _buildQuestion() {
+    final String rawTimeLimit = _timeLimit.text.trim();
+    final int? parsedTimeLimit = rawTimeLimit.isEmpty
+        ? null
+        : int.tryParse(rawTimeLimit) ?? 0;
     return Question(
       id: _generatedId(),
       type: _type,
       prompt: _prompt.text.trim(),
-      choices: _type == QuestionType.multipleChoice ||
+      choices:
+          _type == QuestionType.multipleChoice ||
               _type == QuestionType.multiSelect
           ? _lines(_choices.text)
           : const <String>[],
@@ -232,13 +247,31 @@ final class _CreatorPageState extends State<CreatorPage> {
           .where((String value) => value.isNotEmpty)
           .toList(growable: false),
       explanation: _explanation.text.trim(),
-      timeLimitSeconds: int.tryParse(_timeLimit.text.trim()),
+      timeLimitSeconds: parsedTimeLimit,
     );
   }
 
+  List<String> _validateDraft(Question question) {
+    final List<String> errors = List<String>.of(question.validate());
+    final List<String> rawAnswers = _lines(_answers.text);
+    final Set<String> normalizedAnswers = rawAnswers
+        .map(normalizeAnswer)
+        .where((String value) => value.isNotEmpty)
+        .toSet();
+    if (normalizedAnswers.length != rawAnswers.length) {
+      const String duplicateError =
+          'Correct answers must be non-empty and unique.';
+      if (!errors.contains(duplicateError)) {
+        errors.add(duplicateError);
+      }
+    }
+    return errors;
+  }
+
   Future<void> _save() async {
+    final AppLocalizations strings = AppLocalizations.of(context);
     final Question question = _buildQuestion();
-    final List<String> errors = question.validate();
+    final List<String> errors = _validateDraft(question);
     setState(() => _validationErrors = errors);
     if (errors.isNotEmpty) {
       return;
@@ -249,19 +282,31 @@ final class _CreatorPageState extends State<CreatorPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Question added to the local bank.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.questionAdded)));
       _clearForm();
-    } on Object catch (error) {
+    } on ArgumentError {
       if (mounted) {
-        setState(() => _validationErrors = <String>['$error']);
+        setState(() => _validationErrors = <String>[strings.duplicateQuestion]);
+      }
+    } on Object catch (error) {
+      widget.controller.logger.error(
+        'question.create.persist.failed',
+        fields: <String, Object?>{'errorType': error.runtimeType.toString()},
+      );
+      if (mounted) {
+        setState(() => _validationErrors = <String>[strings.actionFailed]);
       }
     } finally {
       if (mounted) {
         setState(() => _saving = false);
       }
     }
+  }
+
+  void _onDraftChanged() {
+    setState(() => _validationErrors = const <String>[]);
   }
 
   void _clearForm() {
@@ -276,9 +321,9 @@ final class _CreatorPageState extends State<CreatorPage> {
   }
 
   String _generatedId() {
-    final String category = normalizeAnswer(_category.text)
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'^-+|-+$'), '');
+    final String category = normalizeAnswer(
+      _category.text,
+    ).replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
     final String prefix = category.isEmpty ? 'question' : category;
     return '$prefix-${DateTime.now().microsecondsSinceEpoch}';
   }
@@ -289,42 +334,58 @@ final class _CreatorPageState extends State<CreatorPage> {
       .where((String item) => item.isNotEmpty)
       .toList(growable: false);
 
-  static String _typeLabel(QuestionType type) {
+  static String _typeLabel(AppLocalizations strings, QuestionType type) {
     switch (type) {
       case QuestionType.multipleChoice:
-        return 'Multiple choice';
+        return strings.multipleChoice;
       case QuestionType.trueFalse:
-        return 'True / false';
+        return strings.trueFalse;
       case QuestionType.multiSelect:
-        return 'Multi-select';
+        return strings.multiSelect;
       case QuestionType.shortAnswer:
-        return 'Short answer';
+        return strings.shortAnswer;
+    }
+  }
+
+  static String _difficultyLabel(
+    AppLocalizations strings,
+    Difficulty difficulty,
+  ) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return strings.easy;
+      case Difficulty.medium:
+        return strings.medium;
+      case Difficulty.hard:
+        return strings.hard;
     }
   }
 }
 
 final class _PreviewPanel extends StatelessWidget {
-  const _PreviewPanel({
-    required this.question,
-    required this.errors,
-  });
+  const _PreviewPanel({required this.question, required this.errors});
 
   final Question question;
   final List<String> errors;
 
   @override
   Widget build(BuildContext context) {
-    final List<String> currentErrors = question.validate();
+    final AppLocalizations strings = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Preview', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              strings.preview,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              question.prompt.isEmpty ? 'Your prompt will appear here.' : question.prompt,
+              question.prompt.isEmpty
+                  ? strings.promptPreviewPlaceholder
+                  : question.prompt,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -342,17 +403,17 @@ final class _PreviewPanel extends StatelessWidget {
                 ),
               ),
             if (question.type == QuestionType.shortAnswer)
-              const Text('Short-answer text field'),
+              Text(strings.shortAnswerFieldPreview),
             if (question.type == QuestionType.trueFalse)
-              const Text('True / False choices'),
+              Text(strings.trueFalseChoicesPreview),
             const SizedBox(height: AppSpacing.md),
-            if (errors.isNotEmpty || currentErrors.isNotEmpty) ...<Widget>[
+            if (errors.isNotEmpty) ...<Widget>[
               Text(
-                'Validation',
+                strings.validation,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: AppSpacing.sm),
-              for (final String error in errors.isNotEmpty ? errors : currentErrors)
+              for (final String error in errors)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                   child: Row(
@@ -365,11 +426,11 @@ final class _PreviewPanel extends StatelessWidget {
                   ),
                 ),
             ] else
-              const Row(
+              Row(
                 children: <Widget>[
-                  Icon(Icons.check_circle_outline, size: 18),
-                  SizedBox(width: AppSpacing.sm),
-                  Text('Ready to save'),
+                  const Icon(Icons.check_circle_outline, size: 18),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: Text(strings.readyToSave)),
                 ],
               ),
           ],

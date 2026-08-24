@@ -2,12 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-enum LogLevel {
-  debug,
-  info,
-  warning,
-  error,
-}
+enum LogLevel { debug, info, warning, error }
 
 final class AppLogger {
   AppLogger({
@@ -18,27 +13,35 @@ final class AppLogger {
   final void Function(String message) _sink;
   final LogLevel minimumLevel;
 
-  void debug(String event, {Map<String, Object?> fields = const <String, Object?>{}}) {
+  void debug(
+    String event, {
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) {
     _write(LogLevel.debug, event, fields);
   }
 
-  void info(String event, {Map<String, Object?> fields = const <String, Object?>{}}) {
+  void info(
+    String event, {
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) {
     _write(LogLevel.info, event, fields);
   }
 
-  void warning(String event, {Map<String, Object?> fields = const <String, Object?>{}}) {
+  void warning(
+    String event, {
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) {
     _write(LogLevel.warning, event, fields);
   }
 
-  void error(String event, {Map<String, Object?> fields = const <String, Object?>{}}) {
+  void error(
+    String event, {
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) {
     _write(LogLevel.error, event, fields);
   }
 
-  void _write(
-    LogLevel level,
-    String event,
-    Map<String, Object?> fields,
-  ) {
+  void _write(LogLevel level, String event, Map<String, Object?> fields) {
     if (level.index < minimumLevel.index) {
       return;
     }
@@ -80,7 +83,10 @@ final class AppLogger {
       return value;
     }
     if (value is Iterable<Object?>) {
-      return value.take(20).map<Object?>(_sanitizeValue).toList(growable: false);
+      return value
+          .take(20)
+          .map<Object?>(_sanitizeValue)
+          .toList(growable: false);
     }
     if (value is Map<String, Object?>) {
       return _redactMap(value);
@@ -89,7 +95,10 @@ final class AppLogger {
   }
 
   static bool _sensitiveKey(String key) {
-    final String normalized = key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final String normalized = key.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
     const List<String> fragments = <String>[
       'password',
       'passwd',

@@ -6,10 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 
 final class OnboardingPage extends StatefulWidget {
-  const OnboardingPage({
-    required this.onComplete,
-    super.key,
-  });
+  const OnboardingPage({required this.onComplete, super.key});
 
   final Future<void> Function() onComplete;
 
@@ -130,8 +127,8 @@ final class _OnboardingPageState extends State<OnboardingPage> {
                         onPressed: _finishing
                             ? null
                             : lastPage
-                                ? () => unawaited(_finish())
-                                : _next,
+                            ? () => unawaited(_finish())
+                            : _next,
                         icon: Icon(
                           lastPage ? Icons.check : Icons.arrow_forward,
                         ),
@@ -139,8 +136,8 @@ final class _OnboardingPageState extends State<OnboardingPage> {
                           _finishing
                               ? strings.onboardingStarting
                               : lastPage
-                                  ? strings.onboardingStart
-                                  : strings.next,
+                              ? strings.onboardingStart
+                              : strings.next,
                         ),
                       ),
                     ],

@@ -42,7 +42,7 @@ The JSON root is an object with a `questions` array:
 }
 ```
 
-The exporter emits deterministic field names and stable enum identifiers. Consumers should not assume unknown future fields are executable or trusted.
+The exporter additionally emits `format` and `version` metadata alongside `questions`. Readers are driven by the documented question payload and must not treat unknown future fields as executable or trusted content.
 
 ## CSV
 
@@ -54,13 +54,15 @@ id,type,prompt,choices,correctAnswers,category,difficulty,tags,explanation,timeL
 
 `choices`, `correctAnswers`, and `tags` are JSON arrays encoded inside their CSV cells. Standard CSV quoting is used when a value contains commas, quotes, or line breaks.
 
+Quoted fields must start with `"` at the beginning of a field. Literal quotes inside a quoted field use the standard doubled form `""`. After a closing quote, only a comma, a row ending, or end-of-file is accepted. Quotes embedded directly inside an unquoted field and trailing characters after a closing quote are rejected as malformed input instead of being silently reinterpreted.
+
 Use a QuizForge-generated export as the safest template for authoring compatible CSV.
 
 ## Validation rules
 
 The domain model rejects structurally invalid questions, including empty ids/prompts/categories, invalid choice configuration, correct answers that do not belong to choice-based questions, and invalid time limits.
 
-A malformed row or JSON entry is reported rather than silently converted into a different question.
+A malformed row or JSON entry is reported rather than silently converted into a different question. Import source size, question count, question-field lengths, tag/answer counts, and timer values are bounded before accepted content is persisted.
 
 ## Duplicate handling
 

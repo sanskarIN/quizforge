@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizforge/src/application/quizforge_controller.dart';
 import 'package:quizforge/src/data/app_database.dart';
@@ -10,7 +11,9 @@ import 'package:quizforge/src/presentation/quiz_setup_page.dart';
 import '../test_app.dart';
 
 void main() {
-  testWidgets('disables start when no questions match', (WidgetTester tester) async {
+  testWidgets('disables start when no questions match', (
+    WidgetTester tester,
+  ) async {
     final AppDatabase database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final QuizForgeController controller = QuizForgeController(

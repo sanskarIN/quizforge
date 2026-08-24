@@ -4,22 +4,59 @@
 
 QuizForge favors small, testable modules and incremental changes. Keep business rules in the domain layer, persistence details in the data layer, orchestration in the application layer, and Flutter-specific concerns in presentation.
 
+The maintained release-candidate line is currently `2.7.4+1`, with `v2.7.4` reserved for the exact verified release head. Generated runners use organization `io.github.sanskarin`, producing canonical reverse-DNS application/bundle identity `io.github.sanskarin.quizforge` where applicable.
+
 ## Daily workflow
 
-From the repository root:
+From the repository root, prefer the maintained quality scripts:
 
 ```bash
-flutter pub get
-dart format lib test
+./tool/check.sh
+```
+
+or on PowerShell:
+
+```powershell
+./tool/check.ps1
+```
+
+The equivalent sequence is:
+
+```bash
+python3 tool/test_check_markdown_links.py
+python3 tool/test_check_arb_catalogs.py
+python3 tool/test_check_release_metadata.py
+python3 tool/test_prepare_web_assets.py
+python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
+python3 tool/check_markdown_links.py
+python3 tool/check_arb_catalogs.py
+python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
-flutter test
+flutter test --coverage
 ```
 
-Before committing, use the non-mutating formatting gate:
+Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization/release metadata/runner contracts and broken validator tests fail early. Normal verification treats the committed package manifest, application lockfile, and analyzer configuration as reviewed source and rejects unexpected resolver drift.
 
-```bash
-dart format --output=none --set-exit-if-changed lib test
-```
+## Release/version metadata changes
+
+Treat version metadata as a release contract rather than a cosmetic edit.
+
+When changing the package version:
+
+1. update `pubspec.yaml` using `MAJOR.MINOR.PATCH+BUILD`;
+2. create/update the matching dated release entry in `CHANGELOG.md` while retaining a fresh Unreleased section;
+3. update the maintained package/tag identity and compatibility policy in `docs/versioning.md`;
+4. update release notes/evidence documentation when applicable;
+5. run `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py` before Flutter work;
+6. do not create/promote the public Git tag until exact-head release verification is complete.
+
+`tool/check_release_metadata.py` validates current package/changelog/versioning consistency and rejects a stable-major documentation state that still claims a pre-1.0 policy. Its release-heading parser is regression-tested against historical zero-major entries such as `0.1.0`.
 
 ## Adding a question rule
 
@@ -36,19 +73,35 @@ Do not let widgets execute SQL. Add database/repository methods and expose the c
 
 Multi-step mutations must use transactions. Released schema changes must increment `schemaVersion`, include migration code, and include tests that exercise the old-to-new path.
 
-## Import/export changes
+Schema version 1 does not store the original per-answer position inside completed attempts. Code working with historical attempts must not infer play order from database row order. See `docs/local-backup.md` and `docs/architecture.md` for the backup/streak consequence of this boundary.
 
-Treat all file/pasted content as untrusted. Parsers should:
+Changing application SemVer alone does not require a database schema increment. The 2.7.4 package update therefore retains database schema version 1 because it does not change the SQLite layout.
+
+## Import/export and backup changes
+
+Treat all file/pasted content as untrusted. Parsers/codecs should:
 
 - impose clear structure;
 - reject invalid types;
 - validate domain rules;
-- skip or report duplicates predictably;
-- return useful errors without crashing the entire import;
+- skip or report duplicates predictably where the format permits it;
+- return useful errors without crashing the entire operation;
 - avoid executing imported content;
-- preserve Unicode correctly.
+- preserve Unicode correctly;
+- bound input/archive resources;
+- never log raw user payloads.
 
-Add regression cases for malformed quoting, unexpected JSON types, duplicate ids/content, large fields, and relevant edge cases.
+Add regression cases for malformed quoting, unexpected JSON types, duplicate ids/content, large fields, invalid references, non-finite numeric values, and relevant edge cases. Keep deterministic malformed-input/fuzz coverage in `test/data/`.
+
+Question-bank JSON/CSV and complete local backup JSON are different contracts. Changes to the local backup format must preserve or explicitly reject older versions, validate the complete object graph before destructive replacement, preserve rollback behavior, and update `docs/local-backup.md`, `PRIVACY.md`, `docs/data-lifecycle.md`, tests, and the changelog.
+
+Backup-format versioning is independent from application SemVer. QuizForge 2.7.4 continues to use local-backup format version 1.
+
+Do not increase the backup encoder's supported output beyond what the decoder can accept. The current codec refuses to emit an archive above its supported restore limit so it cannot intentionally create an archive that the same version will reject solely for size.
+
+For restored historical attempt data, preserve schema-v1 order limitations: the database does not store original answer sequence. Validate only order-independent streak invariants unless a future schema migration adds explicit sequence metadata.
+
+Every restored answer row must remain consistent with normal QuizForge scoring. Backup validation re-evaluates submitted answers against the archived question and rejects correctness/score metadata that does not agree with the normal `QuizEngine` result.
 
 ## UI development
 
@@ -56,28 +109,55 @@ Use the design tokens in `lib/src/core/theme/app_theme.dart`. Prefer responsive 
 
 Visible changes should be reviewed at compact and wide sizes, in light and dark mode, with larger text. Interactive controls must remain keyboard reachable on desktop/web and have semantic labels where their visual meaning is not self-evident.
 
+All user-facing framework strings should come from the ARB localization resources unless they are user-authored/domain content or unavoidable platform text. Run `python3 tool/check_arb_catalogs.py` and `flutter gen-l10n` after localization changes. Resource identifiers must be valid Dart identifiers rather than language keywords.
+
 ## Asynchronous work
 
-Do not block the UI isolate with expensive parsing or processing. Current question banks are intentionally small enough for synchronous codecs; if profiling shows large imports cause frame stalls, move parsing to an isolate and record the performance threshold in `docs/performance.md`.
+Do not block the UI isolate with expensive parsing or processing. Current question banks are intentionally small enough for synchronous codecs; if profiling shows large imports or backups cause frame stalls, move processing to an isolate only after measuring the threshold and recording the result in `docs/performance.md`.
 
 Use `unawaited` only when intentionally discarding a future. User-visible mutations should normally be awaited so errors can be surfaced.
 
 ## Logging
 
-Do not use ad-hoc `print` calls. The analyzer forbids them. A future logging abstraction must support structured fields and redact secrets, authentication material, and user-authored content by default.
+Use `AppLogger` from `lib/src/core/logging/app_logger.dart` instead of ad-hoc `print` calls. The logger emits structured JSON-like event payloads, validates event names, redacts sensitive field keys, truncates/redacts unsafe string content, and is covered by tests.
+
+Do not log raw question prompts, answers, profile names, email addresses, import/export/backup payloads, tokens, secrets, authorization material, cookies, or credentials. When reporting a caught exception, prefer a stable event name and a small machine-oriented field such as the exception runtime type instead of serializing arbitrary exception/user content.
 
 ## Dependencies
 
 Prefer Flutter/Dart standard libraries unless a maintained package materially reduces risk or complexity. Evaluate maintenance status, platform support, license, API scope, transitive dependencies, and security history before adding packages.
 
-After changing dependencies:
+For normal verification after code changes, do not refresh dependencies implicitly. Use:
 
 ```bash
-flutter pub get
-flutter pub outdated
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
+flutter gen-l10n
 flutter analyze
 flutter test
 ```
+
+When intentionally changing dependencies, update `pubspec.yaml`, run normal resolver tooling in a supported Flutter environment to regenerate `pubspec.lock`, review the full lockfile diff, run `flutter pub outdated` for maintenance visibility, and then rerun the locked verification sequence above before committing.
+
+For this Flutter application, keep `intl: any` paired with `flutter_localizations` so Flutter stable chooses its SDK-compatible `intl` version unless a future verified compatibility reason changes that policy.
+
+Do not hand-author a lockfile. The tagged release workflow requires a committed lockfile and enforces it with `flutter pub get --enforce-lockfile`.
+
+## Generated platform runners
+
+Runner materialization is scaffolding rather than dependency maintenance. Use the canonical organization and restore the reviewed dependency metadata immediately after scaffolding:
+
+```bash
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
+python3 tool/check_platform_runner_contract.py
+```
+
+The organization produces canonical application/bundle identity `io.github.sanskarin.quizforge` where applicable. Do not fall back to Flutter's `com.example` default.
+
+`--no-pub` prevents an implicit resolver pass, while `git restore` is still required because project recreation can remove/reset reviewed package metadata even without running pub. Perform the explicit locked dependency-resolution check afterward. Do not remove the organization, `--no-pub`, metadata restoration, or runner-contract validation from CI/release generation unless the change deliberately redesigns and verifies the distribution/dependency contract.
+
+Once the application has been publicly distributed, changing the application/bundle identifier is a compatibility and migration decision because it can affect installed-app identity and local storage boundaries.
 
 ## Commit discipline
 
@@ -87,4 +167,6 @@ The maintainer-requested commit email is `sanskarin@outlook.in`; configure it lo
 
 ## Definition of a completed change
 
-A change is complete when relevant tests exist, format/analyze/tests pass, error states are handled, accessibility impact has been considered, documentation reflects the behavior, and no secrets/private data were introduced.
+A change is complete when relevant regression tests exist, repository validators pass, localization generation succeeds when applicable, format/analyze/tests pass, error states are handled, accessibility/privacy impact has been considered, documentation reflects the behavior, and no secrets/private data were introduced.
+
+Release-candidate completion is stricter: final-head GitHub Actions/build/security gates, canonical runner identity, reviewed locked dependency state, and applicable manual platform/accessibility/data-restore checks must also be observed as successful rather than inferred from source review.

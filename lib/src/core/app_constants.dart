@@ -1,6 +1,6 @@
 abstract final class AppConstants {
   static const String appName = 'QuizForge';
-  static const String version = '0.1.0';
+  static const String version = '2.7.4';
   static const String credit = 'Made by the Sanskar';
 
   static const String githubUrl = 'https://github.com/sanskarIN/quizforge';

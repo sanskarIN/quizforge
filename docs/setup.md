@@ -18,7 +18,9 @@ Typical platform requirements include:
 - Linux: a supported Linux desktop toolchain and Flutter's documented native dependencies.
 - Web: a supported browser and Flutter web tooling.
 
-Git is required for source checkout.
+Git and Python 3 are required for source checkout and the deterministic repository validation tools. The Python tools use only the standard library.
+
+The maintained release-candidate package version is `2.7.4+1`; the intended public tag after verification is `v2.7.4`. Generated platform runners use organization `io.github.sanskarin`, producing canonical reverse-DNS application/bundle identity `io.github.sanskarin.quizforge` where applicable.
 
 ## Clone
 
@@ -37,36 +39,111 @@ Set `user.name` to the identity you want Git to record.
 
 ## Materialize platform runners
 
-The repository keeps platform shells reproducible. Generate the normal Flutter runner files from the package metadata:
+The repository keeps platform shells reproducible. Generate the normal Flutter runner files using the canonical organization without allowing `flutter create` to run its own package-resolution pass:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
 ```
 
-Run the command from the repository root. Review generated diffs before committing platform files; generated local paths, signing material, and machine-specific configuration must remain untracked.
+The immediate `git restore` is deliberate: project recreation can remove or reset package metadata even with `--no-pub`. Restoring the reviewed files before dependency resolution ensures the checked-in package/lock/analyzer contract remains authoritative. Run these commands from the repository root. Review generated platform diffs before committing platform files; generated local paths, signing material, and machine-specific configuration must remain untracked.
 
-## Install packages
+### Web database runtime assets
+
+The Web runner needs Drift's compatible SQLite WebAssembly module and worker in addition to the generated Flutter shell. Prepare the pinned runtime assets after creating the Web runner:
 
 ```bash
-flutter pub get
+python3 tool/prepare_web_assets.py --destination web
 ```
 
-Do not manually edit generated dependency caches. Commit the normal Flutter lockfile when generated for an application so CI and release builds resolve a reproducible dependency graph.
+On Windows, use `python` when that is the configured Python launcher. The command is idempotent for already-valid assets. It fetches the assets from the pinned Drift 2.34.3 release, validates the WebAssembly header and bounded file shape, and writes them atomically.
+
+To verify an existing Web runner without downloading anything:
+
+```bash
+python3 tool/prepare_web_assets.py --destination web --check
+```
+
+`AppDatabase.defaults()` references `sqlite3.wasm` and `drift_worker.js` for the Web backend. A Web deployment that omits those files may compile but cannot be treated as a working persistent QuizForge build.
+
+See [`platform-support.md`](platform-support.md) for the complete six-platform contract.
+
+## Validate repository inputs
+
+Before Flutter generation/build work, run the deterministic repository validators and their regression tests:
+
+```bash
+python3 tool/test_check_markdown_links.py
+python3 tool/test_check_arb_catalogs.py
+python3 tool/test_check_release_metadata.py
+python3 tool/test_prepare_web_assets.py
+python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
+python3 tool/check_markdown_links.py
+python3 tool/check_arb_catalogs.py
+python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
+```
+
+On Windows, use `python` instead of `python3` when that is the configured launcher.
+
+- The Markdown checker validates repository-local documentation targets and rejects local links that escape the repository root.
+- The ARB checker validates localization catalog structure/key parity.
+- The release-metadata checker validates package/in-app/changelog/versioning consistency, including the maintained `2.7.4+1` / `2.7.4` / `v2.7.4` identity.
+- The Web-asset tool tests protect the SQLite WASM/worker validation path without requiring network access.
+- The platform-branding tests protect deterministic generated icon/splash structure without requiring platform-specific image tooling.
+- The runner-contract validator rejects Flutter's default `com.example` identity and requires canonical organization, `--no-pub`, immediate dependency-metadata restoration, and `--enforce-lockfile` in maintained runner workflows.
+- Flutter localization generation remains the authoritative framework-level localization check after the early ARB validator.
+
+## Install packages and generate localizations
+
+```bash
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
+flutter gen-l10n
+```
+
+`pubspec.yaml` keeps `intl: any` alongside the Flutter localization SDK so the installed Flutter stable SDK selects its compatible `intl` version. Do not replace that with an arbitrary manually pinned version unless the complete Flutter dependency graph has been verified.
+
+Do not manually edit generated dependency caches or silently refresh the application lockfile during normal verification. The maintained 2.7.4 path requires the committed lockfile to be accepted by the supported Flutter resolver without unexpected rewrite. Dependency changes are a separate reviewed operation and may intentionally regenerate `pubspec.lock` before it is committed.
 
 ## Verify the checkout
 
+The maintained convenience scripts run the supported local quality sequence:
+
 ```bash
-dart format --output=none --set-exit-if-changed lib test
+./tool/check.sh
+```
+
+or in PowerShell:
+
+```powershell
+./tool/check.ps1
+```
+
+The complete maintained sequence includes repository/tool regression tests and validators followed by:
+
+```bash
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
-flutter test
+flutter test --coverage
 ```
 
-If the platform runners are present, also verify the primary build appropriate to your host, for example:
+The `tool/` directory is part of the formatting gate because it contains repository utilities and the deterministic benchmark utility.
+
+If the platform runners are present, verify the release build appropriate to your host. Examples:
 
 ```bash
-flutter build apk --debug
-flutter build web
+flutter build apk --release
+python3 tool/prepare_web_assets.py --destination web
+flutter build web --release
+python3 tool/prepare_web_assets.py --destination build/web --check
 ```
+
+Desktop and Apple-platform release builds require their corresponding supported host environments. The pull-request platform-build workflow provides Linux, Windows, macOS, and iOS compile/build evidence on GitHub-hosted runners.
 
 ## Run the app
 
@@ -82,11 +159,24 @@ Then run on a selected device:
 flutter run -d <device-id>
 ```
 
+For Web development, ensure `web/sqlite3.wasm` and `web/drift_worker.js` were prepared before launching the app.
+
 Without `-d`, Flutter can prompt for a target when multiple devices are available.
 
-## Local data
+## Local data and backup
 
-QuizForge creates its SQLite database in application-managed storage. Do not rely on a database path being identical across platforms. Removing app data or uninstalling the app removes local QuizForge state unless it has been exported separately.
+QuizForge creates its SQLite database in application-managed storage. Do not rely on a database path being identical across platforms. Removing app data or uninstalling the app can remove local QuizForge state that has not been separately backed up.
+
+On Web, the database uses Drift's Web SQLite runtime. Browser/site storage policies are therefore part of release verification: a production Web build must be tested for database creation, write/read persistence, refresh/reload behavior, and complete local-backup restore.
+
+The **Import / export** screen provides two different portable-data paths:
+
+- JSON/CSV question-bank export for quiz-content interchange;
+- versioned local-backup JSON for whole-app local-state preservation/restoration.
+
+A local backup can contain profile names, submitted answers, bookmarks, quiz history, settings, and the active profile in addition to questions, so treat it as private data. See `docs/local-backup.md` and `PRIVACY.md` before using real archives in bug reports or shared environments.
+
+For the 2.7.4 candidate, local-backup format remains version 1 and database schema remains version 1. Application SemVer and data-format/schema versions are intentionally separate contracts.
 
 ## Environment file
 
@@ -103,3 +193,5 @@ On the first successful startup QuizForge:
 5. restores the last active local profile when possible.
 
 For errors, continue with `docs/troubleshooting.md`.
+
+For release verification rather than development setup, continue with `docs/platform-support.md`, `docs/release.md`, `docs/release-notes-2.7.4.md`, and `docs/verification.md`.

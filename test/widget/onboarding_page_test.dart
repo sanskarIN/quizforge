@@ -4,7 +4,9 @@ import 'package:quizforge/src/presentation/onboarding_page.dart';
 import '../test_app.dart';
 
 void main() {
-  testWidgets('moves through onboarding and completes', (WidgetTester tester) async {
+  testWidgets('moves through onboarding and completes', (
+    WidgetTester tester,
+  ) async {
     int completed = 0;
 
     await tester.pumpWidget(

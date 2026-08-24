@@ -58,6 +58,31 @@ final class CategoryProgress {
       questionCount == 0 ? 0 : (correctCount / questionCount) * 100;
 }
 
+final class AttemptSummary {
+  const AttemptSummary({
+    required this.id,
+    required this.startedAt,
+    required this.completedAt,
+    required this.correctCount,
+    required this.questionCount,
+    required this.bestStreak,
+    required this.earnedScore,
+  });
+
+  final int id;
+  final DateTime startedAt;
+  final DateTime completedAt;
+  final int correctCount;
+  final int questionCount;
+  final int bestStreak;
+  final double earnedScore;
+
+  double get accuracy =>
+      questionCount == 0 ? 0 : (correctCount / questionCount) * 100;
+
+  Duration get duration => completedAt.difference(startedAt);
+}
+
 final class LeaderboardEntry {
   const LeaderboardEntry({
     required this.profileId,

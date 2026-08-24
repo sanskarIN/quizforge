@@ -26,7 +26,9 @@ void main(List<String> arguments) {
   _measure('decode JSON', () {
     final result = codec.decodeJson(jsonPayload);
     if (result.questions.length != bank.length || result.errors.isNotEmpty) {
-      throw StateError('JSON benchmark round trip was not semantically complete.');
+      throw StateError(
+        'JSON benchmark round trip was not semantically complete.',
+      );
     }
   });
 
@@ -38,7 +40,9 @@ void main(List<String> arguments) {
   _measure('decode CSV', () {
     final result = codec.decodeCsv(csvPayload);
     if (result.questions.length != bank.length || result.errors.isNotEmpty) {
-      throw StateError('CSV benchmark round trip was not semantically complete.');
+      throw StateError(
+        'CSV benchmark round trip was not semantically complete.',
+      );
     }
   });
 

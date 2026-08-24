@@ -4,21 +4,33 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   build:
-    name: Flutter build gate
+    name: Flutter Android/Web build gate
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - name: Test release support tooling
+        run: |
+          python3 tool/test_prepare_web_assets.py
+          python3 tool/test_generate_platform_branding.py
+          python3 tool/test_check_platform_runner_contract.py
+
+      - name: Validate generated platform runner contract
+        run: python3 tool/check_platform_runner_contract.py
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.23.0
@@ -27,16 +39,32 @@ jobs:
           cache: true
 
       - name: Materialize Android and Web runners
-        run: flutter create . --platforms=android,web
+        run: |
+          flutter create . --platforms=android,web --org io.github.sanskarin --no-pub
+          git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
+
+      - name: Apply QuizForge Android and Web branding
+        run: |
+          python3 tool/generate_platform_branding.py --platforms=android,web
+          python3 tool/generate_platform_branding.py --platforms=android,web --check
+
+      - name: Prepare Drift Web runtime assets
+        run: python3 tool/prepare_web_assets.py --destination web
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
+
+      - name: Verify resolver files stay clean
+        run: git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 
       - name: Generate localizations
         run: flutter gen-l10n
 
-      - name: Build Android debug APK
-        run: flutter build apk --debug
+      - name: Build Android release APK
+        run: flutter build apk --release
 
       - name: Build Web release bundle
         run: flutter build web --release
+
+      - name: Verify packaged Drift Web runtime assets
+        run: python3 tool/prepare_web_assets.py --destination build/web --check
