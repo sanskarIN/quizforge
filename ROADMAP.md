@@ -4,6 +4,8 @@ This roadmap tracks engineering milestones rather than guaranteed release dates.
 
 Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7.4`** after verification.
 
+Canonical generated application/bundle identity where applicable: **`io.github.sanskarin.quizforge`**.
+
 ## Phase 0 — Repository foundation
 
 - [x] Public MIT repository identity
@@ -48,6 +50,8 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Private-room multiplayer transport abstraction, disabled by default
 - [x] Structured logging with sensitive-field/content redaction
 - [x] Reproducible generated platform-runner strategy and host build matrix
+- [x] Canonical generated runner organization `io.github.sanskarin` and application/bundle identity `io.github.sanskarin.quizforge`
+- [x] Lockfile-safe runner scaffolding with reviewed package/lock/analyzer metadata restored after project recreation
 - [x] Deterministic platform icon/splash generation integrated into generated runners and release workflows
 - [ ] Complete platform-specific branding visual verification on representative targets
 - [ ] Implement and security-review an optional private-room transport
@@ -75,6 +79,7 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Localization ARB-validator regression tests
 - [x] Release-metadata-validator regression tests, including historical zero-major release parsing
 - [x] Deterministic platform-branding generator regression tests
+- [x] Deterministic generated-runner identity/dependency-safety validator regression tests
 - [ ] Expand full-app restart/platform-adapter end-to-end journeys after stable test adapters are available
 - [ ] Record representative performance measurements and budgets from documented hardware/toolchains
 
@@ -88,6 +93,7 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Release workflow lockfile enforcement and deterministic local-link validation
 - [x] Deterministic ARB localization-catalog validation before Flutter localization generation
 - [x] Deterministic package/changelog/versioning release-metadata validation before Flutter setup
+- [x] Deterministic generated-runner organization/lockfile contract validation before Flutter build/release work
 - [x] Deterministic QuizForge branding generation/validation in build and release workflows
 - [x] Verified-screenshot capture policy and gallery placeholders
 - [x] Dedicated 2.7.4 release notes and stable-version compatibility policy
@@ -129,19 +135,23 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 - [x] Wire release-metadata tests/validation into shell/PowerShell local gates
 - [x] Wire release-metadata tests/validation into pull-request CI
 - [x] Wire release-metadata tests/validation into tag release packaging
+- [x] Add canonical generated application identity `io.github.sanskarin.quizforge` before first public distribution
+- [x] Add and test `tool/check_platform_runner_contract.py`
+- [x] Wire generated-runner contract validation into local quality scripts, PR CI/build gate, and tag release verification
+- [x] Restore reviewed package/lock/analyzer metadata after every generated-runner scaffolding step before enforced dependency resolution
 - [x] Add 2.7.4 README identity, release guide, release notes, CI/testing/setup/development/contribution/maintenance documentation, verification ledger, and continuation handoff
 - [x] Update PR #12 title/body as the maintained 2.7.4 final candidate
 - [x] Generate, review, and commit the application `pubspec.lock` from supported Flutter resolver evidence
 - [x] Add deterministic QuizForge icon/splash generation to generated runner builds
 - [ ] Build from a clean checkout
-- [ ] Pass Markdown/ARB/release-metadata/branding validator tests and validators on the final head
+- [ ] Pass Markdown/ARB/release-metadata/branding/generated-runner validator tests and validators on the final head
 - [ ] Pass formatting, localization generation, analysis, and all automated tests on the final head
 - [ ] Pass dependency review, OSV scan, and secret scan on the final head
 - [ ] Validate database creation and local backup/restore on release builds; add migration verification when schema version first changes
-- [ ] Verify Android release build and branded launcher/splash presentation
+- [ ] Verify Android release build, canonical application id, and branded launcher/splash presentation
 - [ ] Verify Web release build, branding, and Drift persistence/reload behavior
-- [ ] Verify supported desktop builds and branding on their host operating systems
-- [ ] Verify iOS no-codesign compile, icon/splash appearance, and complete signing/device validation outside the public repository
+- [ ] Verify supported desktop builds, canonical identity where applicable, and branding on their host operating systems
+- [ ] Verify iOS no-codesign compile, canonical bundle identifier, icon/splash appearance, and complete signing/device validation outside the public repository
 - [ ] Manually review keyboard navigation, screen-reader semantics, scalable text, contrast, and reduced motion
 - [ ] Capture verified real screenshots using fictional data
 - [ ] Confirm the exact final release-candidate history contains no credentials or private user data
@@ -150,5 +160,7 @@ Current maintained release candidate: **`2.7.4+1`**, intended public tag **`v2.7
 ## Future ideas after 2.7.4 is verified
 
 Future work must remain coherent with QuizForge rather than increasing feature count for its own sake. Candidates include shareable local quiz packs, richer longitudinal statistics beyond the implemented recent-attempt list, optional cloud-independent LAN rooms, additional localization packs, educator-oriented batch authoring, and optional file-picker adapters for the already-versioned local backup format.
+
+A future version such as `2.18.12` must be planned only after the verified 2.7.4 release path is closed. It should start from a fresh changelog/release-notes/metadata/test milestone rather than renaming an unverified 2.7.4 candidate.
 
 **Made by the Sanskar**
