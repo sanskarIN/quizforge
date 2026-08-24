@@ -4,7 +4,7 @@
 
 QuizForge favors small, testable modules and incremental changes. Keep business rules in the domain layer, persistence details in the data layer, orchestration in the application layer, and Flutter-specific concerns in presentation.
 
-The maintained release-candidate line is currently `2.7.4+1`, with `v2.7.4` reserved for the exact verified release head.
+The maintained release-candidate line is currently `2.7.4+1`, with `v2.7.4` reserved for the exact verified release head. Generated runners use organization `io.github.sanskarin`, producing canonical reverse-DNS application/bundle identity `io.github.sanskarin.quizforge` where applicable.
 
 ## Daily workflow
 
@@ -28,18 +28,20 @@ python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
 python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test --coverage
 ```
 
-Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization/release metadata inputs and broken validator tests fail early. Normal verification treats the committed application lockfile as reviewed source and rejects unexpected resolver drift.
+Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization/release metadata/runner contracts and broken validator tests fail early. Normal verification treats the committed package manifest, application lockfile, and analyzer configuration as reviewed source and rejects unexpected resolver drift.
 
 ## Release/version metadata changes
 
@@ -129,7 +131,7 @@ For normal verification after code changes, do not refresh dependencies implicit
 
 ```bash
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 flutter analyze
 flutter test
@@ -143,13 +145,19 @@ Do not hand-author a lockfile. The tagged release workflow requires a committed 
 
 ## Generated platform runners
 
-Runner materialization is scaffolding rather than dependency maintenance. Use:
+Runner materialization is scaffolding rather than dependency maintenance. Use the canonical organization and restore the reviewed dependency metadata immediately after scaffolding:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
+python3 tool/check_platform_runner_contract.py
 ```
 
-Then perform the explicit locked dependency-resolution check. Do not remove `--no-pub` from CI/release runner generation unless the change deliberately redesigns and verifies the lockfile contract.
+The organization produces canonical application/bundle identity `io.github.sanskarin.quizforge` where applicable. Do not fall back to Flutter's `com.example` default.
+
+`--no-pub` prevents an implicit resolver pass, while `git restore` is still required because project recreation can remove/reset reviewed package metadata even without running pub. Perform the explicit locked dependency-resolution check afterward. Do not remove the organization, `--no-pub`, metadata restoration, or runner-contract validation from CI/release generation unless the change deliberately redesigns and verifies the distribution/dependency contract.
+
+Once the application has been publicly distributed, changing the application/bundle identifier is a compatibility and migration decision because it can affect installed-app identity and local storage boundaries.
 
 ## Commit discipline
 
@@ -161,4 +169,4 @@ The maintainer-requested commit email is `sanskarin@outlook.in`; configure it lo
 
 A change is complete when relevant regression tests exist, repository validators pass, localization generation succeeds when applicable, format/analyze/tests pass, error states are handled, accessibility/privacy impact has been considered, documentation reflects the behavior, and no secrets/private data were introduced.
 
-Release-candidate completion is stricter: final-head GitHub Actions/build/security gates, reviewed locked dependency state, and applicable manual platform/accessibility/data-restore checks must also be observed as successful rather than inferred from source review.
+Release-candidate completion is stricter: final-head GitHub Actions/build/security gates, canonical runner identity, reviewed locked dependency state, and applicable manual platform/accessibility/data-restore checks must also be observed as successful rather than inferred from source review.
