@@ -86,7 +86,9 @@ jobs:
           channel: stable
           cache: true
       - name: Generate Android and Web runners
-        run: flutter create . --platforms=android,web --no-pub
+        run: |
+          flutter create . --platforms=android,web --no-pub
+          git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
       - name: Apply QuizForge Android and Web branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=android,web
@@ -96,7 +98,7 @@ jobs:
       - name: Install locked dependencies and localizations
         run: |
           flutter pub get --enforce-lockfile
-          git diff --exit-code -- pubspec.lock
+          git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Build Android release packages
         run: |
@@ -143,6 +145,7 @@ jobs:
         run: |
           flutter config --enable-linux-desktop
           flutter create . --platforms=linux --no-pub
+          git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
       - name: Apply QuizForge Linux branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=linux
@@ -150,7 +153,7 @@ jobs:
       - name: Install locked dependencies and localizations
         run: |
           flutter pub get --enforce-lockfile
-          git diff --exit-code -- pubspec.lock
+          git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Build Linux release bundle
         run: flutter build linux --release
@@ -184,6 +187,7 @@ jobs:
         run: |
           flutter config --enable-windows-desktop
           flutter create . --platforms=windows --no-pub
+          git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
       - name: Apply QuizForge Windows branding
         shell: pwsh
         run: |
@@ -193,7 +197,7 @@ jobs:
         shell: pwsh
         run: |
           flutter pub get --enforce-lockfile
-          git diff --exit-code -- pubspec.lock
+          git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Build Windows release bundle
         shell: pwsh
@@ -228,6 +232,7 @@ jobs:
         run: |
           flutter config --enable-macos-desktop
           flutter create . --platforms=macos --no-pub
+          git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
       - name: Apply QuizForge macOS branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=macos
@@ -235,7 +240,7 @@ jobs:
       - name: Install locked dependencies and localizations
         run: |
           flutter pub get --enforce-lockfile
-          git diff --exit-code -- pubspec.lock
+          git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Build macOS release app
         run: flutter build macos --release
@@ -265,7 +270,9 @@ jobs:
           channel: stable
           cache: true
       - name: Generate iOS runner
-        run: flutter create . --platforms=ios --no-pub
+        run: |
+          flutter create . --platforms=ios --no-pub
+          git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
       - name: Apply QuizForge iOS branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=ios
@@ -273,7 +280,7 @@ jobs:
       - name: Install locked dependencies and localizations
         run: |
           flutter pub get --enforce-lockfile
-          git diff --exit-code -- pubspec.lock
+          git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
           flutter gen-l10n
       - name: Compile iOS release app without signing
         run: flutter build ios --release --no-codesign
