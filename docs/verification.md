@@ -16,7 +16,8 @@ This document records evidence for the consolidated QuizForge **2.7.4** release 
 - Original consolidation base commit: `d8c27cc81f678b1e49c17670c3d1efeab3d044d3`
 - Earlier fully observed build-evidence head: `306bee785cbebbf5b5d6bea875f8d5b4988ea175`
 - Later exact CI diagnostic head: `3cd7511b48c07f9dacc1b901b63d93b486c0df97`
-- Pre-verification-ledger branding/documentation head: `598ba4d22594fff1359395f9405bfb3fc8c51f61`
+- 2026-08-23 cross-platform/format diagnostic head: `b6bbf222a56164f7377c50a8030d2b558fdfc5c5`
+- Pre-verification-update continuation head: `5d99cc92e52fc7cb00b23ff89e9f54ff8386115e`
 - Maintainer commit-email target: `sanskarin@outlook.in`
 - Release-candidate status: **BLOCKED — final exact-head verification and required manual release-host evidence are not complete**
 
@@ -57,7 +58,7 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 
 - [x] Supported target contract explicitly covers Android, iOS, Web, Windows, macOS, and Linux.
 - [x] Shared application/domain/controller code does not require OS-specific `dart:io` / `Platform.*` branches for core flows.
-- [x] Standard Flutter runner shells are reproducibly generated with `flutter create . --platforms=android,ios,web,windows,macos,linux`.
+- [x] Standard Flutter runner shells are reproducibly generated with `flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub` followed by explicit locked dependency resolution.
 - [x] Native Android/iOS/Windows/macOS/Linux database path remains `drift_flutter` native SQLite.
 - [x] `AppDatabase.defaults()` supplies explicit `DriftWebOptions` for Web.
 - [x] Web database URIs point to `sqlite3.wasm` and `drift_worker.js`.
@@ -74,6 +75,7 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 - [x] Tagged release publication waits for every platform packaging job and generates SHA-256 checksums.
 - [x] Only the final release publication job receives `contents: write` permission.
 - [x] iOS release artifact is explicitly described/named as unsigned compile evidence rather than a signed distribution package.
+- [x] Build/platform/tag workflows use `flutter create ... --no-pub` so runner materialization cannot silently rewrite the reviewed application lockfile.
 
 ### Deterministic platform branding
 
@@ -89,8 +91,8 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 - [x] `tool/test_generate_platform_branding.py` covers deterministic rendering, PNG mode/dimensions, all target layouts, missing-asset detection, platform parsing, and ICO structure.
 - [x] Local standard-library test execution completed 4/4 branding-generator tests successfully before CI integration.
 - [x] Main CI and local shell/PowerShell quality scripts run the branding regression suite.
-- [x] Android/Web Build Gate applies and checks branding after `flutter create`.
-- [x] Linux/Windows/macOS/iOS build matrix applies and checks branding after `flutter create`.
+- [x] Android/Web Build Gate applies and checks branding after runner materialization.
+- [x] Linux/Windows/macOS/iOS build matrix applies and checks branding after runner materialization.
 - [x] Tagged platform packaging applies and checks branding before building release artifacts.
 - [ ] Representative platform visual inspection confirms launcher-mask/crop, splash scaling, icon clarity, and distribution presentation.
 
@@ -103,7 +105,8 @@ PR #12 is the single maintained release-candidate path. Former PRs #9, #10, and 
 - [x] Web runtime asset validation is covered by deterministic tests.
 - [x] Platform-branding generation/validation is covered by deterministic tests.
 - [x] Local shell/PowerShell checks, PR CI, Android/Web build CI, host build matrix, and tagged release automation are aligned with their applicable tool contracts.
-- [x] Platform host/build workflows now use `flutter pub get --enforce-lockfile` and reject unexpected resolver drift.
+- [x] Local shell/PowerShell checks use `flutter pub get --enforce-lockfile` and reject unexpected resolver drift.
+- [x] Platform host/build workflows use `flutter pub get --enforce-lockfile` and reject unexpected resolver drift.
 
 ## Historical exact-head GitHub Actions evidence
 
@@ -172,11 +175,45 @@ Focused fixes were committed on 2026-08-23:
 
 These are source/test fixes, not final pass evidence. The newer exact head must complete the affected workflows successfully.
 
+### Head `b6bbf222a56164f7377c50a8030d2b558fdfc5c5` — 2026-08-23 diagnostic
+
+Observed completed workflow results:
+
+- [x] Dependency Review — **SUCCESS** (`32628033564`).
+- [x] OSV Vulnerability Scan — **SUCCESS** (`32628033759`).
+- [x] Secret Scan — **SUCCESS** (`32628033463`).
+- [ ] CI — **FAILURE** (`32628033355`).
+- [ ] Build Gate — **FAILURE** (`32628033412`).
+- [ ] Platform Build Matrix — **FAILURE** (`32628033437`).
+
+The CI failure occurred at the formatting gate after repository validators, Flutter setup, enforced dependency resolution, resolver cleanliness, and localization generation had succeeded. Dart 3.13.1 reported one formatting change in `lib/src/data/settings_repository.dart`. That source formatting defect was corrected in:
+
+- `67a740051bc29469d2185a4b71e3a36e8c1a2cde` — `style: format lazy settings repository constructor`.
+
+The Android/Web Build Gate passed support-tool tests, Flutter setup, runner materialization, branding generation/checks, Web runtime preparation, and dependency resolution, then failed the resolver cleanliness check. The log showed that `flutter create . --platforms=android,web` had already run an implicit package resolution and rewritten multiple transitive entries in `pubspec.lock` before the explicit `--enforce-lockfile` step. The build gate was therefore correctly rejecting generated dependency drift rather than exposing an Android/Web product compile failure.
+
+The Platform Build Matrix showed the same class of defect on generated host runners. Windows completed successfully, while Linux, macOS, and iOS failed during their locked dependency/localization step after runner generation had already changed dependency state.
+
+Focused runner-generation fixes were committed:
+
+- `b334ee3536e28194136d2d8dd6978ed229fa5aec` — Android/Web runner generation uses `--no-pub`;
+- `bc95b7a9908c5979d29641eab8148748e0b4390b` — Linux/Windows/macOS/iOS runner generation uses `--no-pub`;
+- `77ef4fa9031e69e64450557d8a2f1948d43195e8` — tagged release runner generation uses the same lockfile-safe strategy.
+
+Local and contributor verification were then aligned so local quality checks cannot silently accept a different dependency contract from CI:
+
+- `27f78c6dddaebad579a24d33624eeb9c05fa00c2` — Unix local quality checks enforce the application lockfile and resolver cleanliness;
+- `55cb68091588c2715592ddf4c8d06ed6633cc572` — PowerShell local quality checks enforce the same contract.
+
+Repository/setup/testing/release documentation was synchronized afterward so documented commands use `--no-pub`, `--enforce-lockfile`, resolver-diff checks, and the platform-branding regression suite where applicable.
+
+These are source/configuration/documentation repairs, not pass evidence. Every applicable workflow must complete again on the exact final PR head.
+
 ### Interpretation
 
-The successful build matrix on `306bee...` is strong historical evidence that the pre-Web-hardening codebase compiled across all six supported targets. The later `3cd751...` head additionally proved the committed lockfile, repository validators, localization generation, formatter, analyzer, and all non-CI security/build workflows were healthy before the widget-test regressions were reached.
+The successful build matrix on `306bee...` is strong historical evidence that the pre-Web-hardening codebase compiled across all six supported targets. The later `3cd751...` head additionally proved the committed lockfile, repository validators, localization generation, formatter, analyzer, and all non-CI security/build workflows were healthy before the widget-test regressions were reached. The `b6bb...` diagnostic then exposed two newer release-engineering defects—one formatting mismatch and runner-generation lockfile drift—which have focused repairs.
 
-Neither historical head is final release evidence for a newer candidate head. Branding/build-workflow changes also materially affect later heads, so all applicable workflows must pass again on the final frozen head.
+None of those historical heads is final release evidence for the current candidate. Branding, source/test, runner-generation, local-quality, and documentation changes materially affect later heads, so all applicable workflows must pass again on the final frozen head.
 
 ## Required automated gates for the final head
 
@@ -191,7 +228,7 @@ These remain unchecked until the **exact final PR #12 head** completes successfu
 - [ ] ARB localization-catalog validation succeeds.
 - [ ] Release metadata validation succeeds.
 - [ ] `flutter pub get --enforce-lockfile` succeeds against the committed lockfile.
-- [ ] Dependency resolution leaves `pubspec.lock` unchanged.
+- [ ] Dependency resolution leaves `pubspec.lock` and `analysis_options.yaml` unchanged.
 - [ ] Flutter localization generation succeeds.
 - [ ] Dart formatting succeeds for `lib`, `test`, and `tool`.
 - [ ] Flutter analyzer succeeds.
@@ -220,8 +257,10 @@ A queued, pending, cancelled, superseded, skipped-but-applicable, or unobserved 
 - [x] `pubspec.lock` is generated and committed from a supported Flutter resolver.
 - [x] Exact-head CI at `3cd751...` accepted it with `flutter pub get --enforce-lockfile`.
 - [x] Exact-head CI at `3cd751...` left the committed lockfile unchanged after dependency resolution.
-- [x] Android/Web and Linux/Windows/macOS/iOS build-workflow definitions now enforce the committed lockfile and check resolver cleanliness.
-- [x] Tagged release packaging enforces the committed lockfile.
+- [x] Android/Web and Linux/Windows/macOS/iOS build-workflow definitions enforce the committed lockfile and check resolver cleanliness.
+- [x] Build/platform runner generation uses `--no-pub` before the explicit locked-resolution step.
+- [x] Tagged release packaging uses `--no-pub` runner generation and enforces the committed lockfile.
+- [x] Local shell/PowerShell quality scripts enforce the committed lockfile and resolver cleanliness.
 
 The lockfile is no longer a missing-source blocker. It remains part of every final-head verification because a later dependency/configuration change must not silently rewrite it.
 
@@ -305,8 +344,20 @@ The connected GitHub contents API also does not expose a per-commit author-email
 | 2026-08-23 | Deterministic platform-branding generator | PASS (source/local tooling) | commits `703cb6d`, `8b53c2a`; local standard-library tests 4/4 |
 | 2026-08-23 | Branding integrated into CI/build/release paths | PASS (source/config audit) | commits `08a8041`, `b328420`, `87106d3`, `4148eda`, `9c59f0f`, `1fce8f0` |
 | 2026-08-23 | Branding docs/roadmap/release notes/changelog | PASS (documentation audit) | commits `df1d3f8`, `3eca500`, `ea27f80`, `598ba4d` |
-| 2026-08-23 | Final-head automated verification | PENDING | read the newest PR #12 exact-head workflows after the final continuation-ledger commit |
-| 2026-08-23 | Manual platform/branding/accessibility/screenshots | PENDING | requires representative built applications and distribution contexts |
+| 2026-08-23 | Latest completed CI diagnostic | FAIL | run `32628033355` at `b6bb...`; settings repository formatting mismatch |
+| 2026-08-23 | Latest completed Android/Web diagnostic | FAIL | run `32628033412` at `b6bb...`; runner generation rewrote `pubspec.lock` |
+| 2026-08-23 | Latest completed host-matrix diagnostic | FAIL | run `32628033437` at `b6bb...`; Windows passed, Linux/macOS/iOS exposed runner-generation dependency drift |
+| 2026-08-23 | Latest completed Dependency Review | PASS (historical exact head) | run `32628033564` at `b6bb...` |
+| 2026-08-23 | Latest completed OSV scan | PASS (historical exact head) | run `32628033759` at `b6bb...` |
+| 2026-08-23 | Latest completed Secret Scan | PASS (historical exact head) | run `32628033463` at `b6bb...` |
+| 2026-08-24 | Dart formatting repair | PASS (source fix) | commit `67a7400`; exact-head rerun required |
+| 2026-08-24 | Lockfile-safe Android/Web runner generation | PASS (source/config fix) | commit `b334ee3`; exact-head rerun required |
+| 2026-08-24 | Lockfile-safe desktop/iOS runner generation | PASS (source/config fix) | commit `bc95b7a`; exact-head rerun required |
+| 2026-08-24 | Lockfile-safe tagged release runner generation | PASS (source/config fix) | commit `77ef4fa`; tag execution remains future-only |
+| 2026-08-24 | Local quality scripts enforce reviewed lockfile | PASS (source/config audit) | commits `27f78c6`, `55cb680` |
+| 2026-08-24 | Setup/CI/platform/release/testing/development/contribution docs synchronized | PASS (documentation audit) | commits `f617f35` through `5d99cc9` |
+| 2026-08-24 | Final-head automated verification | PENDING | read the newest PR #12 exact-head workflows after this verification-ledger commit and any later continuation commits |
+| 2026-08-24 | Manual platform/branding/accessibility/screenshots | PENDING | requires representative built applications and distribution contexts |
 
 ## Release decision rule
 
