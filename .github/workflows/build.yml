@@ -35,7 +35,7 @@ jobs:
           cache: true
 
       - name: Materialize Android and Web runners
-        run: flutter create . --platforms=android,web
+        run: flutter create . --platforms=android,web --no-pub
 
       - name: Apply QuizForge Android and Web branding
         run: |
