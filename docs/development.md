@@ -26,17 +26,20 @@ The equivalent sequence is:
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
+python3 tool/test_prepare_web_assets.py
+python3 tool/test_generate_platform_branding.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
-flutter pub get
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test --coverage
 ```
 
-Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization/release metadata inputs and broken validator tests fail early.
+Use `python` instead of `python3` on Windows when that is the configured launcher. The repository validators intentionally run before Flutter setup so broken documentation/localization/release metadata inputs and broken validator tests fail early. Normal verification treats the committed application lockfile as reviewed source and rejects unexpected resolver drift.
 
 ## Release/version metadata changes
 
@@ -122,19 +125,31 @@ Do not log raw question prompts, answers, profile names, email addresses, import
 
 Prefer Flutter/Dart standard libraries unless a maintained package materially reduces risk or complexity. Evaluate maintenance status, platform support, license, API scope, transitive dependencies, and security history before adding packages.
 
-After changing dependencies:
+For normal verification after code changes, do not refresh dependencies implicitly. Use:
 
 ```bash
-flutter pub get
-flutter pub outdated
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.lock analysis_options.yaml
 flutter gen-l10n
 flutter analyze
 flutter test
 ```
 
+When intentionally changing dependencies, update `pubspec.yaml`, run normal resolver tooling in a supported Flutter environment to regenerate `pubspec.lock`, review the full lockfile diff, run `flutter pub outdated` for maintenance visibility, and then rerun the locked verification sequence above before committing.
+
 For this Flutter application, keep `intl: any` paired with `flutter_localizations` so Flutter stable chooses its SDK-compatible `intl` version unless a future verified compatibility reason changes that policy.
 
-Review and commit the application `pubspec.lock` after dependency resolution in a supported verified Flutter environment. Do not hand-author a lockfile. The tagged release workflow requires a committed lockfile and enforces it with `flutter pub get --enforce-lockfile`.
+Do not hand-author a lockfile. The tagged release workflow requires a committed lockfile and enforces it with `flutter pub get --enforce-lockfile`.
+
+## Generated platform runners
+
+Runner materialization is scaffolding rather than dependency maintenance. Use:
+
+```bash
+flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
+```
+
+Then perform the explicit locked dependency-resolution check. Do not remove `--no-pub` from CI/release runner generation unless the change deliberately redesigns and verifies the lockfile contract.
 
 ## Commit discipline
 
