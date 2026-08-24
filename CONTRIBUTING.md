@@ -7,7 +7,14 @@ Thank you for helping improve QuizForge.
 1. Fork or branch from `main`.
 2. Configure Git with a real identity. Repository maintainers may use `sanskarin@outlook.in` for local commits.
 3. Install Flutter stable and the platform tooling needed for your target.
-4. Materialize runners when required with `flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub` so scaffolding does not implicitly rewrite the reviewed lockfile.
+4. When runners are required, materialize them with the canonical organization and without an implicit package-resolution pass:
+
+```bash
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
+python3 tool/check_platform_runner_contract.py
+```
+
 5. Make one focused change at a time.
 6. Add or update tests for behavior changes and bug fixes.
 7. Run the maintained quality gate before opening a pull request:
@@ -18,11 +25,13 @@ python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
 python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
@@ -30,6 +39,8 @@ flutter test --coverage
 ```
 
 On Windows, use the configured `python` launcher when `python3` is not the command name, or run `tool/check.ps1`. Unix-like contributors can run `tool/check.sh`.
+
+Generated runners must use organization `io.github.sanskarin`, yielding canonical application/bundle identity `io.github.sanskarin.quizforge` where applicable. Do not commit or release Flutter's `com.example` default. Project recreation can remove/reset reviewed package metadata even with `--no-pub`, which is why the documented runner sequence restores `pubspec.yaml`, `pubspec.lock`, and `analysis_options.yaml` from `HEAD` before locked dependency resolution.
 
 Normal verification must not silently regenerate `pubspec.lock`. Intentional dependency changes are separate maintenance work: update `pubspec.yaml`, regenerate the lockfile in a supported Flutter environment, review its full diff, then rerun the locked quality gate before committing.
 
@@ -47,6 +58,8 @@ When changing the package version:
 - run `tool/test_check_release_metadata.py` and `tool/check_release_metadata.py`.
 
 Do not hand-author `pubspec.lock`. Review and commit resolver-generated lockfile output from a supported Flutter environment.
+
+Changing a previously distributed application/bundle identifier is not routine metadata cleanup; it can change installed-app and local-storage identity and must be treated as a compatibility/migration decision.
 
 ## Commit style
 
@@ -79,6 +92,7 @@ A release-candidate pull request must distinguish implemented source work from e
 - Do not commit credentials, production tokens, private endpoints, personal datasets, real user backup archives, or signing keys.
 - Add an ADR under `docs/adr/` for major architectural changes.
 - Preserve released user data through tested migrations/format compatibility rules.
+- Preserve the generated-runner contract unless a reviewed compatibility decision intentionally changes it.
 
 ## UI and accessibility
 
