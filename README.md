@@ -29,7 +29,8 @@ The maintained release-candidate line is **2.7.4+1**. Tag `v2.7.4` is reserved f
 - Light, dark, and system themes plus large-text and reduced-motion preferences.
 - Keyboard-friendly responsive UI foundations for mobile, desktop, and Web.
 - Persistence-ordering safeguards for settings and local-profile changes, with rollback regression coverage.
-- Repository-local Markdown-link, ARB-localization, release-metadata, Web-runtime, and deterministic platform-branding tooling tests before Flutter CI work begins.
+- Repository-local Markdown-link, ARB-localization, release-metadata, Web-runtime, platform-branding, and generated-runner-contract tooling tests before Flutter CI work begins.
+- Canonical generated application/bundle identity: `io.github.sanskarin.quizforge`.
 - Host-specific release build gates for all six targets.
 - No sign-in requirement and no donation gating.
 - Private-room multiplayer is represented by a clean local protocol/architecture boundary so a transport can be added without coupling it to quiz logic.
@@ -57,7 +58,7 @@ QuizForge 2.7.4 targets:
 - **macOS**
 - **Linux**
 
-Standard Flutter runner shells are regenerated from the repository metadata rather than maintained as hand-edited platform forks. The Web target additionally requires compatible Drift `sqlite3.wasm` and worker assets, which the repository prepares and validates automatically in its Web build/release workflows.
+Standard Flutter runner shells are regenerated from the repository metadata rather than maintained as hand-edited platform forks. Generated runners use organization `io.github.sanskarin`, producing the canonical application/bundle identity `io.github.sanskarin.quizforge` where the platform uses a reverse-DNS identifier. The Web target additionally requires compatible Drift `sqlite3.wasm` and worker assets, which the repository prepares and validates automatically in its Web build/release workflows.
 
 See [`docs/platform-support.md`](docs/platform-support.md) for the complete runtime, build, packaging, and verification contract for every target.
 
@@ -67,7 +68,7 @@ See [`docs/platform-support.md`](docs/platform-support.md) for the complete runt
 - Drift + SQLite / Drift Web WASM persistence
 - Flutter SDK state primitives (`ChangeNotifier` / `ListenableBuilder`)
 - Deterministic pure-Dart quiz engine and codecs
-- Python-stdlib repository documentation/localization/release/Web-runtime/platform-branding tooling
+- Python-stdlib repository documentation/localization/release/Web-runtime/platform-branding/runner-contract tooling
 - GitHub Actions for formatting, analysis, tests, six-platform builds, documentation integrity, localization integrity, release metadata, dependency/security checks, and cross-platform release packaging
 
 ## Quick start
@@ -75,10 +76,12 @@ See [`docs/platform-support.md`](docs/platform-support.md) for the complete runt
 ```bash
 git clone https://github.com/sanskarIN/quizforge.git
 cd quizforge
-flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
 python3 tool/prepare_web_assets.py --destination web
+python3 tool/check_platform_runner_contract.py
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 flutter analyze
 flutter test
@@ -87,19 +90,20 @@ flutter run
 
 On Windows, use `python` instead of `python3` if that is the configured launcher. The Web asset preparation command is harmless for developers targeting another platform and ensures the generated Web runner is ready when Web is selected.
 
-The `flutter create . ... --no-pub` step is idempotent for standard runner scaffolding while deliberately avoiding an implicit dependency-resolution pass that could rewrite the reviewed application lockfile. Dependency resolution is performed once afterward with `--enforce-lockfile`.
+`--no-pub` prevents runner scaffolding from performing its own package-resolution pass, while the immediate `git restore` restores the reviewed application dependency metadata if project recreation removed or reset it. Dependency resolution is then performed exactly once with `--enforce-lockfile`. `tool/check_platform_runner_contract.py` protects the canonical organization, scaffolding, metadata-restoration, and lockfile-enforcement contract used by CI and tagged releases.
 
 ## Development setup
 
 1. Install the current Flutter stable channel and ensure `flutter doctor` is healthy for the platform you plan to build.
 2. Clone the repository.
-3. Run `flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub` to materialize platform runners without implicitly rewriting dependency state.
-4. Run `python3 tool/prepare_web_assets.py --destination web` when preparing the Web target.
-5. Run the repository/tool regression tests: `python3 tool/test_check_markdown_links.py`, `python3 tool/test_check_arb_catalogs.py`, `python3 tool/test_check_release_metadata.py`, `python3 tool/test_prepare_web_assets.py`, and `python3 tool/test_generate_platform_branding.py`.
-6. Run `python3 tool/check_markdown_links.py`, `python3 tool/check_arb_catalogs.py`, and `python3 tool/check_release_metadata.py`.
-7. Run `flutter pub get --enforce-lockfile`, verify `git diff --exit-code -- pubspec.lock analysis_options.yaml`, and then run `flutter gen-l10n`.
-8. Run `dart format --output=none --set-exit-if-changed lib test tool`.
-9. Run `flutter analyze` and `flutter test`.
+3. Run `flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub` to materialize platform runners with the canonical application identity and without an implicit package-resolution pass.
+4. Run `git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml` immediately after scaffolding so reviewed dependency metadata is authoritative.
+5. Run `python3 tool/prepare_web_assets.py --destination web` when preparing the Web target.
+6. Run the repository/tool regression tests: `python3 tool/test_check_markdown_links.py`, `python3 tool/test_check_arb_catalogs.py`, `python3 tool/test_check_release_metadata.py`, `python3 tool/test_prepare_web_assets.py`, `python3 tool/test_generate_platform_branding.py`, and `python3 tool/test_check_platform_runner_contract.py`.
+7. Run `python3 tool/check_markdown_links.py`, `python3 tool/check_arb_catalogs.py`, `python3 tool/check_release_metadata.py`, and `python3 tool/check_platform_runner_contract.py`.
+8. Run `flutter pub get --enforce-lockfile`, verify `git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml`, and then run `flutter gen-l10n`.
+9. Run `dart format --output=none --set-exit-if-changed lib test tool`.
+10. Run `flutter analyze` and `flutter test`.
 
 Or use `tool/check.sh` / `tool/check.ps1` to run the supported local source-quality sequence.
 
@@ -113,18 +117,20 @@ python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
 python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test --coverage
 ```
 
-The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, local backup validation/round trips/restoration, recent-attempt ordering/rendering, controller persistence/rollback ordering, validation, accessibility semantics, settings, and the primary quiz-completion journey. Repository tooling tests cover Markdown, ARB catalogs, release metadata, Web database runtime asset validation, and deterministic platform branding. See [`docs/testing.md`](docs/testing.md).
+The test suite covers scoring, answer normalization, duplicate detection, deterministic selection, JSON/CSV codecs and fuzz cases, local persistence, local backup validation/round trips/restoration, recent-attempt ordering/rendering, controller persistence/rollback ordering, validation, accessibility semantics, settings, and the primary quiz-completion journey. Repository tooling tests cover Markdown, ARB catalogs, release metadata, Web database runtime asset validation, deterministic platform branding, and generated-runner identity/dependency safety. See [`docs/testing.md`](docs/testing.md).
 
 Recent-attempt storage, refresh behavior, deletion semantics, and privacy boundaries are documented in [`docs/progress-history.md`](docs/progress-history.md). Whole-app local backup semantics are documented in [`docs/local-backup.md`](docs/local-backup.md).
 
