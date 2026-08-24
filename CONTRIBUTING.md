@@ -7,7 +7,7 @@ Thank you for helping improve QuizForge.
 1. Fork or branch from `main`.
 2. Configure Git with a real identity. Repository maintainers may use `sanskarin@outlook.in` for local commits.
 3. Install Flutter stable and the platform tooling needed for your target.
-4. Materialize runners when required with `flutter create . --platforms=android,ios,web,windows,macos,linux`.
+4. Materialize runners when required with `flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub` so scaffolding does not implicitly rewrite the reviewed lockfile.
 5. Make one focused change at a time.
 6. Add or update tests for behavior changes and bug fixes.
 7. Run the maintained quality gate before opening a pull request:
@@ -16,10 +16,13 @@ Thank you for helping improve QuizForge.
 python3 tool/test_check_markdown_links.py
 python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
+python3 tool/test_prepare_web_assets.py
+python3 tool/test_generate_platform_branding.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
-flutter pub get
+flutter pub get --enforce-lockfile
+git diff --exit-code -- pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
@@ -27,6 +30,8 @@ flutter test --coverage
 ```
 
 On Windows, use the configured `python` launcher when `python3` is not the command name, or run `tool/check.ps1`. Unix-like contributors can run `tool/check.sh`.
+
+Normal verification must not silently regenerate `pubspec.lock`. Intentional dependency changes are separate maintenance work: update `pubspec.yaml`, regenerate the lockfile in a supported Flutter environment, review its full diff, then rerun the locked quality gate before committing.
 
 ## Release/version changes
 
