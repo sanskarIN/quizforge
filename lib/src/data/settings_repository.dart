@@ -18,8 +18,7 @@ final class SettingsRepository implements AppSettingsStore {
 
   SharedPreferencesAsync? _preferences;
 
-  SharedPreferencesAsync get _store =>
-      _preferences ??= SharedPreferencesAsync();
+  SharedPreferencesAsync get _store => _preferences ??= SharedPreferencesAsync();
 
   static const String _settingsKey = 'settings.v1';
   static const String _themeKey = 'settings.themeMode';
