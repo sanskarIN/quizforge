@@ -36,7 +36,7 @@ jobs:
 
       - name: Materialize Android and Web runners
         run: |
-          flutter create . --platforms=android,web --no-pub
+          flutter create . --platforms=android,web --org io.github.sanskarin --no-pub
           git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
 
       - name: Apply QuizForge Android and Web branding
