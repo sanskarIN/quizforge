@@ -17,6 +17,24 @@ This document distinguishes product support from release verification. A target 
 
 The application does not require an account or a network service for core quiz, profile, progress, question-bank, or local-backup workflows.
 
+## Canonical application identity
+
+Generated Flutter runners use organization:
+
+```text
+io.github.sanskarin
+```
+
+For platforms using reverse-DNS application/bundle identifiers, the canonical QuizForge identity is:
+
+```text
+io.github.sanskarin.quizforge
+```
+
+This avoids Flutter's development default `com.example.quizforge` before the first public 2.7.4 release. The organization is derived from the public GitHub repository owner rather than claiming control of an unrelated domain. `tool/check_platform_runner_contract.py` and its regression tests protect this identity in maintained build/release workflows.
+
+Changing a published application/bundle identifier is a distribution and local-storage compatibility decision, so later releases must not casually replace this value.
+
 ## Platform-independent application boundary
 
 Core quiz rules, scoring, validation, selection, codecs, backup validation, and controller behavior are shared Dart code. The maintained application code does not use `dart:io` or `Platform.*` to fork core behavior by operating system.
@@ -71,11 +89,14 @@ The Android/Web build gate, desktop/iOS build matrix, local validation scripts, 
 
 ## Materialize all Flutter runners
 
-QuizForge keeps standard platform runners reproducible instead of hand-editing generated shells. From the repository root, generate runner files without invoking an implicit package-resolution pass:
+QuizForge keeps standard platform runners reproducible instead of hand-editing generated shells. From the repository root, generate runner files with the canonical organization and without invoking an implicit package-resolution pass:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
 ```
+
+The metadata restore is required because project recreation can remove or reset reviewed package metadata even when `--no-pub` is used. Runner generation is scaffolding; package identity and dependency state remain source-controlled contracts.
 
 Then apply QuizForge branding:
 
@@ -84,14 +105,13 @@ python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,m
 python3 tool/generate_platform_branding.py --platforms=android,ios,web,windows,macos,linux --check
 ```
 
-Resolve the reviewed application dependency graph explicitly after runner materialization:
+Validate the maintained runner contract and resolve the reviewed application dependency graph explicitly after runner materialization:
 
 ```bash
+python3 tool/check_platform_runner_contract.py
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 ```
-
-The `--no-pub` step is intentional. Runner generation is scaffolding; it must not silently replace the reviewed application lockfile before the explicit locked-resolution gate runs.
 
 For Web, also prepare the database runtime assets:
 
@@ -175,19 +195,20 @@ Linux desktop environments generally consume application icons through packaging
 
 The maintained GitHub Actions paths are intentionally split:
 
-- `.github/workflows/build.yml` — Android release + Web release, including lockfile-safe runner materialization, generated QuizForge branding, and Web database runtime assets;
-- `.github/workflows/platform-builds.yml` — branded Linux, Windows, macOS, and iOS no-codesign release builds with lockfile-safe runner materialization and enforced lockfile resolution;
-- `.github/workflows/ci.yml` — repository validators, branding-tool regression tests, Flutter dependency/localization/format/analyzer/tests;
+- `.github/workflows/build.yml` — Android release + Web release, including canonical organization identity, lockfile-safe runner materialization, generated QuizForge branding, and Web database runtime assets;
+- `.github/workflows/platform-builds.yml` — branded Linux, Windows, macOS, and iOS no-codesign release builds with canonical organization identity, reviewed-metadata restoration, and enforced lockfile resolution;
+- `.github/workflows/ci.yml` — repository validators, runner-contract/platform-branding regression tests, Flutter dependency/localization/format/analyzer/tests;
 - dependency review, OSV, and secret scanning remain separate focused gates.
 
-The tagged release workflow uses the same `--no-pub` runner strategy, applies the branding generator to every platform runner, and performs explicit locked resolution before packaging.
+The tagged release workflow uses the same organization, scaffolding/metadata-restoration strategy, runner-contract validator, branding generator, and explicit locked resolution before packaging.
 
-An earlier 2.7.4 candidate head successfully completed the Android/Web build gate and Linux/Windows/macOS/iOS build matrix. Because later cross-platform, test, branding, and runner-generation changes create a newer head, those older green runs are historical evidence only; the newer head must pass again before release verification is updated.
+An earlier 2.7.4 candidate head successfully completed the Android/Web build gate and Linux/Windows/macOS/iOS build matrix. Because later cross-platform, test, branding, runner-generation, and canonical-identity changes create a newer head, those older green runs are historical evidence only; the newer head must pass again before release verification is updated.
 
 ## Manual cross-platform release checks
 
 Compilation is necessary but not sufficient. Before describing a 2.7.4 target as release-verified, exercise the applicable target with fictional data and verify:
 
+- generated application/bundle identity is `io.github.sanskarin.quizforge` where applicable;
 - branded launcher/app icon uses the expected mask/crop and remains recognizable;
 - splash/launch artwork is centered and scales without clipping;
 - app startup and local database creation;
@@ -206,6 +227,6 @@ See `docs/verification.md`, `docs/release.md`, and `docs/local-backup.md` for th
 
 ## Support policy
 
-A platform remains in the supported set only while its maintained Flutter runner can be generated from the documented command and its applicable CI build path remains part of the release-candidate gate. Removing a target is therefore a documented compatibility decision, not an incidental build-script edit.
+A platform remains in the supported set only while its maintained Flutter runner can be generated from the documented command and its applicable CI build path remains part of the release-candidate gate. Removing a target or changing the canonical application identity is therefore a documented compatibility decision, not an incidental build-script edit.
 
 **Made by the Sanskar**
