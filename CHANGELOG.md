@@ -9,25 +9,31 @@ The project follows Semantic Versioning where practical.
 ### Added
 
 - Added deterministic standard-library QuizForge platform branding generation for Android launcher/splash assets, iOS AppIcon/launch images, Web icons, Windows ICO, macOS AppIcon assets, and a Linux packaging icon resource.
+- Added `tool/check_platform_runner_contract.py` plus deterministic regression coverage to protect generated-runner organization identity, lockfile-safe scaffolding, reviewed metadata restoration, and enforced dependency resolution.
 
 ### Changed
 
 - Android/Web, Linux/Windows/macOS/iOS, and tagged-release workflows now apply and structurally verify QuizForge branding after generated Flutter runners are materialized.
-- Platform build jobs now enforce the committed application lockfile and reject unexpected resolver drift.
+- Generated Flutter runners now use canonical organization `io.github.sanskarin`, yielding application/bundle identity `io.github.sanskarin.quizforge` where applicable instead of Flutter's `com.example.quizforge` development default.
+- Generated-runner workflows use `--no-pub`, restore reviewed `pubspec.yaml`, `pubspec.lock`, and `analysis_options.yaml` from `HEAD` after scaffolding, then perform one explicit `flutter pub get --enforce-lockfile` resolution.
+- Platform build jobs and local quality scripts enforce the committed application lockfile and reject unexpected resolver drift.
 
 ### Fixed
 
 - Deferred `SharedPreferencesAsync` acquisition in settings and active-profile preference repositories so constructing repositories does not require an installed platform backend before persistence is actually used.
 - Stabilized recent-attempt and local-backup widget regressions by scrolling lazy `ListView` controls into the built viewport before asserting or interacting with them.
+- Corrected the settings-repository constructor to the exact Dart 3.13.1 formatter output expected by the maintained CI gate.
+- Prevented generated-runner recreation from deleting/resetting reviewed application dependency metadata before locked dependency resolution.
 
 ### Tests
 
 - Added regression coverage proving preference repositories can be constructed without initializing the shared-preferences platform plugin.
 - Added deterministic platform-branding regression coverage for PNG modes/dimensions, complete target output layout, Windows ICO structure, missing-asset detection, and non-mutating verification.
+- Added generated-runner contract regressions covering canonical organization identity, rejection of `com.example`, required `--no-pub`, immediate metadata restoration, and required enforced-lockfile resolution.
 
 ### Documentation
 
-- Synchronized the 2.7.4 roadmap, platform-support guide, release notes, verification evidence, and continuation ledger with the committed lockfile, six-platform release workflow, exact CI evidence, branding generation, and remaining release blockers.
+- Synchronized the 2.7.4 roadmap, setup/development/testing/CI/platform-support/release guides, release notes, verification evidence, contributor guidance, and continuation ledger with the committed lockfile, canonical application identity, six-platform release workflow, exact CI evidence, branding generation, runner-contract validation, and remaining release blockers.
 
 ## [2.7.4] - 2026-08-19
 
@@ -146,7 +152,9 @@ The project follows Semantic Versioning where practical.
 - The committed application lockfile has been accepted by Flutter 3.47.1 using `flutter pub get --enforce-lockfile` with no resulting lockfile diff on exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97`; it remains enforced on every final-head gate.
 - Exact diagnostic head `3cd7511b48c07f9dacc1b901b63d93b486c0df97` passed Android/Web builds, Linux/Windows/macOS/iOS compile/build checks, Dependency Review, OSV, Secret Scan, repository validators, localization generation, formatting, and analysis; its main CI then reported 86 passing and 13 failing widget tests.
 - Eleven of those failures shared eager `SharedPreferencesAsync` plugin initialization as their root cause; two were lazy-`ListView` test-viewport assumptions. Focused fixes and regression coverage were committed on 2026-08-23, but a newer exact head must pass before those fixes are counted as verified.
-- Deterministic platform branding is now generated and structurally validated by repository tooling/build workflows; representative visual verification remains pending.
+- A later 2026-08-23/24 diagnostic exposed one Dart formatter mismatch and generated-runner dependency metadata drift. The formatter mismatch was corrected, and maintained runner workflows now restore reviewed dependency metadata after scaffolding before enforced resolution.
+- Deterministic generated-runner validation now protects canonical organization `io.github.sanskarin`, application identity `io.github.sanskarin.quizforge`, lockfile-safe scaffolding, and metadata restoration; the exact final head still requires complete GitHub Actions evidence.
+- Deterministic platform branding is generated and structurally validated by repository tooling/build workflows; representative visual verification remains pending.
 - Local backup has source-level regression coverage, but release-host clipboard/persistence restore smoke checks remain required before 2.7.4 is described as release-verified.
 - Web packaging verifies required database runtime files, but a real-browser persistence/refresh/backup smoke test remains required.
 - A queued, cancelled because of a newer commit, or pending workflow is not treated as a successful verification result.
