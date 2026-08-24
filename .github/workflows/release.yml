@@ -86,7 +86,7 @@ jobs:
           channel: stable
           cache: true
       - name: Generate Android and Web runners
-        run: flutter create . --platforms=android,web
+        run: flutter create . --platforms=android,web --no-pub
       - name: Apply QuizForge Android and Web branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=android,web
@@ -142,7 +142,7 @@ jobs:
       - name: Generate Linux runner
         run: |
           flutter config --enable-linux-desktop
-          flutter create . --platforms=linux
+          flutter create . --platforms=linux --no-pub
       - name: Apply QuizForge Linux branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=linux
@@ -183,7 +183,7 @@ jobs:
         shell: pwsh
         run: |
           flutter config --enable-windows-desktop
-          flutter create . --platforms=windows
+          flutter create . --platforms=windows --no-pub
       - name: Apply QuizForge Windows branding
         shell: pwsh
         run: |
@@ -227,7 +227,7 @@ jobs:
       - name: Generate macOS runner
         run: |
           flutter config --enable-macos-desktop
-          flutter create . --platforms=macos
+          flutter create . --platforms=macos --no-pub
       - name: Apply QuizForge macOS branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=macos
@@ -265,7 +265,7 @@ jobs:
           channel: stable
           cache: true
       - name: Generate iOS runner
-        run: flutter create . --platforms=ios
+        run: flutter create . --platforms=ios --no-pub
       - name: Apply QuizForge iOS branding
         run: |
           python3 tool/generate_platform_branding.py --platforms=ios
