@@ -20,7 +20,7 @@ Typical platform requirements include:
 
 Git and Python 3 are required for source checkout and the deterministic repository validation tools. The Python tools use only the standard library.
 
-The maintained release-candidate package version is `2.7.4+1`; the intended public tag after verification is `v2.7.4`.
+The maintained release-candidate package version is `2.7.4+1`; the intended public tag after verification is `v2.7.4`. Generated platform runners use organization `io.github.sanskarin`, producing canonical reverse-DNS application/bundle identity `io.github.sanskarin.quizforge` where applicable.
 
 ## Clone
 
@@ -39,13 +39,14 @@ Set `user.name` to the identity you want Git to record.
 
 ## Materialize platform runners
 
-The repository keeps platform shells reproducible. Generate the normal Flutter runner files from the package metadata without allowing `flutter create` to run an implicit dependency-resolution pass:
+The repository keeps platform shells reproducible. Generate the normal Flutter runner files using the canonical organization without allowing `flutter create` to run its own package-resolution pass:
 
 ```bash
-flutter create . --platforms=android,ios,web,windows,macos,linux --no-pub
+flutter create . --platforms=android,ios,web,windows,macos,linux --org io.github.sanskarin --no-pub
+git restore --source=HEAD -- pubspec.yaml pubspec.lock analysis_options.yaml
 ```
 
-Run the command from the repository root. Review generated diffs before committing platform files; generated local paths, signing material, and machine-specific configuration must remain untracked. Dependency resolution is performed explicitly afterward with the committed application lockfile.
+The immediate `git restore` is deliberate: project recreation can remove or reset package metadata even with `--no-pub`. Restoring the reviewed files before dependency resolution ensures the checked-in package/lock/analyzer contract remains authoritative. Run these commands from the repository root. Review generated platform diffs before committing platform files; generated local paths, signing material, and machine-specific configuration must remain untracked.
 
 ### Web database runtime assets
 
@@ -77,9 +78,11 @@ python3 tool/test_check_arb_catalogs.py
 python3 tool/test_check_release_metadata.py
 python3 tool/test_prepare_web_assets.py
 python3 tool/test_generate_platform_branding.py
+python3 tool/test_check_platform_runner_contract.py
 python3 tool/check_markdown_links.py
 python3 tool/check_arb_catalogs.py
 python3 tool/check_release_metadata.py
+python3 tool/check_platform_runner_contract.py
 ```
 
 On Windows, use `python` instead of `python3` when that is the configured launcher.
@@ -89,13 +92,14 @@ On Windows, use `python` instead of `python3` when that is the configured launch
 - The release-metadata checker validates package/in-app/changelog/versioning consistency, including the maintained `2.7.4+1` / `2.7.4` / `v2.7.4` identity.
 - The Web-asset tool tests protect the SQLite WASM/worker validation path without requiring network access.
 - The platform-branding tests protect deterministic generated icon/splash structure without requiring platform-specific image tooling.
+- The runner-contract validator rejects Flutter's default `com.example` identity and requires canonical organization, `--no-pub`, immediate dependency-metadata restoration, and `--enforce-lockfile` in maintained runner workflows.
 - Flutter localization generation remains the authoritative framework-level localization check after the early ARB validator.
 
 ## Install packages and generate localizations
 
 ```bash
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 ```
 
@@ -121,7 +125,7 @@ The complete maintained sequence includes repository/tool regression tests and v
 
 ```bash
 flutter pub get --enforce-lockfile
-git diff --exit-code -- pubspec.lock analysis_options.yaml
+git diff --exit-code -- pubspec.yaml pubspec.lock analysis_options.yaml
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
